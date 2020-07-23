@@ -1,0 +1,36 @@
+GUIState 0
+sbg color_outline 255 120 123 255
+sbg color_solid 0 0 255 255
+sbg outline_thickness 10
+tbg texture_name A1.png
+tbg texture_rect 0 0 50 50
+text color 255 255 255 0
+text string hello
+text font_name
+text character_size 30
+text local_position 50 50
+/ENDSTATE
+GUIState 1
+sbg color_outline 255 255 255 255
+sbg color_solid 255 255 255 255
+sbg outline_thickness 1
+tbg texture_name
+tbg texture_rect 0 0 50 50
+text color 255 255 255 255
+text string hello
+text font_name arial.ttf
+text character_size 30
+text local_position 50 50
+/ENDSTATE
+GUIState 2
+sbg color_outline 255 255 255 255
+sbg color_solid 255 255 255 255
+sbg outline_thickness 1
+tbg texture_name
+tbg texture_rect 0 0 50 50
+text color 255 255 255 255
+text string hello
+text font_name arial.ttf
+text character_size 30
+text local_position 50 50
+/ENDSTATE

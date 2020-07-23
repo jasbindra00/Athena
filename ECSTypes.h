@@ -1,0 +1,28 @@
+#ifndef ECSTYPES_H
+#define ECSTYPES_H
+#include <type_traits>
+
+
+enum class ComponentType {//REGISTER NEW COMPONENTS IN ENTITYMGR CTOR
+	BASE = 0, ANIMATION, COLLIDABLE, MOTION, POSITION,RETRIEVABLE, STATE, SPRITE
+};
+//**************STREAM ATTRIBUTE REQUIREMENTS FOR EACH COMPONENT : 
+/*
+-ANIMATION : 
+-COLLIDABLE : 
+-MOTION : 
+-POSITION : 
+-RETRIEVABLE : 
+-STATE : 
+-SPRITE : 
+*/
+
+
+enum class EntityEventType {
+	MOVING_UP, MOVING_RIGHT, MOVING_DOWN, MOVING_LEFT, DEAD
+};
+enum class SystemType {
+	ANIMATION = 0, COLLIDABLE, CONTROLLABLE, MOVEMENT, RENDERER
+};
+using RawComponentType = std::underlying_type_t<ComponentType>;
+#endif

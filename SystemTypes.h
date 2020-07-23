@@ -1,0 +1,10 @@
+#ifndef SYSTEMTYPES_H
+#define SYSTEMTYPES_H
+enum class SystemType{
+	MOVEMENT = 0, RENDERER, COLLISION, PHYSICS, ANIMATION
+};
+
+
+
+
+#endif

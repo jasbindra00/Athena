@@ -1,0 +1,4 @@
+INTERFACE MyInterface mystyle.txt 50 50 400 400
+TEXTFIELD myelement mystyle2.txt 10 10 100 10
+INTERFACE MyInterfacedfs mystyle3.txt 100 100 50 50
+TEXTFIELD myelfsdfement mystyle2.txt 10 10 20 10
