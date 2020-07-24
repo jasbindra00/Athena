@@ -24,7 +24,7 @@ void GUITextfield::OnHover(){
 void GUITextfield::OnClick(const sf::Vector2f& mousepos) {
 	SetState(GUIState::FOCUSED);
 	GUIEvent evnt;
-	evnt.elementname = name;
+	evnt.interfacehierarchy = name;
 	evnt.elementtype = type;
 	evnt.eventtype = GUIEventType::TEXTFIELDCLICK;
 	parent->GetGUIManager()->AddEvent(std::move(evnt));

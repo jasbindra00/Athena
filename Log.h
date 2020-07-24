@@ -33,7 +33,8 @@ enum class LOCATION {
 	COMPONENT_RETRIEVABLE,
 	COMPONENT_STATE,
 	GUI_INTERFACE,
-	FILEREADER
+	FILEREADER,
+	LOOKUP
 };
 
 using Detail = std::pair<float, std::string>; //{time of occurence, errormsg}

@@ -6,6 +6,9 @@
 #include <string>
 #include <algorithm>
 #include <sstream>
+#include <vector>
+#include "StreamAttributes.h"
+#include "KeyProcessing.h"
 namespace Utility {
 	static LOG log;
 	template<typename T, typename = typename std::is_enum<T>>
@@ -20,6 +23,5 @@ namespace Utility {
 		stream.seekg(0); //reset input from pos.
 		return nattributes;
 	}
-	
 }
 #endif							

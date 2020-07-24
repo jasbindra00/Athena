@@ -9,7 +9,7 @@ enum class GUIEventType {
 	TEXTFIELDCLICK
 };
 struct GUIEvent {
-	std::vector<std::string> hierarchy; //parent names
+	std::string interfacehierarchy;
 	GUIState elementstate;
 	GUIType elementtype;
 	GUIEventType eventtype;

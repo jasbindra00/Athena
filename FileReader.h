@@ -39,7 +39,14 @@ public:
 	void PutBackLine() {
 		GotoLine(linenumber - 1);
 	}
-
+	bool CheckStandardSyntax(const std::vector<std::string>& syntaxes) {
+		bool correct = true;
+		for (auto& syntax : syntaxes) {
+			NextLine();
+			if (line != syntax) correct = false;
+		}
+		return correct;
+	}
 	std::string GetWord() {
 		linestream >> word;
 		return word;

@@ -5,7 +5,10 @@
 #include <unordered_map>
 #include <functional>
 #include "Utility.h"
+#include <variant>
+#include "GUIEvents.h"
 
+struct GUIEvent;
 extern enum class StateType;
 enum class EventType{
 	KEYPRESSED = sf::Event::EventType::KeyPressed,
@@ -14,10 +17,10 @@ enum class EventType{
 	MOUSERELEASED = sf::Event::EventType::MouseButtonReleased, 
 };
 struct EventInfo{
+	std::variant<int, GUIEvent> codeorguievent;
 	EventInfo(const int& code)
-		:keycode(code) {
+		:codeorguievent(code){
 	}
-	int keycode;
 };
 struct EventDetails{
 	EventDetails() {
@@ -44,18 +47,6 @@ struct Binding{
 	std::string bindingname;
 	BindingConditions conditions; //event conditions necessary for the binding callable to be executed.
 	EventDetails details;
-	friend std::ostream& operator<<(std::ostream& os, const Binding& binding) {
-		os << static_cast<std::string>(binding);
-		return os;
-	} 
-	operator std::string() const {
-		std::string msg{ "|BINDING NAME : " + bindingname + "| |BINDING CONDITIONS : " };
-		for (auto& condition : conditions) {
-			msg += " {" + std::to_string(Utility::ConvertToUnderlyingType(condition.first)) + "," + std::to_string(condition.second.keycode) + "} ";
-		}
-		msg += "|";
-		return msg;
-	}
 };
 
 using BindingPtr = std::unique_ptr<Binding>;
@@ -93,6 +84,7 @@ public:
 
 	void RemoveBindingData(const StateType& state, const std::string& bindingname);
 
+	void HandleEvent(const GUIEvent& evnt);
 	void HandleEvent(const sf::Event& evnt, sf::RenderWindow* winptr); //handles all incoming events dispatched from window.
 	void Update(sf::RenderWindow* winptr); //handles all live input events - keyboard and mouse.
 	void LoadBindings(const std::string& filename); //automatic loading and assigning of each binding object to a given state from a txt file. binding callables must be registered seperately.

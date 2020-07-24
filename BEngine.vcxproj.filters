@@ -290,5 +290,14 @@
     <ClInclude Include="StreamAttributes.h">
       <Filter>Header Files\Utility</Filter>
     </ClInclude>
+    <ClInclude Include="KeyProcessing.h">
+      <Filter>Header Files\Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="Location.h">
+      <Filter>Header Files\Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="EnumConverter.h">
+      <Filter>Header Files\Utility</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
