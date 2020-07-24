@@ -9,16 +9,16 @@
 #include "Window.h"
 #include <iostream>
 #include <queue>
+#include "GameStateType.h"
+
 
 Manager_State::Manager_State(SharedContext* c):context(c) {
 	//register state producers here.
-	RegisterStateProducer<State_Intro>(StateType::INTRO);
-	RegisterStateProducer<State_Game>(StateType::GAME);
-	SwitchState(StateType::INTRO);
+	RegisterStateProducer<State_Intro>(GameStateType::INTRO);
+	RegisterStateProducer<State_Game>(GameStateType::GAME);
+	SwitchState(GameStateType::INTRO);
 }
-
-
-bool Manager_State::StateExists(const StateType& state) const{
+bool Manager_State::StateExists(const GameStateType& state) const{
 	auto pendingdestruction = std::find(destructionqueue.begin(), destructionqueue.end(), state);
 	if (pendingdestruction != destructionqueue.end()) return false; //state does not exist if it is pending destruction
 	auto foundstate = std::find_if(statestack.begin(), statestack.end(), [&state](const auto& p) {
@@ -34,7 +34,7 @@ void Manager_State::ProcessInsertions() {
 	}
 	insertionqueue.clear();
 }
-void Manager_State::RemoveStateProducer(const StateType& state){
+void Manager_State::RemoveStateProducer(const GameStateType& state){
 	auto found = statefactory.find(state);
 	statefactory.erase(found);
 }
@@ -65,14 +65,14 @@ void Manager_State::ProcessDestructions() {
 	}
 	destructionqueue.clear();
 }
-void Manager_State::SwitchState(const StateType& s) {
+void Manager_State::SwitchState(const GameStateType& s) {
 	auto foundstate = std::find_if(statestack.begin(), statestack.end(), [s](const auto& p) {
 		return p.first == s;
 		});
 	if (foundstate != statestack.end()) {//state already exists. shift state to top of stack.
 		auto tmp = std::move(foundstate->second);
 		statestack.erase(foundstate);
-		statestack.push_back(std::pair<StateType, StatePtr>{s, std::move(tmp)});
+		statestack.push_back(std::pair<GameStateType, StatePtr>{s, std::move(tmp)});
 		statestack.back().second->Activate();
 		return;
 	}

@@ -10,7 +10,12 @@ public:
 	explicit EnumConverter(const Converter& c) :converter(c) {
 	}
 	T operator()(const std::string& str) {
-		return converter(str);
+		auto tmp = str;
+		for (auto& c : tmp) {
+			c = std::toupper(c);
+		}
+		return converter(std::move(tmp));
 	}
+
 };
 #endif

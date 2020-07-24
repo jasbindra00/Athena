@@ -1,1 +1,1 @@
-GAME Spacebar 5,57 5,0}
+GAME Spacebar {5,57} {5,0}

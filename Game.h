@@ -10,6 +10,7 @@
 #include "Manager_GUI.h"
 #include "Manager_Texture.h"
 #include "Manager_Font.h"
+#include "GameStateType.h"
 
 class Game
 {
@@ -39,8 +40,8 @@ public:
 		context.fontmgr = fontmgr.get();
 		
 		guimgr = std::make_unique<Manager_GUI>(&context);
-		guimgr->CreateStateInterface(StateType::GAME, "MyInterface", "MyInterface.txt");
-		guimgr->SetActiveState(StateType::GAME);
+		guimgr->CreateStateInterface(GameStateType::GAME, "MyInterface", "MyInterface.txt");
+		guimgr->SetActiveState(GameStateType::GAME);
 		
 	}
 	void Update() {

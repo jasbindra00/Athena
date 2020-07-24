@@ -1,5 +1,6 @@
 #include "State_Intro.h"
 #include "Manager_State.h"
+#include "GameStateType.h"
 
 State_Intro::State_Intro(Manager_State* statemgr) :State_Base(statemgr) {
 	transparency = false;
@@ -34,8 +35,8 @@ void State_Intro::UpdateCamera()
 }
 
 void State_Intro::Continue(){
-	statemgr->QueueInsertion(StateType::GAME);
-	statemgr->QueueDestruction(StateType::INTRO);
+	statemgr->QueueInsertion(GameStateType::GAME);
+	statemgr->QueueDestruction(GameStateType::INTRO);
 	
 }
 

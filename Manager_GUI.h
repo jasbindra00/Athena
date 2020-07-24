@@ -12,7 +12,7 @@
 #include "GUIEvents.h"
 
 
-enum class StateType;
+
 enum class GUIElementType;
 class GUIElement;
 class GUIInterface;
@@ -24,7 +24,7 @@ class Attributes;
 using GUIInterfacePtr = std::unique_ptr<GUIInterface>;
 using Interfaces = std::vector<std::pair<std::string,GUIInterfacePtr>>;
 
-using GameStateInterfaces = std::unordered_map<StateType, Interfaces>; //each game state has a number of GUI interfaces.
+using GameStateInterfaces = std::unordered_map<GameStateType, Interfaces>; //each game state has a number of GUI interfaces.
 
 using GUIElementPtr = std::unique_ptr<GUIElement>;
 using GUIElementProducer = std::function<GUIElementPtr(GUIInterface*, GUIStateStyles, std::stringstream& attributes)>;
@@ -37,7 +37,7 @@ private:
 	GUIElementFactory elementfactory;
 
 	SharedContext* context;
-	mutable StateType activestate;
+	mutable GameStateType activestate;
 
 	template<typename T>
 	void RegisterElementProducer(const GUIType& type) { //factory pattern
@@ -46,14 +46,14 @@ private:
 	GUIStateStyles CreateStyleFromFile(const std::string& stylefile);
 	GUIElementPtr CreateElement(GUIInterface* parent, Attributes& attributes);
 	GUIInterfacePtr CreateInterfaceFromFile(const std::string& interfacefile);
-	std::pair<bool,Interfaces::iterator> FindInterface(const StateType& state, const std::string& interfacename) noexcept;
+	std::pair<bool,Interfaces::iterator> FindInterface(const GameStateType& state, const std::string& interfacename) noexcept;
 public:
 	Manager_GUI(SharedContext* context);
 	
-	bool CreateStateInterface(const StateType& state, const std::string& name, const std::string& interfacefile);
-	bool RemoveStateInterface(const StateType& state, const std::string& name);
+	bool CreateStateInterface(const GameStateType& state, const std::string& name, const std::string& interfacefile);
+	bool RemoveStateInterface(const GameStateType& state, const std::string& name);
 
-	inline void SetActiveState(const StateType& state) const { activestate = state; }
+	inline void SetActiveState(const GameStateType& state) const { activestate = state; }
 	
 	
 	void Update(const float& dT);
@@ -63,7 +63,7 @@ public:
 	void AddEvent(const GUIEvent& evnt);
 
 	SharedContext* GetContext() const { return context; }
-	GUIInterface* GetInterface(const StateType& state, const std::string& interfacename);
+	GUIInterface* GetInterface(const GameStateType& state, const std::string& interfacename);
 	GUIType StringToGUIType(const std::string& str) const{
 		if (str == "INTERFACE") return GUIType::WINDOW;
 		else if (str == "LABEL") return GUIType::LABEL;

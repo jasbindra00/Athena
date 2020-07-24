@@ -3,8 +3,9 @@
 #include "Manager_Event.h"
 #include "SharedContext.h"
 #include <iostream>
+#include "GameStateType.h"
 State_Game::State_Game(Manager_State* statemgr) : State_Base(statemgr){
-	statemgr->GetContext()->eventmanager->RegisterBindingCallable(StateType::GAME, "Spacebar", [this](EventDetails* ptr) {this->KeyPress(ptr); });
+	statemgr->GetContext()->eventmanager->RegisterBindingCallable(GameStateType::GAME, "Spacebar", [this](EventDetails* ptr) {this->KeyPress(ptr); });
 }
 
 void State_Game::Update(const float& dT)

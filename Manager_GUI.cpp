@@ -11,10 +11,11 @@
 #include "GUIInfo.h"
 #include "Utility.h"
 #include "FileReader.h"
+#include "GameStateType.h"
 
 Manager_GUI::Manager_GUI(SharedContext* cntxt) :context(cntxt) {
 	RegisterElementProducer<GUITextfield>(GUIType::TEXTFIELD);
-	stateinterfaces[StateType::GAME] = Interfaces{};
+	stateinterfaces[GameStateType::GAME] = Interfaces{};
 }
 GUIStateStyles Manager_GUI::CreateStyleFromFile(const std::string& stylefile) {
 	GUIStateStyles styles;
@@ -140,14 +141,14 @@ GUIInterfacePtr Manager_GUI::CreateInterfaceFromFile(const std::string& interfac
 	file.CloseFile();
 	return std::unique_ptr<GUIInterface>(static_cast<GUIInterface*>(interfacehierarchy[0].second[0].release()));
 }
-std::pair<bool,Interfaces::iterator> Manager_GUI::FindInterface(const StateType& state, const std::string& interfacename) noexcept{
+std::pair<bool,Interfaces::iterator> Manager_GUI::FindInterface(const GameStateType& state, const std::string& interfacename) noexcept{
 	auto& interfaces = stateinterfaces.at(state);
 	auto foundinterface = std::find_if(interfaces.begin(), interfaces.end(), [interfacename](const auto& p) {
 		return p.first == interfacename;
 		});
 	return (foundinterface == interfaces.end()) ? std::make_pair(false, foundinterface) : std::make_pair(true, foundinterface);
 }
-bool Manager_GUI::CreateStateInterface(const StateType& state, const std::string& name, const std::string& interfacefile){
+bool Manager_GUI::CreateStateInterface(const GameStateType& state, const std::string& name, const std::string& interfacefile){
 	auto interfaceexists = FindInterface(state, name);
 	if (interfaceexists.first == true) {
 		LOG::Log(LOCATION::MANAGER_GUI, LOGTYPE::ERROR, __FUNCTION__, "Interface of name " + name + " within the game state " + std::to_string(Utility::ConvertToUnderlyingType(state)) + " already exists.");
@@ -158,7 +159,7 @@ bool Manager_GUI::CreateStateInterface(const StateType& state, const std::string
 	stateinterfaces[state].emplace_back(std::make_pair(name, std::move(interfaceobj)));
 	return true;
 }
-bool Manager_GUI::RemoveStateInterface(const StateType& state, const std::string& name){
+bool Manager_GUI::RemoveStateInterface(const GameStateType& state, const std::string& name){
 	auto foundinterface = FindInterface(state, name);
 	if (foundinterface.first == true) {
 		LOG::Log(LOCATION::MANAGER_GUI, LOGTYPE::ERROR, __FUNCTION__, "State " + std::to_string(Utility::ConvertToUnderlyingType(state)) + " does not have an interface of name " + name);
@@ -167,7 +168,7 @@ bool Manager_GUI::RemoveStateInterface(const StateType& state, const std::string
 	stateinterfaces.at(state).erase(foundinterface.second);
 	return true;
 }
-GUIInterface* Manager_GUI::GetInterface(const StateType& state, const std::string& interfacename){
+GUIInterface* Manager_GUI::GetInterface(const GameStateType& state, const std::string& interfacename){
 	auto foundinterface = FindInterface(state, interfacename);
 	if (foundinterface.first == false) return nullptr;
 	return foundinterface.second->second.get();
