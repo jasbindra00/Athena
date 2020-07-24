@@ -275,14 +275,20 @@
     <ClInclude Include="GUIFormatting.h">
       <Filter>Header Files\GUI</Filter>
     </ClInclude>
-    <ClInclude Include="FileRead.h">
-      <Filter>Header Files\Utility</Filter>
-    </ClInclude>
     <ClInclude Include="GUIEvents.h">
       <Filter>Header Files\GUI</Filter>
     </ClInclude>
     <ClInclude Include="GUIInfo.h">
       <Filter>Header Files\GUI</Filter>
+    </ClInclude>
+    <ClInclude Include="GUIInterfaceLayers.h">
+      <Filter>Header Files\GUI</Filter>
+    </ClInclude>
+    <ClInclude Include="FileReader.h">
+      <Filter>Header Files\Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="StreamAttributes.h">
+      <Filter>Header Files\Utility</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

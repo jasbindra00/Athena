@@ -1,4 +1,16 @@
-INTERFACE MyInterface mystyle.txt 50 50 400 400
-TEXTFIELD myelement mystyle2.txt 10 10 100 10
-INTERFACE MyInterfacedfs mystyle3.txt 100 100 50 50
-TEXTFIELD myelfsdfement mystyle2.txt 10 10 20 10
+NEWINTERFACE mystyle.txt MyInterface 50 50 400 400
+TEXTFIELD mystyle2.txt myelement 50 17 100 10
+NESTEDINTERFACE mystyle3.txt MyInterface 50 50 100 100
+TEXTFIELD mystyle2.txt myelement 0 0 10 10
+NEWINTERFACE mystyle3.txt MyInterffsdace 150 150 200 200
+TEXTFIELD mystyle2.txt elt 0 0 20 8
+NESTEDINTERFACE mystyle.txt dfdf 50 50 70 70
+TEXTFIELD mystyle2.txt myelement 0 0 10 10
+NESTEDINTERFACE mystyle3.txt dfdf 20 20 20 20
+TEXTFIELD mystyle2.txt myelement 5 5 10 10
+NEWINTERFACE mystyle3.txt fsdf 0 0 50 50
+TEXTFIELD mystyle2.txt myelement 0 0 10 10
+NESTEDINTERFACE mystyle.txt mdsgfs 10 10 20 20
+TEXTFIELD mystyle2.txt myelement 3 3 10 10
+
+

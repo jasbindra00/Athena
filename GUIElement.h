@@ -6,9 +6,6 @@
 #include "GUIFormatting.h"
 #include "GUIInfo.h"
 
-
-
-
 class GUIInterface;
 class Manager_Texture;
 class Manager_Font;
@@ -26,46 +23,62 @@ protected:
 	mutable bool controlelement; //used by the interface in determining which layer to redraw
 	mutable bool redrawrequired; //if it's changed, then the layer to which it forms within the interface must be redrawn.
 
+	mutable bool pendingpositionapply;
+	mutable bool pendingsizeapply;
+	mutable bool pendingcalibration;
+
 	sf::Vector2f localposition;
+	sf::Vector2f elementsize;
 
 	void ReleaseStyleResources();
 	bool RequestTextureResources();
 	bool RequestFontResources();
+
+	virtual void ApplyLocalPosition();
+	virtual void ApplySize();
+	void CalibratePosition();
 public:
-	GUIElement(GUIInterface* parent, const GUIType& type, const GUIStateStyles& styles);
+	GUIElement(GUIInterface* parent, const GUIType& type, const GUIStateStyles& styles, std::stringstream& attributes);
 
 	virtual void OnNeutral() = 0;
 	virtual void OnHover() = 0;
 	virtual void OnClick(const sf::Vector2f& mousepos) = 0;
 
-	virtual void SetState(const GUIState& state);
+	void SetState(const GUIState& state);
 	virtual void Draw(sf::RenderTexture& texture);
-	virtual void Update(const float& dT) = 0;
-	virtual bool Contains(const sf::Vector2f& pos) const noexcept;
-	void ApplyCurrentStyle();
-	
+	virtual void Update(const float& dT);
+	bool Contains(const sf::Vector2f& mousepos) const noexcept;
 
-	void CalibratePosition();
+
+	void ApplyCurrentStyle();
+
+	void SetElementSize(const sf::Vector2f& s);
+	void SetLocalPosition(const sf::Vector2f& pos);
+
+
+	void MarkRedraw(const bool& inp) const { redrawrequired = inp; }
+	
 	bool RequiresRedraw() const { return redrawrequired; }
-	virtual void SetElementSize(const sf::Vector2f& s);
-	void SetRedraw(const bool& inp) const { redrawrequired = inp; }
-	virtual void SetLocalPosition(const sf::Vector2f& pos);
-	virtual void ReadIn(std::stringstream& stream) = 0;
 	inline const bool& IsControl() const { return controlelement; }
 
 	inline const GUIState& GetActiveState() const { return activestate; }
-	inline GUIInterface* GetParent() const { return parent; }
-	const sf::Vector2f& GetSize() const { return visual.elementsize; }
+	inline const sf::Vector2f& GetSize() const { return elementsize; }
 	inline const GUIType& GetType() const { return type; }
-	GUIStyle& GetActiveStyle() { return statestyles[activestate]; }
+	inline const std::string& GetName() const { return name; }
+	inline GUIStyle& GetActiveStyle() { return statestyles[activestate]; }
+	inline GUIInterface* GetParent() const { return parent; }
+	inline const sf::Vector2f& GetLocalPosition() const { return localposition; }
+	
 	sf::Vector2f GetGlobalPosition() const;
-	sf::Vector2f GetLocalPosition() const { return localposition; }
-	sf::FloatRect GetLocalBoundingBox() const; //based on the sbg.ss
-	std::string GetName() const { return name; }
+	sf::FloatRect GetLocalBoundingBox() const;
+	
+	
 	friend std::stringstream& operator>>(std::stringstream& stream, GUIElement* elt) {
 		elt->ReadIn(stream);
 		return stream;
 	}
+	virtual void ReadIn(std::stringstream& stream);
+
 	virtual ~GUIElement();
 	
 };

@@ -1,87 +1,39 @@
 #include "GUIInterface.h"
-#include "Utility.h"
+#include "GUIInterfaceLayers.h"
 #include "Manager_GUI.h"
 #include "Window.h"
-class Layers {
-
-protected:
-	sf::Sprite backgroundsprite;
-	sf::RenderTexture backgroundlayer;
-
-	sf::Sprite contentsprite;
-	sf::RenderTexture contentlayer;
-
-	sf::Sprite controlsprite;
-	sf::RenderTexture controllayer;
-	
-public:
-	Layers(const sf::Vector2f& eltsize) {
-		backgroundlayer.create(eltsize.x, eltsize.y);
-		backgroundsprite.setTexture(backgroundlayer.getTexture());
-
-		contentlayer.create(eltsize.x, eltsize.y);
-		contentsprite.setTexture(contentlayer.getTexture());
-
-		controllayer.create(eltsize.x, eltsize.y);
-		controlsprite.setTexture(controllayer.getTexture());
-	}
-
-	sf::RenderTexture* GetControlLayer()  { return &controllayer; }
-	sf::RenderTexture* GetBackgroundLayer() { return &backgroundlayer; }
-	sf::RenderTexture* GetContentLayer() { return &contentlayer; }
-
-	sf::Sprite* GetBackgroundSprite() { return &backgroundsprite; }
-	sf::Sprite* GetContentSprite() { return &contentsprite; }
-	sf::Sprite* GetControlSprite() { return &controlsprite; }
 
 
-};
 
-GUIInterface::GUIInterface(GUIInterface* p, Manager_GUI* mgr, const GUIStateStyles& styles, std::stringstream& attributes) 
-	:GUIElement(p, GUIType::WINDOW, styles),
+GUIInterface::GUIInterface(GUIInterface* p, Manager_GUI* mgr, const GUIStateStyles& styles, std::stringstream& stream) 
+	:GUIElement(p, GUIType::WINDOW, styles, stream),
 	guimgr(mgr){
 	if (parent == nullptr) parent = this;
-	attributes >> this;
-	SetContentRedraw(true);
-	SetControlRedraw(true);
+	layers = std::make_unique<GUIInterfaceLayers>(GetSize());
+	MarkContentRedraw(true);
+	MarkControlRedraw(true);
 }
 bool GUIInterface::AddElement(const std::string& eltname, std::unique_ptr<GUIElement>& elt){
+	auto eltexists = std::find_if(elements.begin(), elements.end(), [eltname](const auto& p) {
+		return p.first == eltname;
+		});
+	if (eltexists != elements.end()) return false;
 	elements.emplace_back(std::make_pair(eltname, std::move(elt)));
 	return true;
 }
 void GUIInterface::ReadIn(std::stringstream& stream) {
-	sf::Vector2f position;
-	sf::Vector2f size;
-	stream >> position.x >> position.y >> size.x >> size.y;
-	layers = std::make_unique<Layers>(size);
-	SetElementSize(size);
-	SetLocalPosition(position);
-	CalibratePosition();
+	GUIElement::ReadIn(stream);
 }
 bool GUIInterface::RemoveElement(const std::string& eltname) {
 	return true;
 }
-bool GUIInterface::HasElement(const std::string& eltname) const{
-	return false;
+void GUIInterface::ApplyLocalPosition(){
+	layers->GetBackgroundSprite()->setPosition(localposition);
+	layers->GetContentSprite()->setPosition(localposition);
+	layers->GetControlSprite()->setPosition(localposition);
 }
-void GUIInterface::SetLocalPosition(const sf::Vector2f& pos){
-	/*
-	-the background of the interface is rendered relative to the interface layers.
-	
-
-	-if the interface has a parent, then the sprites are rendered relative to its layers
-
-	-do I need to move the visual?
-	no. because the visual is always drawn relative to this interface layer.
-	if i want to move the interface, i simply move the sprite.
-
-	if i did move the visual, that would simply offset the visual relative to the layers from this interface.
-	*/
-	localposition = pos;
-
-	layers->GetBackgroundSprite()->setPosition(pos);	
-	layers->GetContentSprite()->setPosition(pos);
-	layers->GetControlSprite()->setPosition(pos);
+void GUIInterface::ApplySize() {
+	GUIElement::ApplySize();
 }
 void GUIInterface::RedrawContentLayer() {
 	auto contentlayer = layers->GetContentLayer();
@@ -89,14 +41,13 @@ void GUIInterface::RedrawContentLayer() {
 	for (auto& element : elements) {
 		if (!element.second->IsControl()) { //then it must be a content elt
 			element.second->Draw(*contentlayer);
-			element.second->SetRedraw(false);
+			element.second->MarkRedraw(false);
 		}
 	}
 	contentlayer->display();
 	layers->GetContentSprite()->setTexture(layers->GetContentLayer()->getTexture());
-	SetContentRedraw(false);
-	SetParentRedraw(true);
-	
+	MarkContentRedraw(false);
+	MarkRedrawToParent(true);
 }
 void GUIInterface::RedrawControlLayer() {
 	auto controllayer = layers->GetControlLayer();
@@ -108,8 +59,8 @@ void GUIInterface::RedrawControlLayer() {
 	}
 	controllayer->display();
 	layers->GetControlSprite()->setTexture(layers->GetControlLayer()->getTexture());
-	SetControlRedraw(false);	
-	SetParentRedraw(true);
+	MarkControlRedraw(false);	
+	MarkRedrawToParent(true);
 }
 void GUIInterface::RedrawBackgroundLayer() {
 	auto backgroundlayer = layers->GetBackgroundLayer();
@@ -119,8 +70,8 @@ void GUIInterface::RedrawBackgroundLayer() {
 	backgroundlayer->draw(visual.text);
 	backgroundlayer->display();
 	layers->GetBackgroundSprite()->setTexture(backgroundlayer->getTexture());
-	SetBackgroundRedraw(false);
-	SetParentRedraw(true);
+	MarkBackgroundRedraw(false);
+	MarkRedrawToParent(true); //if nested interface, this change in interface needs to be reflected in the layer of its parent
 }
 void GUIInterface::Draw(sf::RenderTexture& texture) { //part of another interface
 	texture.draw(*layers->GetBackgroundSprite());
@@ -144,66 +95,48 @@ void GUIInterface::Update(const float& dT){
 	-responsible for updating / redrawing the layers.
 	*/	
 	auto mousepos = static_cast<sf::Vector2f>(sf::Mouse::getPosition(*GetGUIManager()->GetContext()->window->GetRenderWindow()));
-	
 
+	GUIElement::Update(dT); //apply any pending movement / size changes
 	for (auto& element : elements) {
 		element.second->Update(dT);
-		if (dynamic_cast<GUIInterface*>(element.second.get())) { //if its a gui interface
-			if (static_cast<GUIInterface*>(element.second.get())->NeedsParentRedraw()) { //check if its own layers have been redrawn (so that we can redraw this control layer)
-				SetControlRedraw(true); //its layers have been redrawn, so we need to redraw our control. child interface forms the control layer.
-				static_cast<GUIInterface*>(element.second.get())->SetParentRedraw(false); //reset
+		if (dynamic_cast<GUIInterface*>(element.second.get())) {
+			if (static_cast<GUIInterface*>(element.second.get())->RequiresParentRedraw()) { //check if its own layers have been redrawn (so that we can redraw this control layer)
+				MarkControlRedraw(true); //its layers have been redrawn, so we need to redraw our control. child interface forms the control layer.
+				static_cast<GUIInterface*>(element.second.get())->MarkRedrawToParent(false); //reset
 			}
 		}
-		else if (element.second->RequiresRedraw()) {
-			if (element.second->IsControl()) SetControlRedraw(true);
-			else SetContentRedraw(true);
-			element.second->SetRedraw(false);
+		else if (element.second->RequiresRedraw()) { //element has been changed
+			if (element.second->IsControl()) MarkControlRedraw(true); //if it was a control elt, need to redraw control layer
+			else MarkContentRedraw(true);
+			element.second->MarkRedraw(false); //reset
 		}
 	}
-	
-	if (NeedsBackgroundRedraw()) RedrawBackgroundLayer();
-	if (NeedsContentRedraw()) RedrawContentLayer();
-	if (NeedsControlRedraw()) RedrawControlLayer();
+	//apply redrawing changes if applicable.
+	if (RequiresBackgroundRedraw()) RedrawBackgroundLayer(); 
+	if (RequiresContentRedraw()) RedrawContentLayer();
+	if (RequiresControlRedraw()) RedrawControlLayer();
 	
 }
 void GUIInterface::OnHover(){
 
 }
 
-void GUIInterface::OnNeutral()
-{
+void GUIInterface::OnNeutral(){
 
 }
 void GUIInterface::OnClick(const sf::Vector2f& pos){
 	SetState(GUIState::CLICKED);
-	/*
-	-need to check if the click lies within any of the elements.
-	*/
 	for (auto& element : elements) {
-		if (element.second->GetActiveState() != GUIState::CLICKED) { //if it has not already been clicked
+		if (element.second->GetActiveState() != GUIState::CLICKED) { //if the element has not already been clicked
 			if (element.second->Contains(pos)) {
 				element.second->OnClick(pos); //if its a click on a textfield, then the manager will defocus all active interface textfields via event.
+				std::cout << "element click" << std::endl;
 			 }
 		}
 	}
 }
-
-void GUIInterface::SetState(const GUIState& state)
-{
-
-}
-
-
-
-
-
-void GUIInterface::SetElementSize(const sf::Vector2f& size) {
-	GUIElement::SetElementSize(size); //set the size of the visual.
-}
-
-
 std::pair<bool, sf::Vector2f> GUIInterface::EltOverhangs(const GUIElement* const elt){
-	auto eltpos = elt->GetLocalPosition(); //local to me.
+	auto eltpos = elt->GetLocalPosition(); 
 	auto eltsize = elt->GetSize();
 	auto mysize = GetSize();
 	sf::Vector2f newpos{ 0,0 };
@@ -215,9 +148,8 @@ std::pair<bool, sf::Vector2f> GUIInterface::EltOverhangs(const GUIElement* const
 	return { overhangs, newpos };
 }
 
+
 Manager_GUI* GUIInterface::GetGUIManager() const { return guimgr; }
-
 GUIInterface::~GUIInterface() {
-
 }
 

@@ -176,12 +176,13 @@
     <ClInclude Include="EntityEventQueue.h" />
     <ClInclude Include="EntityStates.h" />
     <ClInclude Include="EventQueue.h" />
-    <ClInclude Include="FileRead.h" />
+    <ClInclude Include="FileReader.h" />
     <ClInclude Include="GUIElement.h" />
     <ClInclude Include="GUIEvents.h" />
     <ClInclude Include="GUIFormatting.h" />
     <ClInclude Include="GUIInfo.h" />
     <ClInclude Include="GUIInterface.h" />
+    <ClInclude Include="GUIInterfaceLayers.h" />
     <ClInclude Include="GUILabel.h" />
     <ClInclude Include="GUITextfield.h" />
     <ClInclude Include="Manager_Font.h" />
@@ -193,6 +194,7 @@
     <ClInclude Include="Origin.h" />
     <ClInclude Include="State_Intro.h" />
     <ClInclude Include="StaticContext.h" />
+    <ClInclude Include="StreamAttributes.h" />
     <ClInclude Include="SystemTypes.h" />
     <ClInclude Include="System_State.h" />
     <ClInclude Include="Utility.h" />

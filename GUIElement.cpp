@@ -11,6 +11,12 @@ bool GUIElement::RequestFontResources() {
 	visual.font = parent->GetGUIManager()->GetContext()->fontmgr->RequestResource(activestyle.text.fontname);
 	return (visual.font != nullptr) ? true : false;
 }
+void GUIElement::ApplyLocalPosition(){
+	visual.SetPosition(localposition); 
+}
+void GUIElement::ApplySize() {
+	visual.SetSize(elementsize);
+}
 
 bool GUIElement::RequestTextureResources() {
 	auto& activestyle = statestyles[activestate];
@@ -29,23 +35,19 @@ void GUIElement::ReleaseStyleResources(){
 		parent->GetGUIManager()->GetContext()->fontmgr->RequestResourceDealloc(activestyle.text.fontname);
 	}
 }
-
-
-GUIElement::GUIElement(GUIInterface* p, const GUIType& t, const GUIStateStyles& stylemap) :type(t), parent(p), controlelement(false) {
+void GUIElement::ReadIn(std::stringstream& stream) {
+	sf::Vector2f position;
+	sf::Vector2f size;
+	stream >> name >> position.x >> position.y >> size.x >> size.y;
+	//note that these changes aren't applied immediately but will be applied in the next update cycle.
+	SetElementSize(size);
+	SetLocalPosition(position);
+}
+GUIElement::GUIElement(GUIInterface* p, const GUIType& t, const GUIStateStyles& stylemap, std::stringstream& attributes) :type(t), parent(p), controlelement(false) {
 	statestyles = stylemap;
+	attributes >> this;
 	ApplyCurrentStyle();
 }
-
-
-void GUIElement::UpdateStyle(const GUIState& state, const GUIStyle& style){
-	if (state != activestate) {
-		statestyles[state] = style; return;
-	}
-	ReleaseStyleResources(); //release current resources before replacing.
-	statestyles[state] = style;
-	ApplyCurrentStyle();
-}
-
 void GUIElement::SetState(const GUIState& state){
 //in a state change, we must reflect the change in the visual.
 	if (state == activestate) return; //no visual change.
@@ -53,7 +55,6 @@ void GUIElement::SetState(const GUIState& state){
 	activestate = state;
 	ApplyCurrentStyle();
 }
-
 void GUIElement::ApplyCurrentStyle(){
 	auto& currentstyle = statestyles[activestate];
 	//apply dynamically allocated resources to visuals
@@ -71,51 +72,59 @@ void GUIElement::ApplyCurrentStyle(){
 	visual.text.setString(currentstyle.text.textstr);
 	visual.text.setFillColor(currentstyle.text.textcolor);
 	visual.text.setCharacterSize(currentstyle.text.charactersize);
-	SetRedraw(true); //now the interface knows to redraw the layer.
+	MarkRedraw(true); //now the interface knows to redraw the layer.
 	
 }
-
 void GUIElement::Draw(sf::RenderTexture& texture){
 	texture.draw(visual.sbg);
 	//texture.draw(visual.tbg);
 	//texture.draw(visual.text);
 }
+void GUIElement::Update(const float& dT){
+	if (pendingcalibration) {
+		if (pendingsizeapply) {
+			ApplySize();
+			pendingsizeapply = false;
+		}
+		if (pendingpositionapply) {
+			ApplyLocalPosition();
+			pendingpositionapply = false;
+		}
+		CalibratePosition();
+		pendingcalibration = false;
+	}
+}
+
 sf::FloatRect GUIElement::GetLocalBoundingBox() const {
 	return sf::FloatRect{ localposition, GetSize() };
 }
 bool GUIElement::Contains(const sf::Vector2f& mouseglobal) const noexcept{
-
 	auto globalpos = GetGlobalPosition();
-	auto rect = sf::FloatRect{ globalpos, visual.elementsize };
+	auto rect = sf::FloatRect{ globalpos, elementsize };
 	return rect.contains(mouseglobal);
-
-// 	auto globalposition = GetGlobalPosition();
-// 	if (mouseglobal.x < globalposition.x) return false;
-// 	if (mouseglobal.x > globalposition.x + GetSize().x) return false;
-// 	if (mouseglobal.y < globalposition.y) return false;
-// 	if (mouseglobal.y > globalposition.y + GetSize().y) return false;
-// 	return true;
 }
-
 void GUIElement::CalibratePosition() {
-	if (parent == this) return;
+	return;
+	if (parent == this || parent == nullptr) return; //if in mid initialisation
 	auto overhangs = parent->EltOverhangs(this); //check if this entire elt still lies in interface after pos change
 	if (overhangs.first == false) return; //elt still lies within the interface.
 	SetLocalPosition(overhangs.second);
+	ApplyLocalPosition();
 }
 void GUIElement::SetLocalPosition(const sf::Vector2f& pos){
-	visual.SetPosition(pos);
 	localposition = pos;
-	
+	pendingcalibration = true;
+	pendingpositionapply = true;
+}
+void GUIElement::SetElementSize(const sf::Vector2f& s) {
+	elementsize = s;
+	pendingcalibration = true;
+	pendingsizeapply = true;
 }
 sf::Vector2f GUIElement::GetGlobalPosition() const{
 	if (parent == this) return localposition;
 	return localposition + GetParent()->GetGlobalPosition(); 
 }
-void GUIElement::SetElementSize(const sf::Vector2f& s) {
-	visual.SetSize(s);
-}
-
 GUIElement::~GUIElement() {
 	ReleaseStyleResources();
 }

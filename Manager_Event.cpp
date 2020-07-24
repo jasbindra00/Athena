@@ -110,6 +110,9 @@ void Manager_Event::Update(sf::RenderWindow* winptr) { //handling live input eve
 	}
 }
 void Manager_Event::LoadBindings(const std::string& filename) {
+
+
+	
 	std::string fcnname{ "LoadBindings()" };
 	std::fstream bindingfile(filename, std::ios_base::in);
 	if (!bindingfile.is_open()) {

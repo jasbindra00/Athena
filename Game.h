@@ -39,7 +39,7 @@ public:
 		context.fontmgr = fontmgr.get();
 		
 		guimgr = std::make_unique<Manager_GUI>(&context);
-		guimgr->RegisterInterface(StateType::GAME, "MyInterface", "MyInterface.txt");
+		guimgr->CreateStateInterface(StateType::GAME, "MyInterface", "MyInterface.txt");
 		guimgr->SetActiveState(StateType::GAME);
 		
 	}

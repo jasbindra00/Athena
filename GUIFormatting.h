@@ -6,8 +6,11 @@
 #include <SFML\Graphics\Text.hpp>
 #include <memory>
 #include <string>
+#include <sstream>
 #include <unordered_map>
 #include "GUIFormatting.h"
+#include "GUIInfo.h"
+
 
 struct Background {
 	sf::Color sbg_color{ sf::Color::Red };
@@ -41,10 +44,6 @@ struct Text {
 		std::string word;
 		stream >> word;
 		if (word == "color") {
-			auto nattributes = Utility::CountStreamAttributes(stream);
-			if (nattributes < 3 || nattributes != 4) {
-				//error
-			}
 			unsigned int r, g, b, a = 0;
 			stream >> r >> g >> b >> a;
 			text.textcolor = sf::Color::Color(std::move(r), std::move(g), std::move(b), std::move(a));
@@ -64,7 +63,6 @@ struct GUIStyle {
 	Background background;
 };
 struct GUIVisual {
-	sf::Vector2f elementsize;
 	sf::RectangleShape sbg;
 	sf::RectangleShape tbg;
 	sf::Text text;
@@ -80,7 +78,6 @@ struct GUIVisual {
 		text.setPosition(pos); //origin maintained.
 	}
 	inline void SetSize(const sf::Vector2f& size) {
-		elementsize = size;
 		sbg.setSize(size);
 		tbg.setSize(size);
 	}
