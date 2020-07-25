@@ -135,6 +135,11 @@ void GUIInterface::OnClick(const sf::Vector2f& pos){
 		}
 	}
 }
+
+void GUIInterface::OnRelease(){
+
+}
+
 std::pair<bool, sf::Vector2f> GUIInterface::EltOverhangs(const GUIElement* const elt){
 	auto eltpos = elt->GetLocalPosition(); 
 	auto eltsize = elt->GetSize();

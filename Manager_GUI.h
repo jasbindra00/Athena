@@ -9,10 +9,10 @@
 #include "GUIFormatting.h"
 #include "GUIInterface.h"
 #include "SharedContext.h"
-#include "GUIEvents.h"
+#include "GUIEventData.h"
 
 
-
+using namespace GUIEventData;
 enum class GUIElementType;
 class GUIElement;
 class GUIInterface;
@@ -33,9 +33,10 @@ using GUIElementFactory = std::unordered_map<GUIType, GUIElementProducer>;
 class Manager_GUI{
 private:
 	GameStateInterfaces stateinterfaces;
-	EventQueue<GUIEvent> guieventqueue;
+	EventQueue<GUIEventInfo> guieventqueue;
 	GUIElementFactory elementfactory;
 
+	sf::Vector2f globalmouseposition;
 	SharedContext* context;
 	mutable GameStateType activestate;
 
@@ -59,9 +60,9 @@ public:
 	void Update(const float& dT);
 	void Draw();
 
-	bool PollEvent(GUIEvent& evnt);
-	void AddEvent(const GUIEvent& evnt);
-
+	bool PollGUIEvent(GUIEventInfo& evnt);
+	void AddGUIEvent(const GUIEventInfo& evnt);
+	void HandleEvent(const sf::Event& evnt, sf::RenderWindow* winptr);
 	SharedContext* GetContext() const { return context; }
 	GUIInterface* GetInterface(const GameStateType& state, const std::string& interfacename);
 	GUIType StringToGUIType(const std::string& str) const{

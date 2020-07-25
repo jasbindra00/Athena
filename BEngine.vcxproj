@@ -181,8 +181,9 @@
     <ClInclude Include="EntityStates.h" />
     <ClInclude Include="EventQueue.h" />
     <ClInclude Include="FileReader.h" />
+    <ClInclude Include="GameEventData.h" />
     <ClInclude Include="GUIElement.h" />
-    <ClInclude Include="GUIEvents.h" />
+    <ClInclude Include="GUIEventData.h" />
     <ClInclude Include="GUIFormatting.h" />
     <ClInclude Include="GUIInfo.h" />
     <ClInclude Include="GUIInterface.h" />

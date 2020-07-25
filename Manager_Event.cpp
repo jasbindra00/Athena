@@ -7,10 +7,12 @@
 #include "Window.h"
 #include "FileReader.h"
 #include "Utility.h"
-#include "GUIEvents.h"
+#include "GUIEventData.h"
 #include "KeyProcessing.h"
+#include "Manager_GUI.h"
 
-Manager_Event::Manager_Event() noexcept {
+using GameEventData::WindowEventType;
+Manager_Event::Manager_Event(Manager_GUI* guimanager) noexcept :guimgr(guimanager)  {
 	statebindingobjects[GameStateType::INTRO];
 	statebindingobjects[GameStateType::MAINMENU];
 	statebindingobjects[GameStateType::GAME];
@@ -18,63 +20,63 @@ Manager_Event::Manager_Event() noexcept {
 	statebindingcallables[GameStateType::INTRO];
 	statebindingcallables[GameStateType::MAINMENU];
 	statebindingcallables[GameStateType::GAME];
-	guibindingobjects[GameStateType::INTRO];
-	guibindingobjects[GameStateType::MAINMENU];
-	guibindingobjects[GameStateType::GAME];
+	guistatebindingobjects[GameStateType::INTRO];
+	guistatebindingobjects[GameStateType::MAINMENU];
+	guistatebindingobjects[GameStateType::GAME];
 	//statebindingcallables[StateType::CREDITS];
 	//statebindingcallables[StateType::RESUMEGAMESTATE];
 	//statebindingcallables[StateType::GAMELOSTSTATE];
-	LoadBindings("Bindings.txt");
+	LoadBindings("Bindings2.txt");
 }
-void Manager_Event::RemoveBindingData(const GameStateType& state, const std::string& bindingname) {
-	{ auto foundcallable = FindBinding(statebindingcallables, state, bindingname);
-	if (foundcallable.first) statebindingcallables[state].erase(foundcallable.second);
+
+bool Manager_Event::RegisterBindingCallable(const GameStateType& state, const std::string& bindingname, const BindingTypes::BindingCallable& action) {
+	auto callableexists = FindBinding(statebindingcallables, state, bindingname);
+	if (callableexists.first) {
+		LOG::Log(LOCATION::MANAGER_EVENT, LOGTYPE::ERROR, __FUNCTION__, "Callable for binding of name " + bindingname + " already exists.");
+		return false;
 	}
-	auto foundobject = FindBinding(statebindingobjects,state, bindingname);
-	if (foundobject.first) statebindingobjects[state].erase(foundobject.second);
+	statebindingcallables[state].emplace_back(bindingname, action);
+	return true;
 }
-void Manager_Event::RegisterBindingObject(const GameStateType& state, BindingPtr& bindingobject) {
-	statebindingobjects[state].emplace_back(std::make_pair( bindingobject->bindingname,std::move(bindingobject) ));
-}
-void Manager_Event::RegisterBindingCallable(const GameStateType& state, const std::string& bindingname, BindingCallable action) {
-	auto binding = FindBinding(statebindingobjects, state, bindingname);
-	if (!binding.first){
-		LOG::Log(LOCATION::MANAGER_EVENT, LOGTYPE::ERROR, __FUNCTION__, "Unable to find binding of name " + bindingname + ". RegisterBindingCallable() failed.");
-		return;
+void Manager_Event::HandleEvent(const GUIEventData::GUIEventInfo& evnt) {
+	auto& activeguibindings = guistatebindingobjects.at(activestate);
+	for (auto& guibinding : activeguibindings) {
+		for (auto& condition : guibinding.second->conditions) {
+			/*if(condition.first)*/
+		}
 	}
-	statebindingcallables[state].emplace_back(std::make_pair(bindingname, action));
-}
-void Manager_Event::HandleEvent(const GUIEvent& evnt) {
+
 }
 //handle non gui bindings -> active variant is guaranteed to be ind 0 (int)
 void Manager_Event::HandleEvent(const sf::Event& evnt, sf::RenderWindow* winptr) { //only considering the bindings of the active state.
-	auto eventtype = static_cast<EventType>(evnt.type);
+	guimgr->HandleEvent(evnt, winptr); //checks if any of the events cause change within any active interfaces.
+	auto eventtype = static_cast<GameEventData::WindowEventType>(evnt.type);
 	auto& statebindings = statebindingobjects[activestate];
 	for (auto& binding : statebindings){
 		auto& bindingobject = binding.second;
-		for (auto& bindingcondition : bindingobject->conditions)
-		{//loop through every single condition of statebindings
+		for (auto& bindingcondition : bindingobject->conditions){
+			auto& code = bindingcondition.second.code;
 			if (bindingcondition.first == eventtype) {
-				if (bindingcondition.first == EventType::KEYPRESSED || bindingcondition.first == EventType::KEYRELEASED) {
+				if (bindingcondition.first == GameEventData::WindowEventType::KEYPRESSED || bindingcondition.first == GameEventData::WindowEventType::KEYRELEASED) {
 					const auto& eventcode = evnt.key.code;
-					if (std::get<0>(bindingcondition.second.codeorguievent) == eventcode) {
+					if (code == eventcode) {
 						auto& latestkeypressed = bindingobject->details.keycode;
-						if (latestkeypressed != std::get<0>(bindingcondition.second.codeorguievent)) {//if the key hasn't been pressed already
-							latestkeypressed = std::get<0>(bindingcondition.second.codeorguievent);
-							bindingobject->conditionsmet++; //its a first time match. condition met.
+						if (latestkeypressed != code) {//if the key hasn't been pressed already
+							latestkeypressed = code;
+							++bindingobject->conditionsmet; //its a first time match. condition met.
 							break;
 						}
 					}
 				}
-			}
-				if (bindingcondition.first == EventType::MOUSEPRESSED || bindingcondition.first == EventType::MOUSERELEASED) {
+			}//
+				else if (bindingcondition.first == GameEventData::WindowEventType::MOUSEPRESSED || bindingcondition.first == GameEventData::WindowEventType::MOUSERELEASED) {
 					const auto& eventcode = evnt.mouseButton.button;
-					if (std::get<0>(bindingcondition.second.codeorguievent) == eventcode) {
+					if (code == eventcode) {
 						auto& latestmousepress = bindingobject->details.mousecode;
-						if (latestmousepress != std::get<0>(bindingcondition.second.codeorguievent)) {
-							latestmousepress = std::get<0>(bindingcondition.second.codeorguievent);
-							//bindingobject->details.mouseposition = sf::Mouse::getPosition(*winptr->GetWindow());
-							bindingobject->conditionsmet++;
+						if (latestmousepress != code) {
+							latestmousepress = code;
+							bindingobject->details.mouseposition = sf::Vector2i{ evnt.mouseButton.x,evnt.mouseButton.y };
+							++bindingobject->conditionsmet;
 							break;
 						}
 
@@ -84,28 +86,29 @@ void Manager_Event::HandleEvent(const sf::Event& evnt, sf::RenderWindow* winptr)
 	}
 }
 void Manager_Event::Update(sf::RenderWindow* winptr) { //handling live input events
+	ProcessGUIEvents();
 	auto& statebindings = statebindingobjects[activestate];
 	for (auto& binding : statebindings) {
 		auto& bindingobject = binding.second;
 		for (const auto& bindingcondition : bindingobject->conditions) {
-			const auto& code = std::get<0>(bindingcondition.second.codeorguievent);
-			switch (static_cast<EventType>(bindingcondition.first)) {
-			case EventType::KEYPRESSED: {
+			auto& code = bindingcondition.second.code;
+			switch (static_cast<GameEventData::WindowEventType>(code)) {
+			case GameEventData::WindowEventType::KEYPRESSED: {
 				if (sf::Keyboard::isKeyPressed(static_cast<sf::Keyboard::Key>(code))) {
 					auto& latestkeypressed = bindingobject->details.keycode;
-					if (latestkeypressed != std::get<0>(bindingcondition.second.codeorguievent)) {
-						latestkeypressed = std::get<0>(bindingcondition.second.codeorguievent);
+					if (latestkeypressed != code) {
+						latestkeypressed = code;
 						bindingobject->conditionsmet++;
 					}
 				}
 				break;
 			}
-			case EventType::MOUSEPRESSED: {
+			case GameEventData::WindowEventType::MOUSEPRESSED: {
 				if (sf::Mouse::isButtonPressed(static_cast<sf::Mouse::Button>(code))) {
 					auto& latestmousepress = bindingobject->details.mousecode;
-					if (latestmousepress != std::get<0>(bindingcondition.second.codeorguievent)) {
-						latestmousepress = std::get<0>(bindingcondition.second.codeorguievent);
-						//bindingobject->details.mouseposition = sf::Mouse::getPosition(*winptr->GetWindow());
+					if (latestmousepress != bindingcondition.second.code) {
+						latestmousepress = bindingcondition.second.code;
+						bindingobject->details.mouseposition = sf::Mouse::getPosition(*winptr);
 						bindingobject->conditionsmet++;
 						break;
 					}
@@ -113,8 +116,9 @@ void Manager_Event::Update(sf::RenderWindow* winptr) { //handling live input eve
 			}
 			}
 		}
+
 		if (bindingobject->conditionsmet == bindingobject->conditions.size()) { //checking if this binding has had all of its conditions met
-			auto bindingcallable = FindBinding(statebindingcallables,activestate, bindingobject->bindingname);
+			auto bindingcallable = FindBinding(statebindingcallables, activestate, bindingobject->bindingname);
 			if (bindingcallable.first == true) {
 				bindingcallable.second->second(&bindingobject->details); //execute its callable if all conditions have been met.
 			}
@@ -122,6 +126,7 @@ void Manager_Event::Update(sf::RenderWindow* winptr) { //handling live input eve
 		bindingobject->conditionsmet = 0; //resetting after every iteration.
 		bindingobject->details.Reset();
 	}
+
 }
 void Manager_Event::LoadBindings(const std::string& filename) {
 	FileReader file;
@@ -134,36 +139,37 @@ void Manager_Event::LoadBindings(const std::string& filename) {
 	}
 	auto attributes = static_cast<Attributes*>(&file.GetLineStream());
 	while (!file.EndOfFile()) {
-		GameStateType gamestate;{
-			file.NextLine();
-			gamestate = GameState::converter(file.GetWord());
-			if (gamestate == GameStateType::NULLSTATE) LOG::Log(LOCATION::MANAGER_EVENT, LOGTYPE::ERROR, __FUNCTION__, "Unable to recognise the game state on line " + file.GetLineNumberString() + " in binding file of name " + filename); continue;
+		GameStateType gamestate; 
+		file.NextLine();
+		gamestate = GameState::converter(file.GetWord());
+		if (gamestate == GameStateType::NULLSTATE) {
+			LOG::Log(LOCATION::MANAGER_EVENT, LOGTYPE::ERROR, __FUNCTION__, "Unable to recognise the game state on line " + file.GetLineNumberString() + " in binding file of name " + filename);
+			continue;
 		}
 		auto bindingtype = attributes->GetWord();
 		auto bindingname = attributes->GetWord();
+		bool failflag = false;
 		attributes->seekg(0, std::ios_base::beg);
-		auto binding = std::make_unique < Binding>(bindingname, *attributes);
-		if (binding == nullptr) continue; //binding read error
-		auto bindingptr = binding.get();
 		if (bindingtype == "BINDING") {
-			auto bindingexists = FindBinding(statebindingobjects,gamestate, bindingname);
-			if (bindingexists.first) {
-				LOG::Log(LOCATION::MANAGER_EVENT, LOGTYPE::ERROR, __FUNCTION__, "Binding in state " + std::to_string(Utility::ConvertToUnderlyingType(gamestate)) + " already exists");
-				continue;
-			}
-			statebindingobjects[gamestate].emplace_back(std::make_pair(bindingname, std::move(binding)));
+			auto bindingexists = FindBinding(statebindingobjects, gamestate, bindingname);
+			if (bindingexists.first) { LOG::Log(LOCATION::MANAGER_EVENT, LOGTYPE::ERROR, __FUNCTION__, " Binding in state " + std::to_string(Utility::ConvertToUnderlyingType(gamestate)) + " already exists"); continue; }
+			auto standardbinding = std::make_unique<StandardBinding>(bindingname);
+			if (standardbinding.get() != nullptr) { statebindingobjects[gamestate].emplace_back(bindingname, std::move(standardbinding)); continue; }
 		}
 		else if (bindingtype == "GUIBINDING") {
-			auto bindingexists = FindBinding(guibindingobjects,gamestate, bindingname);
-			if (bindingexists.first) {
-				LOG::Log(LOCATION::MANAGER_EVENT, LOGTYPE::ERROR, __FUNCTION__, "GUIBinding in state " + std::to_string(Utility::ConvertToUnderlyingType(gamestate)) + " already exists");
-				continue;
-			}
-			guibindingobjects[gamestate].emplace_back(std::make_pair(bindingname, std::move(binding)));
+			auto bindingexists = FindBinding(guistatebindingobjects, gamestate, bindingname);
+			if (bindingexists.first) { LOG::Log(LOCATION::MANAGER_EVENT, LOGTYPE::ERROR, __FUNCTION__, "GUIBinding in state " + std::to_string(Utility::ConvertToUnderlyingType(gamestate)) + " already exists"); continue; }
+			auto guibinding = std::make_unique<GUIBinding>(bindingname);
+			*attributes >> guibinding.get();
+			if (guibinding.get() != nullptr) { guistatebindingobjects[gamestate].emplace_back(bindingname, std::move(guibinding)); continue; }
 		}
-		else LOG::Log(LOCATION::MANAGER_EVENT, LOGTYPE::ERROR, __FUNCTION__, "Unable to recognise the binding type on line " + file.GetLineNumberString()); continue;
-		LOG::Log(LOCATION::MANAGER_EVENT, LOGTYPE::STANDARDLOG, __FUNCTION__, "Binding successfully created. " + std::string(*bindingptr));
+		else { LOG::Log(LOCATION::MANAGER_EVENT, LOGTYPE::ERROR, __FUNCTION__, "Unable to recognise the binding type on line " + file.GetLineNumberString()); continue; }
 	}
-
 	file.CloseFile();
+}
+void Manager_Event::ProcessGUIEvents() {
+	GUIEventData::GUIEventInfo evnt;
+	while (guimgr->PollGUIEvent(evnt)) {
+		HandleEvent(std::move(evnt));
+	}
 }

@@ -26,6 +26,9 @@ public:
 		}
 		eventmanager->Update(renderwindow.get());
 
+		/*
+		-
+		*/
 	}
 	bool IsOpen() const { return renderwindow->isOpen(); }
 	

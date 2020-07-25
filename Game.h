@@ -27,21 +27,26 @@ protected:
 	sf::Clock clock;
 public:
 	Game(){
-		eventmanager = std::make_unique<Manager_Event>(); //event manager needs to be made before statemanager.
+		texturemgr = std::make_unique<Manager_Texture>("ResourcePaths.txt");
+		context.texturemgr = texturemgr.get();
+		fontmgr = std::make_unique<Manager_Font>("FontPaths.txt");
+		context.fontmgr = fontmgr.get();
+
+
+		guimgr = std::make_unique<Manager_GUI>(&context);
+		guimgr->CreateStateInterface(GameStateType::GAME, "MyInterface", "MyInterface.txt");
+		guimgr->SetActiveState(GameStateType::GAME);
+
+		eventmanager = std::make_unique<Manager_Event>(guimgr.get()); //event manager needs to be made before statemanager.
 		context.eventmanager = eventmanager.get();
 		
 		statemanager = std::make_unique<Manager_State>(&context);
 		window = std::make_unique<Window>(eventmanager.get(), 1000, 1000, "MyWindow");
 		context.window = window.get();
 
-		texturemgr = std::make_unique<Manager_Texture>("ResourcePaths.txt");
-		context.texturemgr = texturemgr.get();
-		fontmgr = std::make_unique<Manager_Font>("FontPaths.txt");
-		context.fontmgr = fontmgr.get();
+
 		
-		guimgr = std::make_unique<Manager_GUI>(&context);
-		guimgr->CreateStateInterface(GameStateType::GAME, "MyInterface", "MyInterface.txt");
-		guimgr->SetActiveState(GameStateType::GAME);
+
 		
 	}
 	void Update() {

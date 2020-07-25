@@ -275,9 +275,6 @@
     <ClInclude Include="GUIFormatting.h">
       <Filter>Header Files\GUI</Filter>
     </ClInclude>
-    <ClInclude Include="GUIEvents.h">
-      <Filter>Header Files\GUI</Filter>
-    </ClInclude>
     <ClInclude Include="GUIInfo.h">
       <Filter>Header Files\GUI</Filter>
     </ClInclude>
@@ -298,6 +295,12 @@
     </ClInclude>
     <ClInclude Include="EnumConverter.h">
       <Filter>Header Files\Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="GameEventData.h">
+      <Filter>Header Files\Managers</Filter>
+    </ClInclude>
+    <ClInclude Include="GUIEventData.h">
+      <Filter>Header Files\GUI</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
