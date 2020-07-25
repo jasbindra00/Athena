@@ -9,6 +9,9 @@ private:
 public:
 	explicit Attributes() {
 	}
+	Attributes(const std::string& str) {
+		static_cast<std::stringstream&>(*this) << str;
+	}
 	void ResetStream() {
 		*static_cast<std::stringstream*>(this) = std::stringstream{};
 		previouswordpos = 0;

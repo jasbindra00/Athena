@@ -9,6 +9,7 @@
 #include "GUIEventData.h"
 #include "StreamAttributes.h"
 #include "KeyProcessing.h"
+#include "Log.h"
 
 
 namespace GameEventData {
@@ -36,7 +37,6 @@ namespace GameEventData {
 		int keycode{ -1 };
 		int mousecode{ -1 };
 	};
-
 	template<typename T1, typename = typename std::enable_if_t<std::is_same_v<typename std::decay_t<T1>, WindowEventType> || std::is_same_v<typename std::decay_t<T1>, GUIEventData::GUIEventType>>>
 	struct Binding {
 		using EventInformationType = std::conditional_t<std::is_same_v<typename std::decay_t<T1>, WindowEventType>, StandardEventInfo, GUIEventData::GUIEventInfo>;
@@ -62,15 +62,13 @@ namespace GameEventData {
 	struct StandardBinding :public Binding<WindowEventType> {
 		StandardBinding(const std::string& bindingname) :Binding<WindowEventType>(bindingname) {
 		}
-		void ReadIn(Attributes& attributes) override {
-			while (!attributes.eof()) {
-				auto key = KeyProcessing::KeyValsToString(attributes.GetWord()); //remove {,} from key and distill it into a string whose values are seperated by spaces
+		void ReadIn(Attributes& stream) override {
+			while (!stream.eof()) {
+				auto keyattributes = KeyProcessing::ExtractAttributesToStream(stream.GetWord(), false);
+				if (keyattributes.PeekWord().empty()) continue;
 				unsigned int evnttype;
 				StandardEventInfo evntinfo;
-				{ 
-					std::stringstream vals(key);
-					vals >> evnttype >> evntinfo.code; 
-				}
+				keyattributes >> evnttype >> evntinfo.code;
 				AddCondition(static_cast<WindowEventType>(evnttype), std::move(evntinfo));
 			}
 		}
@@ -80,7 +78,15 @@ namespace GameEventData {
 
 		}
 		void ReadIn(Attributes& attributes) override {
-
+			std::string hierarchy;
+			while (!attributes.eof()) {
+				auto keyattributes = KeyProcessing::ExtractAttributesToStream(attributes.GetWord(), true);
+				if (keyattributes.PeekWord().empty())continue;
+				hierarchy += keyattributes.GetWord();
+				hierarchy += ' ';
+				hierarchy += keyattributes.GetWord();
+				hierarchy += ' ';
+			}
 		}
 	};
 

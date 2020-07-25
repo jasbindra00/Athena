@@ -50,11 +50,11 @@ public:
 		
 	}
 	void Update() {
-		
 		float dT = clock.getElapsedTime().asSeconds();
 		window->Update(dT);
 		statemanager->Update(dT);
 		guimgr->Update(dT);
+		clock.restart();
 		
 	
 	}
