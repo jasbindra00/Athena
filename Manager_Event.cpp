@@ -30,21 +30,16 @@ Manager_Event::Manager_Event(Manager_GUI* guimanager) noexcept :guimgr(guimanage
 }
 
 bool Manager_Event::RegisterBindingCallable(const GameStateType& state, const std::string& bindingname, const BindingTypes::BindingCallable& action) {
-	auto callableexists = FindBinding(statebindingcallables, state, bindingname);
+	auto callableexists = FindBindingData<BindingCallable>(state, bindingname);
 	if (callableexists.first) {
 		LOG::Log(LOCATION::MANAGER_EVENT, LOGTYPE::ERROR, __FUNCTION__, "Callable for binding of name " + bindingname + " already exists.");
 		return false;
 	}
-	statebindingcallables[state].emplace_back(bindingname, action);
+	statebindingcallables[state].emplace_back(bindingname, std::make_unique<BindingCallable>(action));
 	return true;
 }
 void Manager_Event::HandleEvent(const GUIEventData::GUIEventInfo& evnt) {
-	auto& activeguibindings = guistatebindingobjects.at(activestate);
-	for (auto& guibinding : activeguibindings) {
-		for (auto& condition : guibinding.second->conditions) {
-			
-		}
-	}
+	
 
 }
 //handle non gui bindings -> active variant is guaranteed to be ind 0 (int)
@@ -119,9 +114,10 @@ void Manager_Event::Update(sf::RenderWindow* winptr) { //handling live input eve
 			}
 		}
 		if (bindingobject->conditionsmet == bindingobject->conditions.size()) { //checking if this binding has had all of its conditions met
-			auto bindingcallable = FindBinding(statebindingcallables, activestate, bindingobject->bindingname);
-			if (bindingcallable.first == true) {
-				bindingcallable.second->second(&bindingobject->details); //execute its callable if all conditions have been met.
+			auto foundcallable = FindBindingData<BindingCallable>(activestate, bindingobject->bindingname);
+			if (foundcallable.first) {
+				auto& callable = *foundcallable.second->second;
+				callable(&bindingobject->details);
 			}
 		}
 		bindingobject->conditionsmet = 0; //resetting after every iteration.
@@ -135,37 +131,22 @@ void Manager_Event::LoadBindings(const std::string& filename) {
 		LOG::Log(LOCATION::MANAGER_EVENT, LOGTYPE::ERROR, __FUNCTION__, "Unable to open the binding file of name " + filename);
 		return;
 	}
-	if (!file.CheckStandardSyntax({ "|SYNTAX||STANDARD BINDING| GAMESTATE BINDING BINDINGNAME {EVENTTYPE, KEYCODE} ... n", "|SYNTAX||GUI BINDING| GAMESTATE GUIBINDING BINDINGNAME HIERARCHY={INTERFACE,INTERFACE,...,ELT} GUIEVENTTYPE TYPE " })) {
+	if (!file.CheckStandardSyntax({ "***BINDING SYNTAX*** GAMESTATE BINDING BINDINGNAME {EVENTTYPE, CODE} ....n", "***GUIBINDING SYNTAX*** GAMESTATE GUIBINDING BINDINGNAME {GUIEVENTTYPE,TYPE} {GUISTATE,STATE} {HIERARCHY,ELTNAME}....{HIERARCHY,TARGET}" })){
 		LOG::Log(LOCATION::MANAGER_EVENT, LOGTYPE::ERROR, __FUNCTION__, "Binding Syntax Guidelines are incorrect in binding file of name " + filename);
 	}
 	auto attributes = static_cast<Attributes*>(&file.GetLineStream());
 	while (!file.EndOfFile()) {
-		GameStateType gamestate; 
 		file.NextLine();
+		GameStateType gamestate; 
+		if (attributes->PeekWord().empty()) continue;
 		gamestate = GameState::converter(file.GetWord());
-		if (gamestate == GameStateType::NULLSTATE) {
-			LOG::Log(LOCATION::MANAGER_EVENT, LOGTYPE::ERROR, __FUNCTION__, "Unable to recognise the game state on line " + file.GetLineNumberString() + " in binding file of name " + filename);
-			continue;
-		}
+		if (gamestate == GameStateType::NULLSTATE) { LOG::Log(LOCATION::MANAGER_EVENT, LOGTYPE::ERROR, __FUNCTION__, "Unable to recognise the game state on line " + file.GetLineNumberString() + " in binding file of name " + filename); continue; }
 		auto bindingtype = attributes->GetWord();
 		auto bindingname = attributes->GetWord();
-		bool failflag = false;
-		/*attributes->seekg(0, std::ios_base::beg);*/
-		if (bindingtype == "BINDING") {
-			auto bindingexists = FindBinding(statebindingobjects, gamestate, bindingname);
-			if (bindingexists.first) { LOG::Log(LOCATION::MANAGER_EVENT, LOGTYPE::ERROR, __FUNCTION__, " Binding in state " + std::to_string(Utility::ConvertToUnderlyingType(gamestate)) + " already exists"); continue; }
-			auto standardbinding = std::make_unique<StandardBinding>(bindingname);
-			*attributes >> standardbinding.get();
-			if (standardbinding.get() != nullptr) { statebindingobjects[gamestate].emplace_back(bindingname, std::move(standardbinding)); continue; }
-		}
-		else if (bindingtype == "GUIBINDING") {
-			auto bindingexists = FindBinding(guistatebindingobjects, gamestate, bindingname);
-			if (bindingexists.first) { LOG::Log(LOCATION::MANAGER_EVENT, LOGTYPE::ERROR, __FUNCTION__, "GUIBinding in state " + std::to_string(Utility::ConvertToUnderlyingType(gamestate)) + " already exists"); continue; }
-			auto guibinding = std::make_unique<GUIBinding>(bindingname);
-			*attributes >> guibinding.get();
-			if (guibinding.get() != nullptr) { guistatebindingobjects[gamestate].emplace_back(bindingname, std::move(guibinding)); continue; }
-		}
-		else { LOG::Log(LOCATION::MANAGER_EVENT, LOGTYPE::ERROR, __FUNCTION__, "Unable to recognise the binding type on line " + file.GetLineNumberString()); continue; }
+		if (bindingtype == "BINDING") RegisterBindingObject<GameEventData::StandardBinding>(gamestate,bindingname, attributes);
+		else if (bindingtype == "GUIBINDING") RegisterBindingObject<GameEventData::GUIBinding>(gamestate, bindingname,attributes);
+		else { LOG::Log(LOCATION::MANAGER_EVENT, LOGTYPE::ERROR, __FUNCTION__, "Unable to recognise the binding type on line " + file.GetLineNumberString());}
+		
 	}
 	file.CloseFile();
 }

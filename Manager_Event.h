@@ -8,88 +8,98 @@
 #include "GUIEventData.h"
 #include "StreamAttributes.h"
 #include <type_traits>
+#include <memory>
 #include "GameEventData.h"
 
 class Window;
 class Manager_GUI;
 
+
+
 using GameEventData::StandardBinding;
 using GameEventData::GUIBinding;
+using GameEventData::EventDetails;
 
 namespace BindingTypes {
 	using StandardBindingPtr = std::unique_ptr<StandardBinding>;
 	using GUIBindingPtr = std::unique_ptr<GUIBinding>;
-	using BindingCallable = std::function<void(GameEventData::EventDetails*)>;
+	using BindingCallable = std::function<void(EventDetails*)>;
+	using BindingCallablePtr = std::unique_ptr<BindingCallable>;
+
 	template<typename T>
 	using BindingData = std::vector<std::pair<std::string, T>>;
-	using BindingCallables = BindingData <BindingCallable>;
-	template<typename T, typename = typename std::enable_if_t<std::is_same_v<typename std::decay_t<T>, StandardBindingPtr> || std::is_same_v<typename std::decay_t<T>, GUIBindingPtr>>>
-	using BindingObjects = BindingData<T>;
-	using StandardBindings = BindingObjects<StandardBindingPtr>;
-	using GUIBindings = BindingObjects<GUIBindingPtr>;
+
 }
+using BindingTypes::BindingCallable;
+using BindingTypes::BindingData;
+
+template<typename T>
+using IS_STANDARD_BINDING = std::is_same<std::decay_t<T>, StandardBinding>;
+template<typename T>
+using IS_GUI_BINDING = std::is_same<std::decay_t<T>, GUIBinding>;
+template<typename T>
+using IS_BINDING_CALLABLE = std::is_same<std::decay_t<T>, BindingCallable>;
+template<typename T>
+using ENABLE_IF_BINDING = std::enable_if_t<IS_STANDARD_BINDING<T>::value || IS_GUI_BINDING<T>::value>;
+template<typename T>
+using ENABLE_IF_VALID_TYPE = std::enable_if_t<IS_STANDARD_BINDING<T>::value || IS_GUI_BINDING<T>::value|| IS_BINDING_CALLABLE<T>::value>;
+
+template<typename T>
+using StateBindingData = std::unordered_map<GameStateType, BindingData<T>>;
 
 
 
-template<typename T, typename = typename std::enable_if_t < std::is_same_v<typename std::decay_t<T>, BindingTypes::BindingCallables> || std::is_same_v<typename std::decay_t<T>, BindingTypes::StandardBindings> || std::is_same_v<typename std::decay_t<T>, BindingTypes::GUIBindings>>>
-using StateBindingData = std::unordered_map<GameStateType, T>;
 class Manager_Event{
+private:
+	template<typename T, typename = typename ENABLE_IF_VALID_TYPE<T>>
+	BindingTypes::BindingData<std::unique_ptr<T>>& GetBindingStorage(const GameStateType& state) {
+		if constexpr (IS_GUI_BINDING<T>::value) return guistatebindingobjects.at(state);
+		else if constexpr (IS_STANDARD_BINDING<T>::value) return statebindingobjects.at(state);
+		else if constexpr (IS_BINDING_CALLABLE<T>::value) return bindingcallables.at(state);
+	}
 protected:
-	using GUIStateBindings = StateBindingData<BindingTypes::GUIBindings>;
-	using StandardStateBindings = StateBindingData<BindingTypes::StandardBindings>;
-	using StateBindingCallables = StateBindingData<BindingTypes::BindingCallables>;
-	
-	StateBindingCallables statebindingcallables;
-	StandardStateBindings statebindingobjects;
-	GUIStateBindings guistatebindingobjects;
+	StateBindingData<BindingTypes::BindingCallablePtr> bindingcallables;
+	StateBindingData<BindingTypes::GUIBindingPtr> guistatebindingobjects;
+	StateBindingData<BindingTypes::StandardBindingPtr> statebindingobjects;
 
 	mutable GameStateType activestate; //only the bindings for the active game state will be executed.
 	Manager_GUI* guimgr;
-	template<typename T>
-	auto FindBinding(StateBindingData<T>& container, const GameStateType& state, const std::string& bindingname)->std::pair<bool, typename std::decay_t<T>::iterator> {
-		auto& statebindings = container.at(state);
-		auto foundbinding = std::find_if(statebindings.begin(), statebindings.end(), [bindingname](const auto& p) {
+	template<typename T, typename = typename ENABLE_IF_VALID_TYPE<T>>
+	auto FindBindingData(const GameStateType& state, const std::string& bindingname)->std::pair<bool, typename BindingTypes::BindingData<std::unique_ptr<T>>::iterator> {
+		auto& b = GetBindingStorage<T>(state);
+		auto data = std::find_if(b.begin(), b.end(), [bindingname](const auto& p) {
 			return p.first == bindingname;
 			});
-		return (foundbinding == statebindings.end()) ? std::make_pair(false, foundbinding) : std::make_pair(true, foundbinding);
+		return (data == b.end()) ? std::make_pair(false, data) : std::make_pair(true, data);
 	}
 	void ProcessGUIEvents();
 public:
 	Manager_Event(Manager_GUI* guimgr) noexcept;
 	bool RegisterBindingCallable(const GameStateType& state, const std::string& bindingname, const BindingTypes::BindingCallable& action); //assigns the callable to the already existing state binding
-	inline void SwitchToState(const GameStateType& state)const noexcept { activestate = state; } //the bindings of the active state are only processed
-	template<typename T, typename  = typename std::enable_if_t<std::is_same_v<typename std::decay_t<T>, BindingTypes::GUIBindingPtr> || std::is_same_v<typename std::decay_t<T>, BindingTypes::StandardBindingPtr>>>
-	auto RegisterBindingObject(const GameStateType& state, T& ptr) {
-		auto bindingname = ptr->bindingname;
-		auto intstate = Utility::ConvertToUnderlyingType(state);
-		if constexpr (std::is_same_v<typename std::decay_t<T>, BindingTypes::GUIBindingPtr>) {
-			auto guibindingexists = FindBinding(guistatebindingobjects, state, bindingname);
-			if (guibindingexists.first) {
-				LOG::Log(LOCATION::MANAGER_EVENT, LOGTYPE::ERROR, __FUNCTION__, "Unable to register GUIBinding object - binding of name " + bindingname + " already exists in state " + std::to_string(intstate));
-				return false;
-			}
-			guistatebindingobjects[state].emplace_back(std::move(bindingname), std::move(ptr));
-			return true;
-		}
-		auto standardbindingexists = FindBinding(statebindingobjects, state, bindingname);
-		if (standardbindingexists.first) {
-			LOG::Log(LOCATION::MANAGER_EVENT, LOGTYPE::ERROR, __FUNCTION__, "Unable to register StandardBinding object - binding of name " + bindingname + " already exists in state " + std::to_string(intstate));
+	inline void SwitchToState(const GameStateType& state)const noexcept { activestate = state; } //the bindings of the active state are only processed	
+	template<typename T, typename  = typename ENABLE_IF_BINDING<T>>
+	bool RegisterBindingObject(const GameStateType& state, std::string& bindingname, Attributes* stream) {
+		auto bindingexists = FindBindingData<T>(state, bindingname);
+		if (bindingexists.first) {
+			LOG::Log(LOCATION::MANAGER_EVENT, LOGTYPE::ERROR, __FUNCTION__, "Binding of name " + bindingname + " within state " + std::to_string(Utility::ConvertToUnderlyingType(state)) +" already exists");
 			return false;
 		}
-		statebindingobjects[state].emplace_back(std::move(bindingname), std::move(ptr));
-		return true;	
+		auto& storage = GetBindingStorage<T>(state);
+		auto bindingobj = std::make_unique<T>(bindingname);
+		*stream >> bindingobj.get();
+		storage.emplace_back(bindingname, std::move(bindingobj));
+		return true;
 	}
-	template<typename T>
-	void RemoveBindingData(StateBindingData<T>& container, const GameStateType& state, const std::string& bindingname) {
-		{auto foundbinding = FindBinding(container, state, bindingname);
-		if (foundbinding.first) {
-			container.erase(foundbinding);//raii
+	template<typename T, typename = ENABLE_IF_VALID_TYPE<T>>
+	bool RemoveBindingData( const GameStateType& state, const std::string& bindingname) {
+		auto foundbinding = FindBindingData<T>(state, bindingname);
+		if (!foundbinding.first) {
+			LOG::Log(LOCATION::MANAGER_EVENT, LOGTYPE::ERROR, __FUNCTION__, "Requested data of binding of name " + bindingname + " does not exist within state " + std::to_string(Utility::ConvertToUnderlyingType(state)));
+			return false;
 		}
-		}
-		auto foundcallable = FindBinding(statebindingcallables, state, bindingname);
-		if (foundcallable.first) {
-			statebindingcallables.erase(foundcallable);
-		}
+		auto& container = GetBindingStorage<T>(state);
+		container.erase(foundbinding);
+		return true;
 	}
 	void HandleEvent(const GUIEventData::GUIEventInfo& evnt);
 	void HandleEvent(const sf::Event& evnt, sf::RenderWindow* winptr); //handles all incoming events dispatched from window.

@@ -16,7 +16,7 @@ namespace GUIEventData {
 		});
 	struct GUIEventInfo {
 		std::string interfacehierarchy;
-		GUIState elementstate;
+		GUIData::GUIStateData::GUIState elementstate;
 		GUIEventType eventtype;
 	};
 }

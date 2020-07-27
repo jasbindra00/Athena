@@ -11,6 +11,13 @@ namespace KeyProcessing {
 			});
 		return tmp;
 	}
+	static std::string ToUpperString(const std::string& str) {
+		auto tmp = str;
+		std::for_each(tmp.begin(), tmp.end(), [](char& c) {
+			c = std::toupper(c);
+			});
+		return tmp;
+	}
 	static std::string ComputeReduction(const std::string& key, const bool& attributesarestrings) {
 		auto reduction = ToLowerString(key);
 		reduction.erase(std::remove_if(reduction.begin(), reduction.end(), [&attributesarestrings](char& c) {

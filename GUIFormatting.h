@@ -83,5 +83,5 @@ struct GUIVisual {
 	}
 };
 
-using GUIStateStyles = std::unordered_map<GUIState, GUIStyle>;
+using GUIStateStyles = std::unordered_map<GUIData::GUIStateData::GUIState, GUIStyle>;
 #endif

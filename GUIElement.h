@@ -10,6 +10,8 @@ class GUIInterface;
 class Manager_Texture;
 class Manager_Font;
 
+using namespace GUIData::GUIStateData;
+using namespace GUIData::GUITypeData;
 class GUIElement { //abstract base class for specialised GUIElements.
 protected:
 	GUIStateStyles statestyles; //each GUI state has its own style.

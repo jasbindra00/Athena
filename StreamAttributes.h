@@ -4,7 +4,7 @@
 #include <string>
 class Attributes : public std::stringstream {
 private:
-	std::string word;
+/*	std::string word;*/
 	int previouswordpos{ 0 };
 public:
 	explicit Attributes() {
@@ -22,14 +22,16 @@ public:
 	}
 	std::string PeekWord() {
 		int pos = tellg();
-		*this >> word;
+		std::string w; //word might be empty
+		*this >> w;
 		seekg(pos);
-		return word;
+		return w;
 	}
 	std::string GetWord() {
 		previouswordpos = tellg();
-		*this >> word;
-		return word;
+		std::string w;
+		*this >> w;
+		return w;
 	}
 	void PutBackPreviousWord() {
 		seekg(previouswordpos);
