@@ -3,29 +3,38 @@
 #include <SFML/Graphics.hpp>
 #include <vector>
 #include <unordered_map>
-struct TileTexture {
+#include "StreamAttributes.h"
+struct StandardTile {
 	sf::Sprite tile;
-	sf::IntRect tilerect;
-	TileTexture(sf::Texture* texture, const sf::IntRect& texturerect);
-	float friction;
+	std::string tilename;
+	StandardTile(sf::Texture* texture, const sf::IntRect& texturerect) {
+
+	}
+	sf::Vector2f friction;
+	friend Attributes* operator>>(Attributes* stream, StandardTile& tile) {
+
+	}
 };
 
+using TileID = char;
 struct MapTile {
-	TileTexture* tiletexture;
+	StandardTile* tiletexture;
 	sf::Vector2f position;
 };
-using TileTexture = std::unique_ptr<TileTexture>;
-using TileTextures = std::unordered_map<std::string, TileTexture>;
+using StandardTilePtr = std::unique_ptr<StandardTile>;
+using TileTextures = std::unordered_map<char, StandardTilePtr>;
 using MapTiles = std::vector<std::vector<MapTile>>;
 
 class Map {
 protected:
+	sf::Vector2f tiledimension;
 	MapTiles maptiles;
 	TileTextures tiletextures;
-
+	std::string name;
 	float gravity;
 	sf::Texture* background;
 	sf::RenderWindow* winptr;
+	void ReadStandardTiles(const std::string& tilefile);
 public:
 	Map(sf::RenderWindow* winptr);
 	void LoadMap(const std::string& mapfile);

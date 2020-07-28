@@ -166,6 +166,7 @@
     <ClCompile Include="Manager_GUI.cpp" />
     <ClCompile Include="Manager_State.cpp" />
     <ClCompile Include="Manager_System.cpp" />
+    <ClCompile Include="Map.cpp" />
     <ClCompile Include="State_Game.cpp" />
     <ClCompile Include="State_Intro.cpp" />
     <ClCompile Include="System_Animation.cpp" />

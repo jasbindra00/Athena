@@ -55,7 +55,6 @@ public:
 	EntityID CreateEntity(const Bitmask& b, const ComponentAttributes& attributes = ComponentAttributes{}); //add entity based on constructed bitmask.
 	EntityID CreateEntity(const std::string& filename); //creates an entity based on an already registered entity file.
 	
-	//Component_Base* GetComponent(const EntityID& entityid, const ComponentType& t) const;
 	void AddComponent(const EntityID& entityid, const ComponentType& t, const std::string& componentattributes = {}); //adds component to an already existing entity.
 	void RemoveComponent(const EntityID& entityid, const ComponentType& t); 
 	void RemoveEntity(const EntityID& entityid); //deletes all com

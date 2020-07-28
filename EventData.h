@@ -99,7 +99,7 @@ namespace EventData {
 		}
 		void ReadIn(Attributes& stream) override {
 			while (!stream.eof()) {
-				auto keyattributes = KeyProcessing::ExtractAttributesToStream(stream.GetWord(), false);
+				auto keyattributes = KeyProcessing::ExtractAttributesToStream(stream.GetWord(), false, false);
 				if (keyattributes.PeekWord().empty()) continue;
 				unsigned int evnttype;
 				unsigned int code;
@@ -118,7 +118,7 @@ namespace EventData {
 			auto evnttype = EventType::NULLTYPE;
 			auto guistate = GUIData::GUIStateData::GUIState::NULLSTATE;
 			while (!attributes.eof()) {
-				auto keyattributes = KeyProcessing::ExtractAttributesToStream(attributes.GetWord(), true);
+				auto keyattributes = KeyProcessing::ExtractAttributesToStream(attributes.GetWord(), true, true);
 				auto attributetype = KeyProcessing::ToUpperString(keyattributes.GetWord());
 				auto attribute = keyattributes.GetWord();
 				if (attributetype == "GUIEVENTTYPE") evnttype = EventTypeConverter(KeyProcessing::ToUpperString(attribute));
