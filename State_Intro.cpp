@@ -1,7 +1,8 @@
 #include "State_Intro.h"
 #include "Manager_State.h"
-#include "GameStateType.h"
+#include "GameStateData.h"
 
+using GameStateData::GameStateType;
 State_Intro::State_Intro(Manager_State* statemgr) :State_Base(statemgr) {
 	transparency = false;
 	transcendency = false;

@@ -10,7 +10,7 @@
 #include "Manager_GUI.h"
 #include "Manager_Texture.h"
 #include "Manager_Font.h"
-#include "GameStateType.h"
+#include "GameStateData.h"
 
 class Game
 {

@@ -9,17 +9,17 @@
 #include "GUIFormatting.h"
 #include "GUIInterface.h"
 #include "SharedContext.h"
-#include "GUIEventData.h"
+#include "EventData.h"
+#include "GameStateData.h"
 
-
-using namespace GUIEventData;
+using EventData::GUIEventInfo;
+using GameStateData::GameStateType;
 enum class GUIElementType;
 class GUIElement;
 class GUIInterface;
 class Manager_Font;
 class Manager_Texture;
 class Attributes;
-
 
 using GUIInterfacePtr = std::unique_ptr<GUIInterface>;
 using Interfaces = std::vector<std::pair<std::string,GUIInterfacePtr>>;
@@ -65,13 +65,7 @@ public:
 	void HandleEvent(const sf::Event& evnt, sf::RenderWindow* winptr);
 	SharedContext* GetContext() const { return context; }
 	GUIInterface* GetInterface(const GameStateType& state, const std::string& interfacename);
-	GUIType StringToGUIType(const std::string& str) const{
-		if (str == "INTERFACE") return GUIType::WINDOW;
-		else if (str == "LABEL") return GUIType::LABEL;
-		else if (str == "TEXTFIELD") return GUIType::TEXTFIELD;
-		else if (str == "SCROLLBAR") return GUIType::SCROLLBAR;
-		return GUIType::NULLTYPE;
-	}
+	sf::Vector2f GetGlobalMousePosition() const { return globalmouseposition; }
 };
 
 

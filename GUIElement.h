@@ -4,7 +4,7 @@
 #include <unordered_map>
 #include <string>
 #include "GUIFormatting.h"
-#include "GUIInfo.h"
+#include "GUIData.h"
 
 class GUIInterface;
 class Manager_Texture;
@@ -12,6 +12,8 @@ class Manager_Font;
 
 using namespace GUIData::GUIStateData;
 using namespace GUIData::GUITypeData;
+using namespace GUIFormatting;
+using GUIStateStyles = std::unordered_map<GUIState, GUIStyle>;
 class GUIElement { //abstract base class for specialised GUIElements.
 protected:
 	GUIStateStyles statestyles; //each GUI state has its own style.
@@ -45,6 +47,8 @@ public:
 	virtual void OnNeutral() = 0;
 	virtual void OnHover() = 0;
 	virtual void OnClick(const sf::Vector2f& mousepos) = 0;
+	virtual void OnLeave() = 0;
+	virtual void OnRelease() = 0;
 
 	void SetState(const GUIState& state);
 	virtual void Draw(sf::RenderTexture& texture);
@@ -56,6 +60,7 @@ public:
 
 	void SetElementSize(const sf::Vector2f& s);
 	void SetLocalPosition(const sf::Vector2f& pos);
+	void SetParent(GUIInterface* p) { parent = p; }
 
 
 	void MarkRedraw(const bool& inp) const { redrawrequired = inp; }

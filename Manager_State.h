@@ -5,24 +5,25 @@
 #include <functional>
 #include <type_traits>
 #include "SharedContext.h"
+#include "State_Base.h"
+#include "Log.h"
 
 
-
-namespace GameState {
+namespace GameStateData {
 	enum class GameStateType;
 };
-using GameState::GameStateType;
-
-class State_Base;
-using StatePtr = std::unique_ptr<State_Base>;
-
-using StateProducer = std::function<StatePtr(void)>;
-using StateFactory = std::unordered_map<GameStateType, StateProducer>;
-using StateQueue = std::vector<GameStateType>;
-using StateObjects = std::vector <std::pair<GameStateType, StatePtr>>;
+using GameStateData::GameStateType;
 
 
+namespace GameStateInfo {
+	using StatePtr = std::unique_ptr<State_Base>;
+	using StateProducer = std::function<StatePtr(void)>;
+	using StateFactory = std::unordered_map<GameStateType, StateProducer>;
+	using StateQueue = std::vector<GameStateType>;
+	using StateObjects = std::vector <std::pair<GameStateType, StatePtr>>;
+}
 
+using namespace GameStateInfo;
 class EventManager;
 class Manager_State
 {
@@ -34,15 +35,16 @@ private:
 	SharedContext* context;
 	
 	template<typename T>
-	void RegisterStateProducer(const GameStateType& state) {
+	bool RegisterStateProducer(const GameStateType& state) {
 		statefactory[state] = [this](void) {return std::make_unique<T>(this); };
+		return true;
 	}
 	void ProcessDestructions();
 	void ProcessInsertions();
 	
 public:
 	Manager_State(SharedContext* context);
-	inline void QueueDestruction(const GameState::GameStateType& state) { destructionqueue.emplace_back(state); }
+	inline void QueueDestruction(const GameStateData::GameStateType& state) { destructionqueue.emplace_back(state); }
 	inline void QueueInsertion(const GameStateType& state) { insertionqueue.emplace_back(state); }
 	bool StateExists(const GameStateType& state) const;
 	void RemoveStateProducer(const GameStateType& state);

@@ -18,6 +18,7 @@ bool GUIInterface::AddElement(const std::string& eltname, std::unique_ptr<GUIEle
 		return p.first == eltname;
 		});
 	if (eltexists != elements.end()) return false;
+	elt->SetParent(this);
 	elements.emplace_back(std::make_pair(eltname, std::move(elt)));
 	return true;
 }
@@ -94,12 +95,22 @@ void GUIInterface::Update(const float& dT){
 	-responsible for setting the flags for redraw, and moving the interface;
 	-responsible for updating / redrawing the layers.
 	*/	
-	auto mousepos = static_cast<sf::Vector2f>(sf::Mouse::getPosition(*GetGUIManager()->GetContext()->window->GetRenderWindow()));
-
+	auto mouseposition = static_cast<sf::Vector2f>(sf::Mouse::getPosition(*guimgr->GetContext()->window->GetRenderWindow()));
 	GUIElement::Update(dT); //apply any pending movement / size changes
 	for (auto& element : elements) {
-		element.second->Update(dT);
-		if (dynamic_cast<GUIInterface*>(element.second.get())) {
+
+		if (element.second->Contains(mouseposition)) {
+			if (element.second->GetActiveState() == GUIState::NEUTRAL) {
+				element.second->OnHover();
+
+			}
+		}
+		else if (element.second->GetActiveState() == GUIState::FOCUSED) element.second->OnLeave();
+		
+			element.second->Update(dT);
+		
+		//check for pending redraws
+		if (element.second->GetType() == GUIType::WINDOW){
 			if (static_cast<GUIInterface*>(element.second.get())->RequiresParentRedraw()) { //check if its own layers have been redrawn (so that we can redraw this control layer)
 				MarkControlRedraw(true); //its layers have been redrawn, so we need to redraw our control. child interface forms the control layer.
 				static_cast<GUIInterface*>(element.second.get())->MarkRedrawToParent(false); //reset
@@ -137,7 +148,13 @@ void GUIInterface::OnClick(const sf::Vector2f& pos){
 }
 
 void GUIInterface::OnRelease(){
-
+	SetState(GUIState::NEUTRAL);
+	for (auto& element : elements) {
+		if (element.second->GetActiveState() == GUIState::CLICKED) {
+			element.second->OnRelease();
+			std::cout << "element release" << std::endl;
+		}
+	}
 }
 
 std::pair<bool, sf::Vector2f> GUIInterface::EltOverhangs(const GUIElement* const elt){

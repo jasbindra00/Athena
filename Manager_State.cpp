@@ -7,13 +7,13 @@
 #include"State_Options.h"
 #include "SharedContext.h"
 #include "Window.h"
-#include <iostream>
-#include <queue>
-#include "GameStateType.h"
+
+#include "GameStateData.h"
 
 
+using GameStateData::GameStateType;
 Manager_State::Manager_State(SharedContext* c):context(c) {
-	//register state producers here.
+
 	RegisterStateProducer<State_Intro>(GameStateType::INTRO);
 	RegisterStateProducer<State_Game>(GameStateType::GAME);
 	SwitchState(GameStateType::INTRO);

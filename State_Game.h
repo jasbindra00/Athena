@@ -1,11 +1,9 @@
 #ifndef STATE_GAME_H
 #define STATE_GAME_H
 #include "State_Base.h"
+#include "EventData.h"
 
-namespace GameEventData {
-	struct EventDetails;
-}
-using GameEventData::EventDetails;
+using EventData::EventDetails;
 class State_Game : public State_Base
 {
 protected:

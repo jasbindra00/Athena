@@ -28,13 +28,14 @@ protected:
 	
 public:
 	GUIInterface(GUIInterface* parent, Manager_GUI* guimgr, const GUIStateStyles& styles, std::stringstream& stream);
-	
 
 	virtual void OnHover() override;
 	virtual void OnNeutral() override;
 	virtual void OnClick(const sf::Vector2f& pos) override;
 	virtual void OnRelease();
+	virtual void OnLeave() override {
 
+	}
 	void Draw(sf::RenderTexture& texture) override; //draw to another interface.
 	void Render();
 	void Update(const float& dT) override;

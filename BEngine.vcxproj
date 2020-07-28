@@ -181,11 +181,10 @@
     <ClInclude Include="EntityStates.h" />
     <ClInclude Include="EventQueue.h" />
     <ClInclude Include="FileReader.h" />
-    <ClInclude Include="GameEventData.h" />
+    <ClInclude Include="EventData.h" />
     <ClInclude Include="GUIElement.h" />
-    <ClInclude Include="GUIEventData.h" />
     <ClInclude Include="GUIFormatting.h" />
-    <ClInclude Include="GUIInfo.h" />
+    <ClInclude Include="GUIData.h" />
     <ClInclude Include="GUIInterface.h" />
     <ClInclude Include="GUIInterfaceLayers.h" />
     <ClInclude Include="GUILabel.h" />
@@ -197,7 +196,7 @@
     <ClInclude Include="Manager_Resource.h" />
     <ClInclude Include="Manager_Texture.h" />
     <ClInclude Include="Map.h" />
-    <ClInclude Include="GameStateType.h" />
+    <ClInclude Include="GameStateData.h" />
     <ClInclude Include="Origin.h" />
     <ClInclude Include="State_Intro.h" />
     <ClInclude Include="StaticContext.h" />

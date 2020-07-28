@@ -33,7 +33,6 @@ public:
 		LOG::Log(LOCATION::MANAGER_TEXTURE, LOGTYPE::ERROR, __FUNCTION__, "Could not find registered path for resource of name " + resourcename);
 		return nullptr;
 	}
-
 	SharedFont RequestResource(const std::string& resname) {
 		return LoadResource(resname);
 	}

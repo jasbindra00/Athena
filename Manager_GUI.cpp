@@ -6,18 +6,23 @@
 #include "Manager_GUI.h"
 #include "Manager_Texture.h"
 #include "Manager_Font.h"
-#include "GameStateType.h"
 #include "GUITextfield.h"
-#include "GUIInfo.h"
 #include "Utility.h"
 #include "FileReader.h"
-#include "GameStateType.h"
+#include "GameStateData.h"
 #include "SharedContext.h"
 #include "Window.h"
-#include "GameEventData.h"
+#include "GUIData.h"
+#include "EventData.h"
 
 
-using GameEventData::WindowEventType;
+
+
+using GameStateData::GameStateType;
+using GUIData::GUITypeData::GUIType;
+using namespace EventData;
+using namespace GUIData;
+
 Manager_GUI::Manager_GUI(SharedContext* cntxt) :context(cntxt) {
 	RegisterElementProducer<GUITextfield>(GUIType::TEXTFIELD);
 	stateinterfaces[GameStateType::GAME] = Interfaces{};
@@ -66,7 +71,7 @@ GUIElementPtr Manager_GUI::CreateElement(GUIInterface* parent, Attributes& attri
 	std::string stylefile{ attributes.GetWord() };
 	if (elttype == "NEWINTERFACE" || elttype == "NESTEDINTERFACE") return std::make_unique<GUIInterface>(parent, this, CreateStyleFromFile(stylefile), attributes);
 	else {
-		auto guielementtype = StringToGUIType(elttype);
+		auto guielementtype = GUIData::GUITypeData::converter(elttype);
 		if (guielementtype == GUIType::NULLTYPE) {
 			LOG::Log(LOCATION::MANAGER_GUI, LOGTYPE::ERROR, __FUNCTION__, "Unable to read the element type");
 			return nullptr;
@@ -113,7 +118,7 @@ GUIInterfacePtr Manager_GUI::CreateInterfaceFromFile(const std::string& interfac
 	for (auto& structure : interfacehierarchy) {
 		auto currentinterface = static_cast<GUIInterface*>(structure.second[0].get());
 		if (structure.second.size() == 1) continue;
-		for (int i = structure.second.size() - 1; i > 0; --i) {
+		for (int i = structure.second.size() - 1; i > 0; --i) { //loop throw 
 			auto& element = structure.second[i];
 			if (!currentinterface->AddElement(element->GetName(), element)) {
 				element.reset();
@@ -183,26 +188,26 @@ bool Manager_GUI::PollGUIEvent(GUIEventInfo& evnt){
 	return false;
 }
 void Manager_GUI::HandleEvent(const sf::Event& evnt, sf::RenderWindow* winptr){
-	auto evnttype = static_cast<WindowEventType>(evnt.type);
-	if (evnttype == WindowEventType::KEYPRESSED || evnttype == WindowEventType::KEYRELEASED) {
+	auto evnttype = static_cast<EventType>(evnt.type);
+	if (evnttype == EventType::KEYPRESSED || evnttype == EventType::KEYRELEASED) {
 		auto& keycode = evnt.key.code;
 	}
-	else if (evnttype == WindowEventType::MOUSEPRESSED || evnttype == WindowEventType::MOUSERELEASED) {
+	else if (evnttype == EventType::MOUSEPRESSED || evnttype == EventType::MOUSERELEASED) {
 		auto clickcoords = sf::Vector2f{ static_cast<float>(evnt.mouseButton.x), static_cast<float>(evnt.mouseButton.y) };
 		auto& activeinterfaces = stateinterfaces.at(activestate);
 		for (auto& interfacepair : activeinterfaces) {
 			auto& interfaceobj = interfacepair.second;
 			switch (evnttype) {
-				case WindowEventType::MOUSEPRESSED: {
-					if (interfaceobj->GetActiveState() != GUIState::CLICKED) { //prev click has been processed, so we can go ahead and register this click.
+				case EventType::MOUSEPRESSED: {
+					if (interfaceobj->GetActiveState() != GUIStateData::GUIState::CLICKED) { //prev click has been processed, so we can go ahead and register this click.
 						if (interfaceobj->Contains(clickcoords)) {
 							interfaceobj->OnClick(clickcoords);
 						}
 					}
 					break;
 				}
-				case WindowEventType::MOUSERELEASED: {
-					if (interfaceobj->GetActiveState() == GUIState::CLICKED) { //release it from the previous click.
+				case EventType::MOUSERELEASED: {
+					if (interfaceobj->GetActiveState() == GUIStateData::GUIState::CLICKED) { //release it from the previous click.
 						interfaceobj->OnRelease();
 					}
 					break;
@@ -210,7 +215,7 @@ void Manager_GUI::HandleEvent(const sf::Event& evnt, sf::RenderWindow* winptr){
 			}
 		}
 	}
-	else if (evnttype == WindowEventType::MOUSESCROLLED) {
+	else if (evnttype == EventType::MOUSESCROLLED) {
 
 	}
 
@@ -228,7 +233,12 @@ void Manager_GUI::Update(const float& dT){
 	globalmouseposition = static_cast<sf::Vector2f>(sf::Mouse::getPosition(*context->window->GetRenderWindow()));
 	auto &stategui = stateinterfaces.at(activestate);
 	for (auto& interfaceptr : stategui) {
+		if (interfaceptr.second->GetName() == "fsdf") {
+			interfaceptr.second->Update(dT);
+			continue;
+		}
 		interfaceptr.second->Update(dT);
+		
 	}
 }
 void Manager_GUI::Draw() {
@@ -240,4 +250,5 @@ void Manager_GUI::Draw() {
 void Manager_GUI::AddGUIEvent(const GUIEventInfo& evnt){
 	guieventqueue.InsertEvent(evnt);
 }
+
 

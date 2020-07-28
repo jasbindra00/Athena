@@ -3,15 +3,15 @@
 #include "EnumConverter.h"
 
 namespace GUIData {
-
 	namespace GUIStateData {
 		static enum class GUIState {
-			NEUTRAL, FOCUSED, CLICKED, NULLSTATE
+			NEUTRAL, FOCUSED, CLICKED, HOVER, NULLSTATE
 		};
 		static EnumConverter<GUIState> converter([](const std::string& str)->GUIState {
 			if (str == "NEUTRAL") return GUIState::NEUTRAL;
 			else if (str == "FOCUSED") return GUIState::FOCUSED;
 			else if (str == "CLICKED") return GUIState::CLICKED;
+			else if (str == "HOVER") return GUIState::HOVER;
 			return GUIState::NULLSTATE;
 			});
 	}

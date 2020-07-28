@@ -11,6 +11,8 @@ public:
 	void OnNeutral() override;
 	void OnHover() override;
 	void OnClick(const sf::Vector2f& mousepos) override;
+	virtual void OnLeave() override;
+	virtual void OnRelease() override;
 	void Draw(sf::RenderTexture& texture) override;
 	void AppendChar(const char& c);
 	void PopChar();
