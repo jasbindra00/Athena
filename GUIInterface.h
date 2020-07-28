@@ -1,6 +1,8 @@
 #ifndef GUIINTERFACE_H
 #define GUIINTERFACE_H
 #include "GUIElement.h"
+#include <iostream>
+
 
 //forward declarations
 class Manager_GUI;
@@ -35,6 +37,17 @@ public:
 	virtual void OnRelease();
 	virtual void OnLeave() override {
 
+	}
+	
+	void DefocusTextfields() {
+		for (auto& elt : elements) {
+			if (elt.second->GetType() == GUIType::TEXTFIELD) {
+				elt.second->OnNeutral();
+			}
+			else if (elt.second->GetType() == GUIType::WINDOW) {
+				static_cast<GUIInterface*>(elt.second.get())->DefocusTextfields();
+			}
+		}
 	}
 	void Draw(sf::RenderTexture& texture) override; //draw to another interface.
 	void Render();

@@ -54,9 +54,6 @@ void Manager_Event::HandleEvent(const GUIEventInfo& evnt) {
 			if (evnt.interfacehierarchy != guicondition.interfacehierarchy) continue;
 			//its a full match.
 			++bindingobject->conditionsmet;
-			//we only want to replace the conditions if the binding hasn't been dealt with already - ie if it hasn't been cleared in the update cycle.
-			//its not possible to have a gui evnt thats not immediately dealt with.
-			//this is because unlike sfml events, we don't check twice for normal and live input evnts.
 			bindingobject->details.guiinfo = evnt;
 		}
 
@@ -106,32 +103,33 @@ void Manager_Event::Update(sf::RenderWindow* winptr) { //handling live input eve
 	auto& statebindings = statebindingobjects[activestate];
 	for (auto& binding : statebindings) {
 		auto& bindingobject = binding.second;
-		if (bindingobject->type == BINDINGTYPE::GUI) continue;
-		for (const auto& bindingcondition : bindingobject->conditions) {
-			auto& evnttype = bindingcondition.first;
-			auto& code = std::get<0>(bindingcondition.second);
-			switch (evnttype) {
-			case EventType::KEYPRESSED: {
-				if (sf::Keyboard::isKeyPressed(static_cast<sf::Keyboard::Key>(code))) {
-					auto& latestkeypressed = bindingobject->details.keycode;
-					if (latestkeypressed != code) {
-						latestkeypressed = code;
-						++bindingobject->conditionsmet;
+		if (bindingobject->type != BINDINGTYPE::GUI) { //gui is not applicable here 
+			for (const auto& bindingcondition : bindingobject->conditions) {
+				auto& evnttype = bindingcondition.first;
+				auto& code = std::get<0>(bindingcondition.second);
+				switch (evnttype) {
+				case EventType::KEYPRESSED: {
+					if (sf::Keyboard::isKeyPressed(static_cast<sf::Keyboard::Key>(code))) {
+						auto& latestkeypressed = bindingobject->details.keycode;
+						if (latestkeypressed != code) {
+							latestkeypressed = code;
+							++bindingobject->conditionsmet;
+						}
+					}
+					break;
+				}
+				case EventType::MOUSEPRESSED: {
+					if (sf::Mouse::isButtonPressed(static_cast<sf::Mouse::Button>(code))) {
+						auto& latestmousepress = bindingobject->details.mousecode;
+						if (latestmousepress != code) {
+							latestmousepress = code;
+							bindingobject->details.mouseposition = sf::Mouse::getPosition(*winptr);
+							++bindingobject->conditionsmet;
+							break;
+						}
 					}
 				}
-				break;
-			}
-			case EventType::MOUSEPRESSED: {
-				if (sf::Mouse::isButtonPressed(static_cast<sf::Mouse::Button>(code))) {
-					auto& latestmousepress = bindingobject->details.mousecode;
-					if (latestmousepress != code) {
-						latestmousepress = code;
-						bindingobject->details.mouseposition = sf::Mouse::getPosition(*winptr);
-						++bindingobject->conditionsmet;
-						break;
-					}
 				}
-			}
 			}
 		}
 		if (bindingobject->conditionsmet == bindingobject->conditions.size()) { //checking if this binding has had all of its conditions met

@@ -91,25 +91,16 @@ void GUIInterface::Render(){
 	winptr->draw(*layers->GetControlSprite());
 }
 void GUIInterface::Update(const float& dT){
-	/*
-	-responsible for setting the flags for redraw, and moving the interface;
-	-responsible for updating / redrawing the layers.
-	*/	
 	auto mouseposition = static_cast<sf::Vector2f>(sf::Mouse::getPosition(*guimgr->GetContext()->window->GetRenderWindow()));
 	GUIElement::Update(dT); //apply any pending movement / size changes
 	for (auto& element : elements) {
-
 		if (element.second->Contains(mouseposition)) {
 			if (element.second->GetActiveState() == GUIState::NEUTRAL) {
 				element.second->OnHover();
-
 			}
 		}
 		else if (element.second->GetActiveState() == GUIState::FOCUSED) element.second->OnLeave();
-		
-			element.second->Update(dT);
-		
-		//check for pending redraws
+		element.second->Update(dT);
 		if (element.second->GetType() == GUIType::WINDOW){
 			if (static_cast<GUIInterface*>(element.second.get())->RequiresParentRedraw()) { //check if its own layers have been redrawn (so that we can redraw this control layer)
 				MarkControlRedraw(true); //its layers have been redrawn, so we need to redraw our control. child interface forms the control layer.
@@ -119,14 +110,12 @@ void GUIInterface::Update(const float& dT){
 		else if (element.second->RequiresRedraw()) { //element has been changed
 			if (element.second->IsControl()) MarkControlRedraw(true); //if it was a control elt, need to redraw control layer
 			else MarkContentRedraw(true);
-			element.second->MarkRedraw(false); //reset
+			element.second->MarkRedraw(false);
 		}
 	}
-	//apply redrawing changes if applicable.
 	if (RequiresBackgroundRedraw()) RedrawBackgroundLayer(); 
 	if (RequiresContentRedraw()) RedrawContentLayer();
 	if (RequiresControlRedraw()) RedrawControlLayer();
-	
 }
 void GUIInterface::OnHover(){
 
@@ -141,7 +130,9 @@ void GUIInterface::OnClick(const sf::Vector2f& pos){
 		if (element.second->GetActiveState() != GUIState::CLICKED) { //if the element has not already been clicked
 			if (element.second->Contains(pos)) {
 				element.second->OnClick(pos); //if its a click on a textfield, then the manager will defocus all active interface textfields via event.
-				std::cout << "element click" << std::endl;
+				if (element.second->GetType() == GUIType::TEXTFIELD) {
+					guimgr->SetActiveTextfield(static_cast<GUITextfield*>(element.second.get()));
+				}
 			 }
 		}
 	}

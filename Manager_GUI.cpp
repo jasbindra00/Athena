@@ -187,45 +187,47 @@ bool Manager_GUI::PollGUIEvent(GUIEventInfo& evnt){
 	if (guieventqueue.PollEvent(evnt)) return true;
 	return false;
 }
-void Manager_GUI::HandleEvent(const sf::Event& evnt, sf::RenderWindow* winptr){
+void Manager_GUI::HandleEvent(const sf::Event& evnt, sf::RenderWindow* winptr) {
 	auto evnttype = static_cast<EventType>(evnt.type);
-	if (evnttype == EventType::KEYPRESSED || evnttype == EventType::KEYRELEASED) {
-		auto& keycode = evnt.key.code;
-	}
-	else if (evnttype == EventType::MOUSEPRESSED || evnttype == EventType::MOUSERELEASED) {
+	auto& activeinterfaces = stateinterfaces.at(activestate);
+	switch (evnttype) {
+	case EventType::MOUSEPRESSED: {
 		auto clickcoords = sf::Vector2f{ static_cast<float>(evnt.mouseButton.x), static_cast<float>(evnt.mouseButton.y) };
-		auto& activeinterfaces = stateinterfaces.at(activestate);
-		for (auto& interfacepair : activeinterfaces) {
-			auto& interfaceobj = interfacepair.second;
-			switch (evnttype) {
-				case EventType::MOUSEPRESSED: {
-					if (interfaceobj->GetActiveState() != GUIStateData::GUIState::CLICKED) { //prev click has been processed, so we can go ahead and register this click.
-						if (interfaceobj->Contains(clickcoords)) {
-							interfaceobj->OnClick(clickcoords);
-						}
-					}
-					break;
+		SetActiveTextfield(nullptr);
+		for (auto& interfaceobj : activeinterfaces) {
+			interfaceobj.second->DefocusTextfields();
+			if (interfaceobj.second->Contains(clickcoords)) {
+				if (interfaceobj.second->GetActiveState() == GUIState::NEUTRAL) {
+					interfaceobj.second->OnClick(clickcoords);
 				}
-				case EventType::MOUSERELEASED: {
-					if (interfaceobj->GetActiveState() == GUIStateData::GUIState::CLICKED) { //release it from the previous click.
-						interfaceobj->OnRelease();
-					}
-					break;
-				}
+			}
+			else if (interfaceobj.second->GetActiveState() == GUIState::FOCUSED) {
+				interfaceobj.second->OnLeave();
 			}
 		}
 	}
-	else if (evnttype == EventType::MOUSESCROLLED) {
-
+	case EventType::MOUSERELEASED: {
+		for (auto& interfaceobj : activeinterfaces) {
+			if (interfaceobj.second->GetActiveState() == GUIState::CLICKED) {
+				interfaceobj.second->OnRelease();
+			}
+		}
 	}
-
-
-
-
-
-
-
-
+	case EventType::TEXTENTERED: {
+		if (activetextfield != nullptr) {
+			activetextfield->AppendChar(evnt.text.unicode);
+			std::cout << activetextfield->GetStdString() << std::endl;
+		}
+	}
+	case EventType::KEYPRESSED: {
+		if (activetextfield != nullptr) {
+			if (evnt.key.code == sf::Keyboard::Key::Backspace) {
+				activetextfield->PopChar();
+				std::cout << activetextfield->GetStdString() << std::endl;
+			}
+		}
+	}
+	}
 
 }
 

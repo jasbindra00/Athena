@@ -11,6 +11,7 @@
 #include "SharedContext.h"
 #include "EventData.h"
 #include "GameStateData.h"
+#include "GUITextfield.h"
 
 using EventData::GUIEventInfo;
 using GameStateData::GameStateType;
@@ -39,6 +40,7 @@ private:
 	sf::Vector2f globalmouseposition;
 	SharedContext* context;
 	mutable GameStateType activestate;
+	mutable GUITextfield* activetextfield{ nullptr };
 
 	template<typename T>
 	void RegisterElementProducer(const GUIType& type) { //factory pattern
@@ -66,6 +68,9 @@ public:
 	SharedContext* GetContext() const { return context; }
 	GUIInterface* GetInterface(const GameStateType& state, const std::string& interfacename);
 	sf::Vector2f GetGlobalMousePosition() const { return globalmouseposition; }
+	void SetActiveTextfield(GUITextfield* ptr) {
+		activetextfield = ptr;
+	}
 };
 
 

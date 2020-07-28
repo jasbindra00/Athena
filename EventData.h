@@ -28,6 +28,7 @@ namespace EventData {
 		MOUSERELEASED = sf::Event::EventType::MouseButtonReleased,
 		MOUSESCROLLED = sf::Event::EventType::MouseWheelScrolled,
 		MOUSEMOVED = sf::Event::EventType::MouseMoved,
+		TEXTENTERED = sf::Event::EventType::TextEntered,
 		GUI_HOVER,
 		GUI_CLICK,
 		GUI_RELEASE,
