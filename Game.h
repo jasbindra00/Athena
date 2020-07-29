@@ -11,6 +11,7 @@
 #include "Manager_Texture.h"
 #include "Manager_Font.h"
 #include "GameStateData.h"
+#include "Map.h"
 
 class Game
 {
@@ -22,7 +23,7 @@ protected:
 	std::unique_ptr<Manager_GUI> guimgr;
 	std::unique_ptr<Manager_Font> fontmgr;
 	std::unique_ptr<Manager_Texture> texturemgr;
-	
+	std::unique_ptr<Map> map;
 	
 	sf::Clock clock;
 public:
@@ -44,6 +45,7 @@ public:
 		window = std::make_unique<Window>(eventmanager.get(), 1000, 1000, "MyWindow");
 		context.window = window.get();
 
+		map = std::make_unique<Map>(texturemgr.get(), window->GetRenderWindow());
 
 		
 
@@ -62,6 +64,7 @@ public:
 		window->GetRenderWindow()->clear();
 		statemanager->Draw();
 		guimgr->Draw();
+		map->Draw();
 		window->GetRenderWindow()->display();
 	
 	}

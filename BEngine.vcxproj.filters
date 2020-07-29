@@ -61,6 +61,9 @@
     <Filter Include="Header Files\GUI\Data">
       <UniqueIdentifier>{47ca2bae-297b-4cd1-bc92-9e14223838cb}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\Map">
+      <UniqueIdentifier>{01d93fe6-5ae0-420e-9d84-5184c49dc6fd}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BEngine.cpp">
@@ -242,9 +245,6 @@
     <ClInclude Include="EntityDirection.h">
       <Filter>Header Files\System\Messaging</Filter>
     </ClInclude>
-    <ClInclude Include="Map.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Manager_GUI.h">
       <Filter>Header Files\GUI</Filter>
     </ClInclude>
@@ -304,6 +304,9 @@
     </ClInclude>
     <ClInclude Include="GUIFormatting.h">
       <Filter>Header Files\GUI\Data</Filter>
+    </ClInclude>
+    <ClInclude Include="Map.h">
+      <Filter>Header Files\Map</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

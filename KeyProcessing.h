@@ -52,55 +52,24 @@ namespace KeyProcessing {
 		}
 		return { false,true };
 	}
-
 	static std::pair<bool, std::string> CheckKeySyntax(const std::string& key) {
-		auto reduction = key;
+		auto reduction = RemoveWhiteSpaces(key);
 		std::string extracted;
 		reduction.erase(std::remove_if(reduction.begin(), reduction.end(), [&extracted](char& c) {
-			if (c != '{') return true;
-			if (c != ',') { extracted.push_back(' '); return true;}
-			if (c != '}') return true;
-			else extracted.push_back(c);
-			return false;
+			if (c == '{') return false;
+			if (c == ',') { extracted.push_back(' '); return false; }
+			if (c == '}') return false;
+			else { extracted.push_back(c); return true; }
 			}), reduction.end());
-		if (reduction != "{,}") return std::make_pair(false, std::move(reduction));
-		//check if the keys are alpha numeric.
-		Attributes stream(extracted);
-
-
-
-
+		return (reduction != "{,}") ? std::make_pair(false, std::move(extracted)) : std::make_pair(true, std::move(extracted));
 	}
-	static std::pair<bool, std::string> CheckKeySyntax(const std::string& key, const bool& arg1str, const bool& arg2str) {
-		auto reduction = ToLowerString(key);
-		bool firstarg = true;
-		auto foundseperation = std::find(reduction.begin(), reduction.end(), ',');
-		if (foundseperation == reduction.end()) return std::make_pair(false, std::string{});
-		std::string extractedattributes;
-		reduction.erase(std::remove_if(reduction.begin(), reduction.end(), [&arg1str, &arg2str, &firstarg,&extractedattributes](char& c) {
-			if ((firstarg && arg1str) || (!firstarg && arg2str)) {//if attribute type is str
-				if (IsLetter(c)) {
-					extractedattributes.push_back(c);
-					return true; //remove if letter
-				}
-			}
-			if ((firstarg && !arg1str) || (!firstarg && !arg2str)) { //if attribute type in num
-				if (IsNumber(c)) {
-					extractedattributes.push_back(c);
-					return true; //remove if num
-				}
-			}
-			if (c == ',') {
-				firstarg = false;
-				extractedattributes.push_back(' ');
-			}
-			return false;
-			}), reduction.end());
-		return (reduction == "{,}") ? std::make_pair(true, extractedattributes) : std::make_pair(false, extractedattributes);
+	static Attributes ExtractAttributesToStream(const std::string& key) {
+		return Attributes(CheckKeySyntax(key).second);
 	}
-	static Attributes ExtractAttributesToStream(const std::string& key, const bool& arg1str, const bool& arg2str) {
-		return Attributes(CheckKeySyntax(key, arg1str, arg2str).second);
+	static std::string ConstructKey(const std::string& arg1, const std::string& arg2) {
+		auto arg1tmp = RemoveWhiteSpaces(arg1);
+		auto arg2tmp = RemoveWhiteSpaces(arg2);
+		return std::string{ "{" + std::move(arg1tmp) + "," + std::move(arg2tmp) + "}" };
 	}
-
 }
 #endif
