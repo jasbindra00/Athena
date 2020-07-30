@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -198,6 +198,7 @@
     <ClInclude Include="Manager_Texture.h" />
     <ClInclude Include="Map.h" />
     <ClInclude Include="GameStateData.h" />
+    <ClInclude Include="MapTile.h" />
     <ClInclude Include="Origin.h" />
     <ClInclude Include="State_Intro.h" />
     <ClInclude Include="StaticContext.h" />

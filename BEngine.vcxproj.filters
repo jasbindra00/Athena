@@ -308,5 +308,8 @@
     <ClInclude Include="Map.h">
       <Filter>Header Files\Map</Filter>
     </ClInclude>
+    <ClInclude Include="MapTile.h">
+      <Filter>Header Files\Map</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -1,113 +1,96 @@
-#ifndef GAMEMAP_H
-#define GAMEMAP_H
+#ifndef MAP_H
+#define MAP_H
 #include <SFML/Graphics.hpp>
-#include <vector>
+#include <string>
 #include <unordered_map>
-#include <functional>
-#include "StreamAttributes.h"
-#include "Manager_Texture.h"
+#include <vector>
+#include "FileReader.h"
+#include "Log.h"
 #include "KeyProcessing.h"
-
-
-namespace ConfigurationData {
-	enum class ConfigurationType {
-		GAME_MAP = 0, LAYER_MAP, WARP_MAP, DEADLY_MAP, NULLTYPE
-	};
-	EnumConverter<ConfigurationType> converter([](const std::string& type) {
-		if (type == "GAME_MAP") return ConfigurationType::GAME_MAP;
-		else if (type == "LAYER_MAP") return ConfigurationType::LAYER_MAP;
-		else if (type == "WARP_MAP") return ConfigurationType::WARP_MAP;
-		else if (type == "DEADLY_MAP") return ConfigurationType::DEADLY_MAP;
-		return ConfigurationType::NULLTYPE;
-		});
-
+#include "Manager_Texture.h"
+#include "MapTile.h"
+namespace MapData {
+	using namespace TileData;
+	using StaticTilePtr = std::unique_ptr<StaticTile>;
+	using StaticTiles = std::unordered_map<char, StaticTilePtr>;
+	using MapTiles = std::vector<std::vector<MapTile>>;
 }
-class StandardTile {
-
-public:
-	std::string atlasmapname;
-	SharedTexture texture;
-	sf::Sprite tilesprite;
-	sf::IntRect texturerect;
-	sf::Vector2f friction;
-	StandardTile() {
-	}
-};
-using TileID = char;
-struct MapTile {
-	StandardTile* standardtile;
-	sf::Vector2f position;
-	unsigned int layer;
-};
-using StandardTilePtr = std::unique_ptr<StandardTile>;
-using StandardTiles = std::unordered_map<char, StandardTilePtr>;
-using MapTiles = std::vector<std::vector<MapTile>>;
-class Map;
-using ConfigurationReader = std::function<void(Map*, Attributes*)>;
-using ConfigurationReaders = std::unordered_map<ConfigurationData::ConfigurationType, ConfigurationReader>;
-
 class Map {
 private:
-	static void CreateConfigurationMap() {
-		ConfigurationReaders configreaders;
-		configreaders[ConfigurationData::ConfigurationType::GAME_MAP] = [](Map* map, Attributes* stream) {
-
-		};
-	}
-protected:
-	static ConfigurationReaders configurationreaders;
-
-	MapTiles maptiles;
-	StandardTiles standardtiles;
-	std::string tilefile;
-	sf::Vector2i tiledimension;
-	sf::Vector2i mapdimension;
-	unsigned int maxlayers{ 0 };
-	std::string mapname;
-	float gravity;
-	sf::Texture* background;
-	sf::RenderWindow* renderwindow;
+	MapData::StaticTiles statictiles;
+	MapData::MapTiles maptiles;
 	Manager_Texture* texturemgr;
-	std::string CreateZeroConfig() {
-
-	}
-	MapTile* GetMapTile(const unsigned int& ind1, const unsigned int& ind2);
-	static void ReadMapAttributes();
-	bool ReadStandardTiles(const std::string& tilefile);
-	void LoadMap(const std::string& mapfile);
-	void ReadConfiguration(const std::string& configurationtype, const std::string& configuration);
-	StandardTile* GetErrorTile() {
-		return nullptr;
-	}
-public:
-	Map(Manager_Texture* mgr, sf::RenderWindow* winptr);
-	MapTile* GetTile(const float& x, const float& y, const unsigned int& elevation) const;
-	sf::Vector2i GetTileSize() const;
-	void Update(const float& dT);
-	void Draw();
-};
-
-
-ConfigurationReaders readers;
-readers[ConfigurationData::CONFIGTYPE::GAME_MAP] = [](Attributes* stream, Map* map) {
-
-}
-ConfigurationReaders Map::configurationreaders[ConfigurationData::CONFIGTYPE::GAME_MAP] = [](Attributes* stream, Map* map) {
-	auto configurationrow = configurationstream.GetWord();
-	maptiles.push_back(std::vector<MapTile>{});
-	for (int i = 0; i < configurationrow.size(); ++i) {
-		MapTile tile;
-		auto standardtileexists = standardtiles.find(configurationrow[i]);
-		if (standardtileexists == standardtiles.end()) {
-			tile.standardtile = GetErrorTile();
-			LOG::Log(LOCATION::MAP, LOGTYPE::ERROR, __FUNCTION__, "Unable to find tile of TILEID char of " + std::to_string(configurationrow[i]) + "at index " + ConvertToIndexNotation(configrow, i));
+	sf::Vector2i tiledimension;
+	void ReadStandardTiles(const std::string& tilefile) {
+		using KeyProcessing::ToUpperString;
+		using KeyProcessing::ExtractAttributesToStream;
+		using namespace TileData;
+		FileReader file;
+		if (!file.LoadFile(tilefile)) {
+			LOG::Log(LOCATION::MAP, LOGTYPE::ERROR, __FUNCTION__, "Unable to open the standard tile file of name " + tilefile);
+			return;
 		}
-		else tile.standardtile = standardtileexists->second.get();
-		tile.position = sf::Vector2f{ static_cast<float>(i * tiledimension.x), static_cast<float>(configrow * tiledimension.y) };
-		maptiles.back().push_back(std::move(tile));
+		std::string DidNotReadTile{ " DID NOT READ TILE..." };
+		std::string TileFileStr{ " in tile file of name " + tilefile };
+		file.NextLine();
+		for (int i = 0; i < 2; ++i) { //we must read the tile pixel dimensions before anything else.
+			auto dimensionstream = KeyProcessing::ExtractAttributesToStream(file.GetWord());
+			auto attrtype = ToUpperString(dimensionstream.GetWord());
+			if (attrtype == "TILEDIMENSIONX") dimensionstream >> tiledimension.x;
+			else if (attrtype == "TILEDIMENSIONY") dimensionstream >> tiledimension.y;
+		}
+		if (tiledimension.x <= 0 || tiledimension.y <= 0) { LOG::Log(LOCATION::MAP, LOGTYPE::ERROR, __FUNCTION__, "Invalid tile dimensions in tile file of name " + tilefile); return; }
+		auto tileattributes = static_cast<Attributes*>(&file.GetLineStream());
+		while (!file.EndOfFile()) {
+			file.NextLine();
+			auto statictileobj = std::make_unique<StaticTile>(texturemgr);
+			char tileid = '~';
+			Attributes tileidstream(ExtractAttributesToStream(tileattributes->GetWord()));
+			try {//checking plausiblity of the TILEID.
+				if (ToUpperString(tileidstream.GetWord()) != "TILEID") throw std::string{ "Unable to find the TILEID for standard tile on line " + file.GetLineNumberString() + "." };
+				else {
+					std::string tileidstr = tileidstream.GetWord();
+					if (tileidstr.size() > 1) throw std::string{ "The char typedef for a static tile should be a single character on " + file.GetLineNumberString() + "." };
+					else if (tileidstr[0] == '~') throw std::string{ "Invalid tile char typedef - '~' is a reserved char." };
+					else if (statictiles.find(tileidstr[0]) != statictiles.end()) {
+						throw std::string{ "A static tile with TILEID '" + tileidstr + "' already exists." };
+					}
+					tileid = tileidstr[0];
+				}
+			}
+			catch (const std::string& errorstring) { //any problems with the tile id will skip the tile completely
+				LOG::Log(LOCATION::MAP, LOGTYPE::ERROR, __FUNCTION__, errorstring + TileFileStr + DidNotReadTile);
+				statictileobj.reset();
+				continue;
+			}
+			try { *tileattributes >> statictileobj.get(); } //read the remainder of the attributes into the object.
+			catch (const std::string& errorstring) {
+				if (!errorstring.empty()) {
+					Attributes errorstream(errorstring);
+					while (!errorstream.eof()) {
+						std::string errortype = errorstream.GetWord();
+						if (errortype == "SPRITESHEET") LOG::Log(LOCATION::MAP, LOGTYPE::ERROR, __FUNCTION__, "Unable to identify spritesheet for tile of ID " + std::string{ tileid } + TileFileStr + ". ERROR TEXTURE SET...");
+						else if (errortype == "TEXTURERECT") {
+							LOG::Log(LOCATION::MAP, LOGTYPE::ERROR, __FUNCTION__, "Tile of ID " + std::string{ tileid } + TileFileStr + " has invalid texture dimensions." + DidNotReadTile);
+							statictileobj->GetTextureRect().width = 32; // set to error texture dimensions
+							statictileobj->GetTextureRect().height = 32;
+						}
+					}
+				}
+			}
+			//scale the sprite texture to match the specified tile pixel dimensions.
+			sf::Sprite& tilesprite = statictileobj->GetTileSprite();
+			tilesprite.setTextureRect(statictileobj->GetTextureRect());
+			tilesprite.setScale(tiledimension.x / tilesprite.getTextureRect().width, tiledimension.y / tilesprite.getTextureRect().height); //scale the texture down to tile pixel dimension
+			statictiles[tileid] = std::move(statictileobj);
+		}
 	}
-}
 
+public:
+	Map(Manager_Texture* mgr):texturemgr(mgr){
+		ReadStandardTiles("StandardTiles.txt");
+	}
 
-
+};
 #endif
+ 

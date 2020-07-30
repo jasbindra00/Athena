@@ -45,7 +45,7 @@ public:
 		window = std::make_unique<Window>(eventmanager.get(), 1000, 1000, "MyWindow");
 		context.window = window.get();
 
-		map = std::make_unique<Map>(texturemgr.get(), window->GetRenderWindow());
+		map = std::make_unique<Map>(texturemgr.get());
 
 		
 
@@ -64,7 +64,6 @@ public:
 		window->GetRenderWindow()->clear();
 		statemanager->Draw();
 		guimgr->Draw();
-		map->Draw();
 		window->GetRenderWindow()->display();
 	
 	}

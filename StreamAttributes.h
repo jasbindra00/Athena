@@ -36,6 +36,9 @@ public:
 	void PutBackPreviousWord() {
 		seekg(previouswordpos);
 	}
+	void InsertWord() {
+
+	}
 };
 
 #endif
