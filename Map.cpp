@@ -3,7 +3,7 @@
 #include "StreamAttributes.h"
 #include "MapTile.h"
 
-
+using TileData::MapTile;
 void Map::ReadConfiguration(const std::string& configurationtype, const std::string& configuration) {
 	using namespace TileData;
 	auto ConstructIndex = [](const int& y, const int& x)->std::string {return "[" + std::to_string(y) + "][" + std::to_string(x) + "] "; };
@@ -243,6 +243,39 @@ void Map::LoadMap(const std::string& mapfile){
 }
 Map::Map(Manager_Texture* mgr) :texturemgr(mgr){
 	statictiles['0'] = std::make_unique<TileData::StaticTile>(texturemgr);
+
+	configurationreaders[ConfigurationType::GAME] = [this](const std::string& configurationrow, const int& rownum = 0)->bool {
+		std::string errorstring;
+		maptiles.push_back(std::vector<MapTile>());
+		for (int i = 0; i < configurationrow.size(); ++i) {
+			MapTile tile;
+			const auto& tileid = configurationrow[i];
+			auto statictile = statictiles.find(tileid);
+			if (statictile != statictiles.end()) tile.statictileid = tileid;
+			else { tile.statictileid = '0';	errorstring += std::string{ "[" + std::to_string(rownum) + "][" + std::to_string(i) + "] " }; }
+			maptiles.back().push_back(std::move(tile));
+		}
+		if(!errorstring.empty()) throw CustomException("Map GAME_CONFIGURATION ERROR : The TILE ID in following configuration indices were not registered : " + std::move(errorstring));
+	};
+	configurationreaders[ConfigurationType::LAYER] = [this](const std::string& configurationrow, const int& rownum )->bool {
+		std::string errorstring;
+			for (int i = 0; i < configurationrow.size(); ++i) {
+				const auto& layernum = configurationrow[i];
+				auto& tile = maptiles[rownum][i];
+				if (layernum > '0' && layernum < '3') { tile.layer = layernum; continue; }
+				tile.layer = '0';
+				errorstring += std::to_string(i) + " ";
+			}
+			if(!errorstring.empty()) throw CustomException("LAYER_MAP has a minimum layer arg of 0 and a  maximum layer arg of 3. The following tiles in the layer configuration were defaulted to 0 : " + std::move(errorstring));
+	};
+
+// 	switch (T) {
+// 	case ConfigurationType::GAME:
+// 	{ LOG::Log(LOCATION::MAP, LOGTYPE::ERROR, __FUNCTION__, "Map GAME_CONFIGURATION ERROR : The TILE ID in following configuration indices were not registered : " + errorstring); break; }
+// 	case ConfigurationType::LAYER: {LOG::Log(LOCATION::MAP, LOGTYPE::ERROR, __FUNCTION__, "Map LAYER CONFIGURATION ERROR : The LAYER NUMBER in the following configuration indices did not satisfy 0<=LAYER<=3 : " + errorstring; break;)}
+// 	case ConfigurationType::TELEPORT: {LOG::Log(LOCATION::MAP, LOGTYPE::ERROR, __FUNCTION__, "Map TELEPORT CONFIGURATION ERROR : The BINARY VALUES in the following configuration indices did not satisfy 0<=TELEPORT<=1 :" + errorstring); break; }
+// 	case ConfigurationType::DEADLY: {LOG::Log(LOCATION::MAP, LOGTYPE::ERROR, __FUNCTION__, "Map DEADLY CONFIGURATION ERROR : The BINARY VALUES in the following configuration indices did not satisfy 0<=DEADLY<=1 :" + errorstring); break; }
+// 	}
 	LoadMap("MyMap.txt");
 }
 
