@@ -33,7 +33,7 @@ public:
 		fontmgr = std::make_unique<Manager_Font>("FontPaths.txt");
 		context.fontmgr = fontmgr.get();
 
-
+		
 		guimgr = std::make_unique<Manager_GUI>(&context);
 		guimgr->CreateStateInterface(GameStateType::GAME, "MyInterface", "MyInterface.txt");
 		guimgr->SetActiveState(GameStateType::GAME);

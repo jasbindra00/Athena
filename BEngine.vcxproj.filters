@@ -311,5 +311,8 @@
     <ClInclude Include="MapTile.h">
       <Filter>Header Files\Map</Filter>
     </ClInclude>
+    <ClInclude Include="CustomException.h">
+      <Filter>Header Files\Utility</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

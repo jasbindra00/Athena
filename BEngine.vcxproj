@@ -177,6 +177,7 @@
     <ClInclude Include="Bitmask.h" />
     <ClInclude Include="Component_Position.h" />
     <ClInclude Include="Component_State.h" />
+    <ClInclude Include="CustomException.h" />
     <ClInclude Include="EntityDirection.h" />
     <ClInclude Include="EntityEventQueue.h" />
     <ClInclude Include="EntityStates.h" />

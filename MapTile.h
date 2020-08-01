@@ -6,6 +6,7 @@
 #include "StreamAttributes.h"
 #include "EnumConverter.h"
 #include "KeyProcessing.h"
+#include "CustomException.h"
 #include <iostream>
 
 namespace TileData {
@@ -55,11 +56,11 @@ namespace TileData {
 				}
 			}
 			if (tile->texturerect.width <= 0 || tile->texturerect.height <= 0) errorstring += "TEXTURERECT";
-			throw std::move(errorstring);
+			throw CustomException(errorstring);
 		}
 	};
 	struct MapTile {
-		StaticTile* statictile{ nullptr };
+		char statictileid{ '0' };
 		bool teleport{ false };
 		bool deadly{ false };
 		int layer{ 0 };
