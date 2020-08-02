@@ -6,11 +6,17 @@ class Attributes : public std::stringstream {
 private:
 /*	std::string word;*/
 	int previouswordpos{ 0 };
+	std::string currentword;
 public:
 	explicit Attributes() {
 	}
 	Attributes(const std::string& str) {
 		static_cast<std::stringstream&>(*this) << str;
+	}
+	Attributes& NextWord() {
+		previouswordpos = tellg();
+		*this >> currentword;
+		return *this;
 	}
 	void ResetStream() {
 		*static_cast<std::stringstream*>(this) = std::stringstream{};
@@ -28,10 +34,11 @@ public:
 		return w;
 	}
 	std::string GetWord() {
-		previouswordpos = tellg();
-		std::string w;
-		*this >> w;
-		return w;
+		NextWord();
+		return currentword;
+	}
+	std::string ReturnWord() {
+		return currentword;
 	}
 	void PutBackPreviousWord() {
 		seekg(previouswordpos);

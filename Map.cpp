@@ -3,73 +3,46 @@
 #include "StreamAttributes.h"
 #include "MapTile.h"
 
-using TileData::MapTile;
-void Map::ReadConfiguration(const std::string& configurationtype, const std::string& configuration) {
-	using namespace TileData;
-	auto ConstructIndex = [](const int& y, const int& x)->std::string {return "[" + std::to_string(y) + "][" + std::to_string(x) + "] "; };
-	Attributes configurationstream(configuration);
-	int configrownumber{ -1 };
-	//error strings.
-	std::string altered;
-	std::string invalidtileid;
-	std::string invalidlayer;
-	std::string invalidteleportdeadly;
+using namespace MapData;
+using namespace MapData::ConfigurationData;
+
+void Map::ReadConfiguration(const ConfigurationType& type, const std::string& configurationblock) {
+	ConfigurationReader reader = configurationreaders[type];
+	Attributes configurationstream(configurationblock);
+	std::string errorstring;
+	std::string alteredstring;
+	int rownumber{ -1 };
 	while (!configurationstream.eof()) {
-		++configrownumber;
-		std::string configrow = configurationstream.GetWord();
-		if (configrow.size() != mapdimension.x) {
-			std::string altered;
-			if (configrow.size() < mapdimension.x) {
-				std::string fill(mapdimension.x - configrow.size(), '0');
-				configrow.append(std::move(fill));
-			}
-			else {
-				configrow = configrow.substr(0, mapdimension.x);
-				altered.append(ConstructIndex(configrownumber, 0));
-			}
-			for (int k = 0; k < configrow.size(); ++k) {
-				auto& val = configrow[k];
-				using KeyProcessing::ToUpperString;
-				if (ToUpperString(configurationtype) == "GAME_MAP") {
-					MapTile tile;
-					auto foundstatic = statictiles.find(val);
-					if (foundstatic != statictiles.end()) {
-						tile.statictileid = val;
-						maptiles[configrownumber - 1].push_back(std::move(tile));
-						continue;
-					}
-					tile.statictileid = '0';
-					maptiles[configrownumber - 1].push_back(std::move(tile));
-					invalidtileid.append(ConstructIndex(configrownumber, k));
+		++rownumber;
+		std::string configurationrow(configurationstream.GetWord());
+		if (configurationrow.empty()) {
+			std::cout<<std::endl;
+		}
+		auto changerecord = FixConfigurationRow(type, configurationrow);
+		if (!changerecord.empty()) LOG::Log(LOCATION::MAP, LOGTYPE::ERROR, __FUNCTION__, "Map configuration row number was changed in the following ways : " + changerecord);
+		{//ensuring that all the rows match the specified map dimension.
+			if (configurationrow.size() != mapdimension.x) {
+				std::string altered;
+				if (configurationrow.size() < mapdimension.x) {
+					std::string fill(mapdimension.x - configurationrow.size(), '0');
+					configurationrow.append(std::move(fill));
 				}
 				else {
-					auto& foundtile = maptiles[configrownumber][k];
-					if (ToUpperString(configurationtype) == "LAYER_MAP") {
-						auto& foundtile = maptiles[configrownumber][k];
-						if (val > '0' && val < '3') {
-							foundtile.layer = val;
-							continue;
-						}
-						invalidlayer.append(ConstructIndex(configrownumber, k));
-					}
-					else if (val == '0' || val == '1') {
-						if (ToUpperString(configurationtype) == "TELEPORT_MAP") foundtile.teleport = val;
-						else if (ToUpperString(configurationtype) == "DEADLY_MAP")foundtile.deadly = val;
-						continue;
-					}
-					invalidteleportdeadly.append(ConstructIndex(configrownumber, k));
+					configurationrow = configurationrow.substr(0, mapdimension.x);
+					alteredstring.append(std::to_string(rownumber) + " "); //log.
 				}
 			}
+			try { reader(std::move(configurationrow), rownumber); }
+			catch (const CustomException& exception) {
+				auto rowerror = static_cast<std::string>(exception.what());
+				errorstring.append(rowerror);
+			}
 		}
-
-		if (!invalidlayer.empty()) LOG::Log(LOCATION::MAP, LOGTYPE::ERROR, __FUNCTION__, "LAYER_MAP has a minimum layer arg of 0 and a  maximum layer arg of 3. The following tiles in the layer configuration were defaulted to 0 : " + invalidlayer);
-		if (!invalidteleportdeadly.empty()) LOG::Log(LOCATION::MAP, LOGTYPE::ERROR, __FUNCTION__, "TELEPORT_MAP / DEADLY_MAP args must be binary to represent true or false. The following tiles in the teleport and or deadly configuration were defaulted to 0 : " + invalidteleportdeadly);
-		if (!invalidtileid.empty()) LOG::Log(LOCATION::MAP, LOGTYPE::ERROR, __FUNCTION__, "GAME_MAP configuration had unregistered TILEID's. Ensure that you register the tile before creating a GAME_MAP configuration. The following tiles were defaulted to error tiles : " + invalidtileid);
-
 	}
+	if (!alteredstring.empty()) LOG::Log(LOCATION::MAP, LOGTYPE::ERROR, __FUNCTION__, "Map CONFIGURATION ERROR : The following configuration indices were truncated/extended due to a mismatch between the size and the specified map X dimension : " + alteredstring);
+	else if (!errorstring.empty()) LOG::Log(LOCATION::MAP, LOGTYPE::ERROR, __FUNCTION__, std::move(errorstring));
 }
-
-bool Map::ReadStandardTiles(const std::string& tilefile){
+bool Map::ReadStaticTiles(const std::string& tilefile){
 	using KeyProcessing::ToUpperString;
 	using KeyProcessing::ExtractAttributesToStream;
 	using namespace TileData;
@@ -88,10 +61,9 @@ bool Map::ReadStandardTiles(const std::string& tilefile){
 		else if (attrtype == "TILEDIMENSIONY") dimensionstream >> tiledimension.y;
 	}
 	if (tiledimension.x <= 0 || tiledimension.y <= 0) { LOG::Log(LOCATION::MAP, LOGTYPE::ERROR, __FUNCTION__, "Invalid tile dimensions in tile file of name " + tilefile); return false; }
-	file.NextLine();
 	auto tileattributes = static_cast<Attributes*>(&file.GetLineStream());
-	while (!file.EndOfFile()) {
-		file.NextLine();
+	std::string line;
+	while (file.NextLine().GetFileStream()) {
 		auto statictileobj = std::make_unique<StaticTile>(texturemgr);
 		char tileid = '0';
 		Attributes tileidstream(ExtractAttributesToStream(tileattributes->GetWord()));
@@ -101,9 +73,7 @@ bool Map::ReadStandardTiles(const std::string& tilefile){
 				std::string tileidstr = tileidstream.GetWord();
 				if (tileidstr.size() > 1) throw CustomException{ "The char typedef for a static tile should be a single character on " + file.GetLineNumberString() + "." };
 				else if (tileidstr[0] == '0') throw CustomException{ "Invalid tile char typedef - '0' is a reserved char." };
-				else if (statictiles.find(tileidstr[0]) != statictiles.end()) {
-					throw CustomException{ "A static tile with TILEID '" + tileidstr + "' already exists." };
-				}
+				else if (statictiles.find(tileidstr[0]) != statictiles.end()) throw CustomException{ "A static tile with TILEID '" + tileidstr + "' already exists." };
 				tileid = tileidstr[0];
 			}
 		}
@@ -135,115 +105,107 @@ bool Map::ReadStandardTiles(const std::string& tilefile){
 	}
 	return true;
 }
-
-void Map::LoadMap(const std::string& mapfile){
+void Map::LoadMap(const std::string& mapfile) {
+	std::string errorstart = "MAP NAME : " + mapfile + ". ";
 	using KeyProcessing::ToUpperString;
-	std::string mapstr = " in map file of name " + mapfile;
 	FileReader file;
 	if (!file.LoadFile(mapfile)) {
-		LOG::Log(LOCATION::MAP, LOGTYPE::ERROR, __FUNCTION__, "Unable to open map file of name " + mapfile);
+		LOG::Log(LOCATION::MAP, LOGTYPE::ERROR, __FUNCTION__, "Unable to open the mapfile of name " + mapfile);
 		return;
 	}
 	file.NextLine();
-	try {
-		Attributes keystream = KeyProcessing::ExtractAttributesToStream(file.GetWord()); //
-		if (ToUpperString(keystream.GetWord()) != "TILEFILE") throw CustomException("Unable to read the TILEFILE map attribute " + mapstr);
-		if (!ReadStandardTiles(keystream.PeekWord())) throw CustomException("Unable to read the tile file of name " + keystream.GetWord() + mapstr);
-		for (int i = 0; i < 2; ++i) {//read map dimensions
-			keystream = KeyProcessing::ExtractAttributesToStream(file.GetWord());
-			std::string attributetype = keystream.GetWord();
-			if (attributetype == "MAPDIMENSIONX") keystream >> mapdimension.x;
-			else if (attributetype == "MAPDIMENSIONY") keystream >> mapdimension.y;
-		}
-		if (mapdimension.x <= 0 || mapdimension.y <= 0) throw CustomException("Invalid map dimensions " + mapstr + ". Ensure that map dimensions are positive integers. Exiting map read...");
-	}
-	catch (const CustomException& exception) {
-		LOG::Log(LOCATION::MAP, LOGTYPE::ERROR, __FUNCTION__, std::string{ exception.what() } + ". Exiting map read...");
-		return;
-	}
-	for (int i = 0; i < mapdimension.y; ++i) {
-		maptiles.push_back(std::vector<TileData::MapTile>());
-	}
-	file.NextLine();
-	auto& filestream = file.GetFileStream();
-	while (!file.EndOfFile()) {
-		Attributes keystream = KeyProcessing::ExtractAttributesToStream(file.GetWord());
-		if (keystream.GetWord() != "START_CONFIGURATION") { //we should be at the start of a config.
-			LOG::Log(LOCATION::MAP, LOGTYPE::ERROR, __FUNCTION__, "Unable to find the start of the current configuration " + mapstr + " - skipping configuration...");
-			if (!file.SeekToLineKey("{START_CONFIGURATION,x}", false, true, false)) { //no other start configuration exists
-				LOG::Log(LOCATION::MAP, LOGTYPE::ERROR, __FUNCTION__, "Unable to find any subsequent configurations " + mapstr + ". Exiting map read...");
-				return;
-			}
-			keystream = KeyProcessing::ExtractAttributesToStream(file.GetWord());
-			keystream.GetWord(); //seekg to next word
-		}
-		int configstart = filestream.tellg(); //incase we need to backtrack because of user error.
-		std::string configurationtype = keystream.GetWord();
-		std::string configurationblock((mapdimension.x * mapdimension.y) + mapdimension.y, '0');
-		filestream.readsome(configurationblock.data(), std::streamsize(mapdimension.x * mapdimension.y) + mapdimension.y); //read the chunk of data that which SHOULD be the configuration
-		auto y = file.NextLine();
-		try {if (file.ReturnLine() != KeyProcessing::ConstructKey("END_CONFIGURATION", configurationtype)) { //if by the end of reading the chunk, we are not at an end config
-				//then there exists a dichotomy; the user may have inserted an over or undersized configuration, in which case we may have over or undershot another configuration
-				filestream.clear();
-				filestream.seekg(configstart); //go back to where the configuration started.
-				int configurationrow{ 0 };
-				std::pair<bool, std::string> iskey(false, "");
-				while (!file.EndOfFile() && !iskey.first) { //read line by line, until we reach a key.
-					iskey = KeyProcessing::CheckKeySyntax(file.NextLine());
-					++configurationrow;
+	try {bool tilefile = false, mapdimensionx = false, mapdimensiony = false;
+			Attributes linestream(file.ReturnLine());
+			auto x = file.ReturnLine();
+			while (!linestream.eof()) {
+				Attributes keystream(KeyProcessing::ExtractAttributesToStream(linestream.GetWord()));
+				std::string keytype = keystream.GetWord();
+				if (keytype == "TILEFILE") {
+					if (ReadStaticTiles(keystream.PeekWord())) tilefile = true;
+					else throw CustomException("Unable to open the tilefile of name " + keystream.GetWord());
 				}
-				std::string errorstring;
-				int alterrows = mapdimension.y - (configurationrow - 1); //measuring the length of the configuration.
-				if (alterrows != 0) errorstring += "CHANGE_CONFIG "; //if config size doesn't match specified dimensions, config size := wrong. -ve:= truncate n rows. +ve := expand n rows.
-				if (file.EndOfFile()) errorstring += "MISSING_END_CONFIGURATION "; //if at end of file, then this means we are missing the end config key.
-				if (iskey.first) {
-					std::string configmark = Attributes(iskey.second).GetWord();
-					if (configmark == "START_CONFIGURATION" || configmark != "END_CONFIGURATION") {
-						if (configmark != "END_CONFIGURATION" && configmark != "START_CONFIGURATION") { //invalid key.
-							LOG::Log(LOCATION::MAP, LOGTYPE::ERROR, __FUNCTION__, "Unable to identify entry in line number " + file.GetLineNumberString() + " " + mapstr);
+				else if (keytype == "MAPDIMENSIONX" || keytype == "MAPDIMENSIONY") {
+					std::string dimensionstr = keystream.GetWord();
+					if (KeyProcessing::IsOnlyNumeric(keystream.PeekWord())) {
+						if (std::stoi(dimensionstr) > 0) {
+							if (keytype == "MAPDIMENSIONX") { mapdimension.x = std::stoi(dimensionstr); mapdimensionx = true; }
+							else if (keytype == "MAPDIMENSIONY") { mapdimension.y = std::stoi(dimensionstr); mapdimensiony = true; }
 						}
-						errorstring += "MISSING_END_CONFIGURATION "; //if we are at a new start config, then we must be missing an end_config key.
-						throw CustomException(std::move(errorstring));
+						else throw CustomException("Map dimensions are not positive.");
 					}
-				}
-				if (!errorstring.empty()) {
-					CustomException exception(std::move(errorstring));
-					exception.SetNum(alterrows);
-					file.NextLine();
-					throw std::move(exception);
+					else throw CustomException("Map dimensions are not integers.");
 				}
 			}
-			ReadConfiguration(std::move(configurationtype), std::move(configurationblock));
+			if (!(tilefile && mapdimensionx && mapdimensiony)) throw CustomException("All three {TILEFILE,file} {MAPDIMENSIONX,x} {MAPDIMENSIONY,y} keys must be present on the first line before map read can initiate.");
+			file.NextLine();
+			if (file.ReturnLine() != "{START_CONFIGURATION,GAME_MAP}") throw CustomException("Ensure that the GAME_MAP configuration is the first argument configuration.");
+		}
+		catch (const CustomException& exception) { LOG::Log(LOCATION::MAP, LOGTYPE::ERROR, __FUNCTION__, errorstart + std::string{ exception.what() } + ". Exiting map file read..."); return; }	
+		auto& filestream = file.GetFileStream();
+		while (!file.EndOfFile()) {
+			Attributes linestream(KeyProcessing::ExtractAttributesToStream(file.ReturnLine()));
+			if (linestream.GetWord() == "START_CONFIGURATION") {
+				int configstartpos = filestream.tellg();
+				std::string configstringtype = linestream.GetWord();
+				ConfigurationType configtype = configurationconverter(configstringtype);
+				if (configtype != ConfigurationType::NULLTYPE) {
+					std::string configurationblock((mapdimension.x * mapdimension.y) + mapdimension.y, '0');
+					filestream.readsome(configurationblock.data(), std::streamsize(mapdimension.x * mapdimension.y) + mapdimension.y);
+
+					linestream = KeyProcessing::ExtractAttributesToStream(file.NextLine().ReturnLine());
+					if (linestream.GetWord() != "END_CONFIGURATION") {
+						LOG::Log(LOCATION::MAP, LOGTYPE::ERROR, __FUNCTION__, "Unable to find the {END_CONFIGURATION,x} key for configuration of type " + configstringtype);
+						filestream.clear();
+						filestream.seekg(configstartpos);
+						file.SeekToLineKey("{START_CONFIGURATION,x}", false, true, false); //go to the next start configuration
+					}
+					ReadConfiguration(configtype, configurationblock);
+				}
+			}
 			file.NextLine();
 		}
-		catch (const CustomException& exception) {
-			Attributes errorstream(static_cast<std::string>(exception.what()));
-			std::string errortype = errorstream.GetWord();
-			while (!errorstream.eof()) {
-				if (errortype == "MISSING_END_CONFIGURATION") LOG::Log(LOCATION::MAP, LOGTYPE::ERROR, __FUNCTION__, "Missing {END_CONFIGURATION,x} key on line number " + file.GetLineNumberString() + mapstr);
-				if (errortype == "CHANGE_CONFIG") {
-					auto nrowchange = exception.GetNum();
-					if (nrowchange > 0) {
-						LOG::Log(LOCATION::MAP, LOGTYPE::ERROR, __FUNCTION__, "Configuration is " + std::to_string(nrowchange) + " rows too small " + mapstr + ". Defaulting the remaining required rows to 0...");
-						//at this point, the mapdimensionmax - nrowchange row and onwards will be filled with junk values, by leakage from another configuration.
-						auto pos = ((mapdimension.y - nrowchange) * (mapdimension.x + 1));
-						std::string defaultrow(mapdimension.x, '0'); defaultrow.push_back('\n');
-						configurationblock.erase(configurationblock.begin() + pos, configurationblock.end());
-						for (int k = 0; k < nrowchange; ++k) {
-							configurationblock.append(defaultrow);
-						}
-					}
-					else if (nrowchange < 0) LOG::Log(LOCATION::MAP, LOGTYPE::ERROR, __FUNCTION__, "Configuration is " + std::to_string(nrowchange) + " rows too big " + mapstr + ". Ignoring the remaining rows...");
+		
+	}
+std::string Map::FixConfigurationRow(const ConfigurationType& type, std::string& configurationrow)
+{
+	std::string recordstring;
+	if (configurationrow.size() != mapdimension.x) {
+		if (configurationrow.size() > mapdimension.x) { configurationrow = configurationrow.substr(0, mapdimension.x); recordstring += "TRUNCATED "; }
+		else if (configurationrow.size() < mapdimension.x) { configurationrow += std::string(mapdimension.x - configurationrow.size(), '0');  recordstring += "EXPANDED "; }
+	}
+	bool altered = false;
+	if (type == ConfigurationType::GAME) {
+		for (auto& c : configurationrow) {
+			bool exists = false;
+			for (auto& statictile : statictiles) {
+				if (c == statictile.first) {
+					exists = true;
+					break;
 				}
-				errortype = errorstream.GetWord();
 			}
-			ReadConfiguration(std::move(configurationtype), std::move(configurationblock));
+			if (!exists) {
+				c = '0';
+				altered = true;
+			}
 		}
 	}
+	else if (type == ConfigurationType::LAYER) {
+		for (auto& c : configurationrow) {
+			if (c < '0' || c > '3') c = '0';
+			altered = true; 
+		}
+	}
+	else if (type == ConfigurationType::DEADLY || type == ConfigurationType::TELEPORT) {
+		for (auto& c : configurationrow) {
+			if (c != '0' || c != '1') { c = '0'; altered = true; }
+		}
+	}
+	if (altered) recordstring += "ADJUSTED ";
+	return recordstring;
 }
-Map::Map(Manager_Texture* mgr) :texturemgr(mgr){
-	statictiles['0'] = std::make_unique<TileData::StaticTile>(texturemgr);
 
+Map::Map(Manager_Texture* mgr, sf::RenderWindow* render) :texturemgr(mgr),window(render){
+	statictiles['0'] = std::make_unique<TileData::StaticTile>(texturemgr);
 	configurationreaders[ConfigurationType::GAME] = [this](const std::string& configurationrow, const int& rownum = 0)->bool {
 		std::string errorstring;
 		maptiles.push_back(std::vector<MapTile>());
@@ -262,20 +224,29 @@ Map::Map(Manager_Texture* mgr) :texturemgr(mgr){
 			for (int i = 0; i < configurationrow.size(); ++i) {
 				const auto& layernum = configurationrow[i];
 				auto& tile = maptiles[rownum][i];
-				if (layernum > '0' && layernum < '3') { tile.layer = layernum; continue; }
+				if (layernum >= '0' && layernum <= '3') { tile.layer = layernum; continue; }
 				tile.layer = '0';
 				errorstring += std::to_string(i) + " ";
 			}
 			if(!errorstring.empty()) throw CustomException("LAYER_MAP has a minimum layer arg of 0 and a  maximum layer arg of 3. The following tiles in the layer configuration were defaulted to 0 : " + std::move(errorstring));
 	};
-
-// 	switch (T) {
-// 	case ConfigurationType::GAME:
-// 	{ LOG::Log(LOCATION::MAP, LOGTYPE::ERROR, __FUNCTION__, "Map GAME_CONFIGURATION ERROR : The TILE ID in following configuration indices were not registered : " + errorstring); break; }
-// 	case ConfigurationType::LAYER: {LOG::Log(LOCATION::MAP, LOGTYPE::ERROR, __FUNCTION__, "Map LAYER CONFIGURATION ERROR : The LAYER NUMBER in the following configuration indices did not satisfy 0<=LAYER<=3 : " + errorstring; break;)}
-// 	case ConfigurationType::TELEPORT: {LOG::Log(LOCATION::MAP, LOGTYPE::ERROR, __FUNCTION__, "Map TELEPORT CONFIGURATION ERROR : The BINARY VALUES in the following configuration indices did not satisfy 0<=TELEPORT<=1 :" + errorstring); break; }
-// 	case ConfigurationType::DEADLY: {LOG::Log(LOCATION::MAP, LOGTYPE::ERROR, __FUNCTION__, "Map DEADLY CONFIGURATION ERROR : The BINARY VALUES in the following configuration indices did not satisfy 0<=DEADLY<=1 :" + errorstring); break; }
-// 	}
 	LoadMap("MyMap.txt");
+}
+
+void Map::Draw(){
+	int y = 0;
+	for (auto& row : maptiles)
+	{
+		int x = 0;
+		for (auto& col : row)
+		{
+			auto& statictile = statictiles.at(col.statictileid);
+			statictile->GetTileSprite().setPosition(sf::Vector2f{ static_cast<float>(x * 32), static_cast<float>(y * 32) });
+			window->draw(statictile->GetTileSprite());
+			++x;
+			
+		}
+		++y;
+	}
 }
 

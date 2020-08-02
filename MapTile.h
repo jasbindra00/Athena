@@ -39,6 +39,9 @@ namespace TileData {
 				texturemgr->RequestResourceDealloc(atlasmapname);
 			}
 		}
+		std::pair<bool, std::string> ReadIn(const std::string& distilledkey) {
+
+		}
 		friend Attributes& operator>>(Attributes& stream, StaticTile* tile) {
 			std::string errorstring;
 			while (!stream.eof()) {
@@ -57,6 +60,9 @@ namespace TileData {
 			}
 			if (tile->texturerect.width <= 0 || tile->texturerect.height <= 0) errorstring += "TEXTURERECT";
 			throw CustomException(errorstring);
+		}
+		friend bool operator>>(const std::string& distilledkey, StaticTile* tile) {
+
 		}
 	};
 	struct MapTile {

@@ -14,6 +14,15 @@ private:
 	int linenumber;
 	int previouspos;
 public:
+
+	std::vector<std::pair<bool,std::string>> ReadKeyLine() const {
+		Attributes linestream(line);
+		std::vector<std::pair<bool, std::string>> result;
+		while (!linestream.eof()) {
+			result.push_back(KeyProcessing::CheckKeySyntax(linestream.GetWord()));
+		}
+		return result;
+	}
 	bool LoadFile(const std::string& name) {
 		if (file.is_open()) file.close();
 		file.open(name, std::ios::in);
@@ -26,11 +35,11 @@ public:
 	}
 	int GetLineNumber() { return linenumber; }
 	std::string GetLineNumberString(){ return std::to_string(linenumber); }
-	std::string NextLine() {
+	FileReader& NextLine() {
 		std::getline(file, line);
 		linestream.PopulateStream(line);
 		++linenumber;
-		return line;
+		return *this;
 	}
 	void GotoLine(const unsigned int& num) {
 		file.seekg(std::ios::beg);
@@ -54,6 +63,7 @@ public:
 		linestream >> word;
 		return word;
 	}
+
 	std::string PeekWord() {
 		return linestream.PeekWord();
 	}
@@ -80,7 +90,8 @@ public:
 			attr2str = keystream.GetWord();
 		}
 		while (!file.eof()) {
-			Attributes linestream = KeyProcessing::ExtractAttributesToStream(NextLine());
+			
+			Attributes linestream = KeyProcessing::ExtractAttributesToStream(NextLine().ReturnLine());
 			std::string lineattr1 = linestream.PeekWord();
 			std::string lineattr2 = linestream.PeekWord();
 			if (attr1 && attr2) {
