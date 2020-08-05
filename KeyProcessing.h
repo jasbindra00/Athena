@@ -3,7 +3,12 @@
 #include <string>
 #include <algorithm>
 #include "StreamAttributes.h"
+#include <vector>
+
 namespace KeyProcessing {
+	using Key = std::pair<std::string, std::string>;
+	using Keys = std::vector<Key>;
+
 	static std::string ToLowerString(const std::string& str) {
 		auto tmp = str;
 		std::for_each(tmp.begin(), tmp.end(), [](char& c) {
@@ -52,7 +57,7 @@ namespace KeyProcessing {
 		}
 		return { false,true };
 	}
-	static std::pair<bool, std::string> CheckKeySyntax(const std::string& key) {
+	static std::pair<bool, std::string> VerifyKey(const std::string& key) {
 		auto reduction = RemoveWhiteSpaces(key);
 		std::string extracted;
 		reduction.erase(std::remove_if(reduction.begin(), reduction.end(), [&extracted](char& c) {
@@ -61,15 +66,49 @@ namespace KeyProcessing {
 			if (c == '}') return false;
 			else { extracted.push_back(c); return true; }
 			}), reduction.end());
-		return (reduction != "{,}") ? std::make_pair(false, std::move(extracted)) : std::make_pair(true, std::move(extracted));
+		return(reduction != "{,}") ? std::make_pair(false, std::move(extracted)) : std::make_pair(true, std::move(extracted));
 	}
-	static Attributes ExtractAttributesToStream(const std::string& key) {
-		return Attributes(CheckKeySyntax(key).second);
+	static Keys ExtractValidKeys(const std::string& line) {
+		Keys keys;
+		Attributes linestream(line);
+		while (linestream.NextWord()) {
+			std::pair<bool, std::string> isvalid = VerifyKey(linestream.ReturnWord());
+			if (isvalid.first) {
+				Attributes keystream(isvalid.second);
+				std::string arg1 = keystream.GetWord();
+				std::string arg2 = keystream.GetWord();
+				keys.emplace_back(std::make_pair(std::move(arg1), std::move(arg2)));
+			}
+		}
+		return keys;
 	}
-	static std::string ConstructKey(const std::string& arg1, const std::string& arg2) {
+	static Attributes DistillValuesToStream(const Keys& keys, const char& emptyplaceholder) {
+		Attributes stream;
+		for (const auto& key : keys) {
+			if (key.second.empty()) stream << emptyplaceholder;
+			else stream << key.second;
+			stream << " ";
+		}
+	}
+	static Keys SortKeys(const std::string& keytypeorder, const std::string& line, const bool& fill) {
+		Keys validkeys = ExtractValidKeys(line);
+		Keys sortedkeys;
+		Attributes keyorderstream(keytypeorder);
+		while (keyorderstream.NextWord()) {
+			std::string keytype = keyorderstream.ReturnWord();
+			auto keyexists = std::find_if(validkeys.begin(), validkeys.end(), [&keytype](const Key& key) {
+				return key.first == keytype;
+				});
+			if (keyexists != validkeys.end()) sortedkeys.emplace_back(*keyexists); //key exists
+			else if (fill) sortedkeys.emplace_back(Key{ keytype,"" }); //if the required key doesnt exist, fill it with an empty key.
+		}
+		return sortedkeys;
+	}
+	static std::string ConstructKey(const std::string & arg1, const std::string & arg2) {
 		auto arg1tmp = RemoveWhiteSpaces(arg1);
 		auto arg2tmp = RemoveWhiteSpaces(arg2);
 		return std::string{ "{" + std::move(arg1tmp) + "," + std::move(arg2tmp) + "}" };
 	}
+	
 }
 #endif

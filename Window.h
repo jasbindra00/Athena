@@ -18,11 +18,15 @@ public:
 		renderwindow = std::make_unique<sf::RenderWindow>(sf::VideoMode(winwidth, winheight), winname, sf::Style::Default);
 	}
 	void Update(const float& dT) {
-		//need to look for events.
 		sf::Event e;
 		while (renderwindow->pollEvent(e)) {
 			if (e.type == sf::Event::EventType::Closed) renderwindow->close();
 			eventmanager->HandleEvent(e, renderwindow.get());
+		}
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::S)) {
+			sf::View s = renderwindow->getView();
+			s.zoom(1.0001);
+			renderwindow->setView(s);
 		}
 		eventmanager->Update(renderwindow.get());
 

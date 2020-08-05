@@ -39,30 +39,12 @@ namespace TileData {
 				texturemgr->RequestResourceDealloc(atlasmapname);
 			}
 		}
-		std::pair<bool, std::string> ReadIn(const std::string& distilledkey) {
-
-		}
-		friend Attributes& operator>>(Attributes& stream, StaticTile* tile) {
-			std::string errorstring;
-			while (!stream.eof()) {
-				auto pos = stream.tellg();
-				Attributes keystream = KeyProcessing::ExtractAttributesToStream(stream.GetWord());
-				std::string attributetype = keystream.GetWord();
-				if (attributetype == "FRICTIONX") keystream>>tile->friction.x;
-				else if (attributetype == "FRICTIONY") keystream >> tile->friction.y;
-				else if (attributetype == "TOPLEFTX") keystream >> tile->texturerect.left;
-				else if (attributetype == "TOPLEFTY") keystream >> tile->texturerect.top;
-				else if (attributetype == "TEXTURESIZEX") keystream >> tile->texturerect.width;
-				else if (attributetype == "TEXTURESIZEY") keystream >> tile->texturerect.height;
-				else if (attributetype == "SPRITESHEET") {
-					if (!tile->SetTexture(keystream.GetWord())) errorstring.append("SPRITESHEET ");
-				}
-			}
-			if (tile->texturerect.width <= 0 || tile->texturerect.height <= 0) errorstring += "TEXTURERECT";
-			throw CustomException(errorstring);
-		}
-		friend bool operator>>(const std::string& distilledkey, StaticTile* tile) {
-
+		void InitTile(const Keys& keys) {
+			Attributes keyvalues = KeyProcessing::DistillValuesToStream(keys, '0');
+			std::string errorstring{ "" };
+			keyvalues >> texturerect.width >> texturerect.height >> texturerect.left >> texturerect.top >> friction.x >> friction.y >> atlasmapname;
+			if (texturerect.width <= 0 || texturerect.height <= 0 || !texturemgr->RequestResource(atlasmapname)) errorstring += "TEXTURERECT ";
+			if (!errorstring.empty()) throw CustomException(std::move(errorstring));
 		}
 	};
 	struct MapTile {

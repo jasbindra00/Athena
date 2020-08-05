@@ -47,7 +47,7 @@ private:
 	sf::Vector2i mapdimension{ 0,0 };
 	unsigned int maxlayers;
 
-	void ReadConfiguration(const ConfigurationType& type, const std::string& configurationblock);
+	void ReadConfiguration(const ConfigurationType& type, const int& layernum, const std::string& configurationblock);
 	bool ReadStaticTiles(const std::string& tilefile);
 	void LoadMap(const std::string& mapfile);
 	std::string FixConfigurationRow(const ConfigurationType& type, std::string& configurationrow);
