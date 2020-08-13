@@ -161,9 +161,9 @@ void Manager_Event::LoadBindings(const std::string& filename) {
 			}
 			if (err) continue;
 		}
-		GameStateData::GameStateType gamestate = GameStateData::converter(keys.at("GAMESTATE"));
-		std::string bindingtype = keys.at("BINDINGTYPE");
-		std::string bindingname = keys.at("BINDINGNAME");
+		GameStateData::GameStateType gamestate = GameStateData::converter(keys.find("GAMESTATE")->second);
+		std::string bindingtype = keys.find("BINDINGTYPE")->second;
+		std::string bindingname = keys.find("BINDINGNAME")->second;
 		//check if the essential keys have valid args.
 		try{
 			if (gamestate == GameStateData::GameStateType::NULLSTATE)throw CustomException("Unable to identify binding Game State");
@@ -186,7 +186,6 @@ void Manager_Event::LoadBindings(const std::string& filename) {
 		catch (const CustomException& exception) {
 			LOG::Log(LOCATION::MANAGER_EVENT, LOGTYPE::ERROR, __FUNCTION__, std::string{ exception.what() });
 		}
-		LOG::Log(LOCATION::MANAGER_EVENT, LOGTYPE::ERROR, __FUNCTION__, "Unable to recognise the binding type on line " + file.GetLineNumberString());
 	}
 	file.CloseFile();
 }

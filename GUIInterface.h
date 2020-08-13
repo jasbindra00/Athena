@@ -42,7 +42,7 @@ public:
 	void DefocusTextfields() {
 		for (auto& elt : elements) {
 			if (elt.second->GetType() == GUIType::TEXTFIELD) {
-				elt.second->OnNeutral();
+				if(elt.second->GetActiveState() != GUIState::NEUTRAL) elt.second->OnNeutral();
 			}
 			else if (elt.second->GetType() == GUIType::WINDOW) {
 				static_cast<GUIInterface*>(elt.second.get())->DefocusTextfields();
@@ -75,7 +75,7 @@ public:
 	virtual void ApplyLocalPosition() override;
 
 	virtual void ReadIn(const KeyProcessing::Keys& keys) override;
-	Manager_GUI* GetGUIManager() const;
+
 
 	virtual ~GUIInterface();
 	

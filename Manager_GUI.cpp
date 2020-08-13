@@ -34,7 +34,7 @@ GUIStateStyles Manager_GUI::CreateStyleFromFile(const std::string& stylefile) {
 		LOG::Log(LOCATION::MANAGER_GUI, LOGTYPE::ERROR, __FUNCTION__, "Unable to open the style file of name " + stylefile);
 		return styles;
 	}
-	while (!file.NextLine().GetFileStream()) {
+	while (file.NextLine().GetFileStream()) {
 		auto currentstate = GUIState::NEUTRAL;{//conv scope to function
 			auto currentword = file.GetWord();
 			if (currentword == "GUIState") {
@@ -67,8 +67,8 @@ GUIStateStyles Manager_GUI::CreateStyleFromFile(const std::string& stylefile) {
 }
 GUIElementPtr Manager_GUI::CreateElement(GUIInterface* parent, const Keys& keys){
 	using KeyProcessing::KeyPair;
-	std::string elttype = keys.at("ELEMENTTYPE");
-	std::string stylefile = keys.at("STYLEFILE");
+	std::string elttype = keys.find("ELEMENTTYPE")->second;
+	std::string stylefile = keys.find("STYLEFILE")->second;
 	if (elttype == "NEWINTERFACE" || elttype == "NESTEDINTERFACE") return std::make_unique<GUIInterface>(parent, this, CreateStyleFromFile(stylefile), keys);
 	else {
 		auto guielementtype = GUIData::GUITypeData::converter(elttype);
@@ -101,12 +101,13 @@ GUIInterfacePtr Manager_GUI::CreateInterfaceFromFile(const std::string& interfac
 
 	while (file.NextLine().GetFileStream()) {
 		Keys linekeys = KeyProcessing::ExtractValidKeys(file.ReturnLine());
-		KeyProcessing::FillMissingKeys(std::vector<KeyPair>{ {"ELEMENTTYPE", "ERROR"}, { "STYLEFILE", "ERROR" }, { "ELEMENTNAME", "ERROR" },
-			{ "POSITIONX","0" }, { "POSITIONY","0" }, { "SIZEX","50" }, { "SIZEY","50" }}, linekeys);
+		KeyProcessing::FillMissingKeys(std::vector<KeyPair>{ {"ELEMENTTYPE", "FATALERROR"}, { "STYLEFILE", "FATALERROR" }, { "ELEMENTNAME", "FATALERROR" },
+			{ "POSITIONX","ERROR" }, { "POSITIONY","ERROR" }, { "POSITIONX%", "ERROR" }, { "POSITIONY%", "ERROR" }, { "SIZEX", "ERROR" }, { "SIZEY","ERROR" },
+			{ "SIZEX%", "ERROR" }, { "SIZEY%", "ERROR" }}, linekeys);
 		{
 			bool err = false;
 			for (auto& key : linekeys) {
-				if (key.second == "ERROR") {
+				if (key.second == "FATALERROR") {
 					LOG::Log(LOCATION::MAP, LOGTYPE::ERROR, __FUNCTION__, "Invalid essential key " + KeyProcessing::ConstructKeyStr(key.first, key.second) + " for GUIElement initialisation on line " + file.GetLineNumberString() + appenderrorstr+ "DID NOT READ ELEMENT..");
 					err = true;
 				}
@@ -122,7 +123,7 @@ GUIInterfacePtr Manager_GUI::CreateInterfaceFromFile(const std::string& interfac
 			continue;
 		}
 		if (dynamic_cast<GUIInterface*>(element.get())) {//if the element is an interface
-			std::string elttype = linekeys.at("ELEMENTTYPE");
+			std::string elttype = linekeys.find("ELEMENTTYPE")->second;
 			//create a new structure line
 			interfacehierarchy.push_back(std::make_pair(elttype,std::vector<GUIElementPtr>{}));
 			//this is now the leading interface. subsequent nested interfaces will be relative to this one.
@@ -223,6 +224,7 @@ void Manager_GUI::HandleEvent(const sf::Event& evnt, sf::RenderWindow* winptr) {
 				interfaceobj.second->OnLeave();
 			}
 		}
+		break;
 	}
 	case EventType::MOUSERELEASED: {
 		for (auto& interfaceobj : activeinterfaces) {
@@ -230,12 +232,14 @@ void Manager_GUI::HandleEvent(const sf::Event& evnt, sf::RenderWindow* winptr) {
 				interfaceobj.second->OnRelease();
 			}
 		}
+		break;
 	}
 	case EventType::TEXTENTERED: {
 		if (activetextfield != nullptr) {
 			activetextfield->AppendChar(evnt.text.unicode);
 			std::cout << activetextfield->GetStdString() << std::endl;
 		}
+		break;
 	}
 	case EventType::KEYPRESSED: {
 		if (activetextfield != nullptr) {
@@ -244,6 +248,7 @@ void Manager_GUI::HandleEvent(const sf::Event& evnt, sf::RenderWindow* winptr) {
 				std::cout << activetextfield->GetStdString() << std::endl;
 			}
 		}
+		break;
 	}
 	}
 

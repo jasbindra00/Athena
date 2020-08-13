@@ -9,6 +9,7 @@
 class GUIInterface;
 class Manager_Texture;
 class Manager_Font;
+class Manager_GUI;
 
 using namespace GUIData::GUIStateData;
 using namespace GUIData::GUITypeData;
@@ -80,7 +81,7 @@ public:
 	sf::FloatRect GetLocalBoundingBox() const;
 	
 	virtual void ReadIn(const KeyProcessing::Keys& keys);
-
+	Manager_GUI* GetGUIManager();
 	virtual ~GUIElement();
 	
 };

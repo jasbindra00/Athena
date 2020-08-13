@@ -7,12 +7,9 @@
 #include <map>
 #include <unordered_map>
 #include <iostream>
-
-
-
 namespace KeyProcessing {
 	using KeyPair = std::pair<std::string, std::string>;
-	using Keys = std::unordered_map<std::string, std::string>;
+	using Keys = std::multimap<std::string, std::string>;
 	static std::string ToLowerString(const std::string& str) {
 		auto tmp = str;
 		std::for_each(tmp.begin(), tmp.end(), [](char& c) {

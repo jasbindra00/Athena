@@ -33,9 +33,10 @@ public:
 		fontmgr = std::make_unique<Manager_Font>("FontPaths.txt");
 		context.fontmgr = fontmgr.get();
 
-		
 		guimgr = std::make_unique<Manager_GUI>(&context);
-		guimgr->CreateStateInterface(GameStateType::GAME, "MyInterface", "MyInterface.txt");
+// 		guimgr->CreateStateInterface(GameStateType::GAME, "Interface_Bot", "Interface_Bot_Panel.txt");
+// 		guimgr->CreateStateInterface(GameStateType::GAME, "Interface_Right", "Interface_Right_Panel.txt");
+		guimgr->CreateStateInterface(GameStateType::GAME, "Interface_Top", "Interface_Top_Panel.txt");
 		guimgr->SetActiveState(GameStateType::GAME);
 
 		eventmanager = std::make_unique<Manager_Event>(guimgr.get()); //event manager needs to be made before statemanager.
@@ -45,10 +46,6 @@ public:
 		window = std::make_unique<Window>(eventmanager.get(), 1000, 1000, "MyWindow");
 		context.window = window.get();
 
-	
-		
-
-		
 	}
 	void Update() {
 		float dT = clock.getElapsedTime().asSeconds();

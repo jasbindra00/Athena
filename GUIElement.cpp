@@ -36,22 +36,130 @@ void GUIElement::ReleaseStyleResources(){
 	}
 }
 void GUIElement::ReadIn(const KeyProcessing::Keys& keys) {
-	sf::Vector2f position{ 0,0 };
-	sf::Vector2f size{ 40,40 };
-	try { position.x = std::stoi(keys.at("POSITIONX"));
-	position.y = std::stoi(keys.at("POSITIONY"));
-	size.x = std::stoi(keys.at("SIZEX"));
-	size.y = std::stoi(keys.at("SIZEY"));
-	}
+
+	name = keys.find("ELEMENTNAME")->second;
+	std::string errorstr{ " for GUIElement of name " + name };
+	//need to check if the sizex% of sizey%
+	//need to check if the positionx% or positiony%
+	sf::Vector2f position;
+	auto videomode = sf::VideoMode::getDesktopMode();
+	sf::Vector2f size{ static_cast<float>(videomode.width), static_cast<float>(videomode.height) };
+
+	try { size.x = std::stof(keys.find("SIZEX")->second); }
 	catch (const std::exception& exception) {
-		LOG::Log(LOCATION::GUIELEMENT, LOGTYPE::ERROR, __FUNCTION__, "Unable to initialise dimension attributes for GUIElement of name " + name);
+		if (keys.find("SIZEX")->second == "STRETCH") position.x = 0;
+		else {
+			try { size.x *= std::stof(keys.find("SIZEX%")->second) / 100;}
+			catch (const std::exception& exc) {
+				//invalid positionx. invalid positionx%.
+				LOG::Log(LOCATION::GUIELEMENT, LOGTYPE::ERROR, __FUNCTION__, "Unable to identify {SIZEX,x} / {SIZEX%,x%} key. DEFAULTING TO 10%.." + errorstr);
+				size.x = videomode.width * 0.1;
+			}
+		
+		}
+	}
+	try { size.y = std::stof(keys.find("SIZEY")->second); }
+	catch (const std::exception& exception) {
+		if (keys.find("SIZEY")->second == "STRETCH") position.y = 0;
+		else {
+			try { size.y = (std::stof(keys.find("SIZEY%")->second) / 100) * videomode.height; }
+			catch (const std::exception& exc) {
+				//invalid positionx. invalid positionx%.
+				LOG::Log(LOCATION::GUIELEMENT, LOGTYPE::ERROR, __FUNCTION__, "Unable to identify {SIZEY,x} / {SIZEY%,x%} key. DEFAULTING TO 10%.." + errorstr);
+				size.y = videomode.width * 0.1;
+			}
+		}
 	}
 
+	try { position.x = std::stof(keys.find("POSITIONX")->second); }
+	catch (const std::exception& exception) {
+			try { position.x = (std::stof(keys.find("POSITIONX%")->second) / 100) * videomode.width; }
+			catch (const std::exception& exc) {
+				//invalid positionx. invalid positionx%.
+				LOG::Log(LOCATION::GUIELEMENT, LOGTYPE::ERROR, __FUNCTION__, "Unable to identify {POSITIONX,x} / {POSITIONX%,x%} key. DEFAULTING TO 10%.." + errorstr);
+				position.x = videomode.width * 0.1;
+			}
+			if (position.x == videomode.width) position.x -= size.x;
+	}
+	try { position.y = std::stof(keys.find("POSITIONY")->second); }
+	catch (const std::exception& exception) {
+		try { position.y = (std::stof(keys.find("POSITIONY%")->second) / 100) * videomode.height; }
+		catch (const std::exception& exc) {
+			//invalid positionx. invalid positionx%.
+			LOG::Log(LOCATION::GUIELEMENT, LOGTYPE::ERROR, __FUNCTION__, "Unable to identify {POSITIONY,y} / {POSITIONY%,y%} key. DEFAULTING TO 10%.." + errorstr);
+			position.y = videomode.width * 0.1;
+		}
+		if (position.y == videomode.height) position.y -= size.y;
+	}
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// 
+// 	name = keys.find("ELEMENTNAME")->second;
+// 	auto videomode = sf::VideoMode::getDesktopMode();
+// 	sf::Vector2f position{ 0,0 };
+// 	sf::Vector2f size{ static_cast<float>(videomode.width),static_cast<float>(videomode.height) };
+// 	std::string sizexstr = keys.find("SIZEX")->second;
+// 	std::string sizeystr = keys.find("SIZEY")->second;
+// 	try { size.x = std::stoi(sizexstr); }
+// 	catch (const std::exception& exception) {
+// 		if (sizexstr == "STRETCH") position.x = 0;
+// 		else LOG::Log(LOCATION::GUIELEMENT, LOGTYPE::ERROR, __FUNCTION__, "Invalid x dimension for GUIElement of name " + name);
+// 	}
+// 	try { size.y = std::stoi(sizeystr); }
+// 	catch (const std::exception& exception) {
+// 		if (sizeystr == "STRETCH") position.y = 0;
+// 		else LOG::Log(LOCATION::GUIELEMENT, LOGTYPE::ERROR, __FUNCTION__, "Invalid dimensions for GUIElement of name " + name);
+// 	}
+// 	std::string posxstr = keys.find("POSITIONX")->second;
+// 	std::string posystr = keys.find("POSITIONY")->second;
+// 	try { position.x = std::stoi(posxstr); }
+// 	catch (const std::exception& exception) {
+// 		if (posxstr == "LEFT") position.x = 0;
+// 		else if (posxstr == "MID") position.x = (parent == nullptr) ? static_cast<float>(videomode.width / 2) : static_cast<float>(parent->GetSize().x / 2);
+// 		else if (posxstr == "RIGHT") position.x = (parent == nullptr) ? videomode.width - size.x : parent->GetSize().x - size.x;
+// 		else LOG::Log(LOCATION::GUIELEMENT, LOGTYPE::ERROR, __FUNCTION__, "Unable to initialise x position for GUIElement of name " + name);
+// 	}
+// 	try { position.y = std::stoi(posystr); }
+// 	catch (const std::exception& exception) {
+// 		if (posystr == "TOP") position.y = 0;
+// 		else if (posystr == "MID") position.y = (parent == nullptr) ? static_cast<float>(videomode.height / 2) : static_cast<float>(parent->GetSize().y / 2);
+// 		else if (posystr == "BOT") position.y = (parent == nullptr) ? videomode.height - size.y : parent->GetSize().y - size.y;
+// 		else LOG::Log(LOCATION::GUIELEMENT, LOGTYPE::ERROR, __FUNCTION__, "Unable to initialise y position for GUIElement of name " + name);
+// 	}
 
 	//note that these changes aren't applied immediately but will be applied in the next update cycle.
-	SetElementSize(size);
-	SetLocalPosition(position);
+	SetElementSize(std::move(size));
+	SetLocalPosition(std::move(position));
 }
+
+Manager_GUI* GUIElement::GetGUIManager() {
+	if (dynamic_cast<GUIInterface*>(this)) return dynamic_cast<GUIInterface*>(this)->guimgr;
+	return parent->guimgr;
+}
+
+
 GUIElement::GUIElement(GUIInterface* p, const GUIType& t, const GUIStateStyles& stylemap, const KeyProcessing::Keys& attributes) :type(t), parent(p), controlelement(false) {
 	statestyles = stylemap;
 	ReadIn(attributes);
@@ -59,6 +167,7 @@ GUIElement::GUIElement(GUIInterface* p, const GUIType& t, const GUIStateStyles& 
 }
 void GUIElement::SetState(const GUIState& state){
 //in a state change, we must reflect the change in the visual.
+	
 	if (state == activestate) return; //no visual change.
 	ReleaseStyleResources();
 	activestate = state;

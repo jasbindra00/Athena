@@ -1,7 +1,7 @@
 #include "GUITextfield.h"
 #include "GUIInterface.h"
 #include "Manager_GUI.h"
-
+#include <iostream>
 
 GUITextfield::GUITextfield(GUIInterface* parent, const GUIStateStyles& styles, const KeyProcessing::Keys& attributes):GUIElement(parent, GUIType::TEXTFIELD, styles, attributes) {
 	controlelement = false;
@@ -15,12 +15,8 @@ std::string GUITextfield::GetStdString(){
 }
 
 void GUITextfield::OnNeutral(){
-	SetState(GUIState::NEUTRAL);
-	std::cout << "TEXTFIELD NEUTRAL" << std::endl;
-	
+	SetState(GUIState::NEUTRAL);	
 }
-
-
 void GUITextfield::Update(const float& dT){
 	GUIElement::Update(dT);
 }
@@ -34,6 +30,7 @@ void GUITextfield::OnClick(const sf::Vector2f& mousepos) {
 	GUIEventInfo evnt;
 	evnt.interfacehierarchy = name;
 	parent->GetGUIManager()->AddGUIEvent(std::move(evnt));
+	std::cout << "TEXTFIELD CLICK" << std::endl;
 }
 void GUITextfield::OnLeave(){
 

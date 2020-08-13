@@ -30,12 +30,12 @@ namespace EventData {
 		MOUSESCROLLED = sf::Event::EventType::MouseWheelScrolled,
 		MOUSEMOVED = sf::Event::EventType::MouseMoved,
 		TEXTENTERED = sf::Event::EventType::TextEntered,
-		GUI_HOVER,
-		GUI_CLICK,
-		GUI_RELEASE,
-		GUI_FOCUS,
-		GUI_LEAVE,
-		NULLTYPE
+		GUI_HOVER = 12,
+		GUI_CLICK = 13,
+		GUI_RELEASE = 14,
+		GUI_FOCUS = 15,
+		GUI_LEAVE = 16,
+		NULLTYPE = 17
 	};
 	static EnumConverter<EventType> EventTypeConverter([](const std::string& str)->EventType {
 		if (str == "KEYPRESSED") return EventType::KEYPRESSED;
@@ -123,6 +123,8 @@ namespace EventData {
 				auto it = keys.find("GUIEVENTTYPE");
 				if (it != keys.end()) {
 					guieventtype = EventTypeConverter(it->second);
+					if (guieventtype == EventType::GUI_CLICK) {
+					}
 				}
 				if (it == keys.end() || guieventtype == EventType::NULLTYPE) throw CustomException("GUIEVENTTYPE");
 				keys.erase(it);

@@ -136,6 +136,7 @@ void GUIInterface::OnClick(const sf::Vector2f& pos){
 			 }
 		}
 	}
+
 }
 
 void GUIInterface::OnRelease(){
@@ -143,7 +144,6 @@ void GUIInterface::OnRelease(){
 	for (auto& element : elements) {
 		if (element.second->GetActiveState() == GUIState::CLICKED) {
 			element.second->OnRelease();
-			std::cout << "element release" << std::endl;
 		}
 	}
 }
@@ -160,9 +160,6 @@ std::pair<bool, sf::Vector2f> GUIInterface::EltOverhangs(const GUIElement* const
 	else if (eltpos.y + eltsize.y > mysize.y) { newpos.y = mysize.y - eltsize.y; overhangs = true; }
 	return { overhangs, newpos };
 }
-
-
-Manager_GUI* GUIInterface::GetGUIManager() const { return guimgr; }
 GUIInterface::~GUIInterface() {
 }
 
