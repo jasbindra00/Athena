@@ -47,6 +47,7 @@ private:
 		elementfactory[type] = [type](GUIInterface* parent, const GUIStateStyles& style, const KeyProcessing::Keys& keys) {return std::make_unique<T>(parent, style, keys); };
 	}
 	GUIStateStyles CreateStyleFromFile(const std::string& stylefile);
+
 	GUIElementPtr CreateElement(GUIInterface* parent, const Keys& keys);
 	GUIInterfacePtr CreateInterfaceFromFile(const std::string& interfacefile);
 	std::pair<bool,Interfaces::iterator> FindInterface(const GameStateType& state, const std::string& interfacename) noexcept;

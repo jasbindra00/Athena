@@ -65,11 +65,13 @@ GUIStateStyles Manager_GUI::CreateStyleFromFile(const std::string& stylefile) {
 	file.CloseFile();
   	return styles;
 }
-GUIElementPtr Manager_GUI::CreateElement(GUIInterface* parent, const Keys& keys){
+GUIElementPtr Manager_GUI::CreateElement(GUIInterface* parent, const Keys& keys) {
 	using KeyProcessing::KeyPair;
 	std::string elttype = keys.find("ELEMENTTYPE")->second;
 	std::string stylefile = keys.find("STYLEFILE")->second;
-	if (elttype == "NEWINTERFACE" || elttype == "NESTEDINTERFACE") return std::make_unique<GUIInterface>(parent, this, CreateStyleFromFile(stylefile), keys);
+	if (elttype == "NEWINTERFACE" || elttype == "NESTEDINTERFACE") {
+		return std::make_unique<GUIInterface>(parent, this, CreateStyleFromFile(stylefile), keys);
+	}
 	else {
 		auto guielementtype = GUIData::GUITypeData::converter(elttype);
 		if (guielementtype == GUIType::NULLTYPE) throw CustomException("ELEMENTTYPE");
@@ -97,6 +99,7 @@ GUIInterfacePtr Manager_GUI::CreateInterfaceFromFile(const std::string& interfac
 	
 	file.PutBackLine();
 	GUIInterface* leadinginterface{ nullptr };
+	GUIInterface* masterinterface{ nullptr };
 	int ninterfaces{ 0 };
 
 	while (file.NextLine().GetFileStream()) {
@@ -115,7 +118,10 @@ GUIInterfacePtr Manager_GUI::CreateInterfaceFromFile(const std::string& interfac
 			if (err) continue;
 		}
 		GUIElementPtr element;
-		try { element = CreateElement(leadinginterface, std::move(linekeys)); }
+		std::string elttype = linekeys.find("ELEMENTTYPE")->second;
+		try {
+			element = (elttype == "NESTEDINTERFACE" || elttype != "NEWINTERFACE") ? CreateElement(leadinginterface, linekeys) : CreateElement(masterinterface, linekeys);
+		}
 		catch (const CustomException& exception) {
 			if (std::string{ exception.what() } == "ELEMENTTYPE") {
 				LOG::Log(LOCATION::MANAGER_GUI, LOGTYPE::ERROR, __FUNCTION__, "Unable to read the GUIElement on line " + file.GetLineNumberString() + appenderrorstr + "DID NOT READ ELEMENT..");
@@ -135,7 +141,7 @@ GUIInterfacePtr Manager_GUI::CreateInterfaceFromFile(const std::string& interfac
 		//if its an element, add the element to the lastmost active interface structure
 		else interfacehierarchy[ninterfaces - 1].second.emplace_back(std::move(element));
 	}
-	GUIInterface* masterinterface = static_cast<GUIInterface*>(interfacehierarchy[0].second[0].get());
+	masterinterface = static_cast<GUIInterface*>(interfacehierarchy[0].second[0].get());
 	leadinginterface = masterinterface;
 	//link up all the individual interfaces to their elements.
 	int interfacenum = 0; //interface

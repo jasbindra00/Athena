@@ -18,7 +18,7 @@ bool GUIInterface::AddElement(const std::string& eltname, std::unique_ptr<GUIEle
 		return p.first == eltname;
 		});
 	if (eltexists != elements.end()) return false;
-	elt->SetParent(this);
+	//elt->SetParent(this);
 	elements.emplace_back(std::make_pair(eltname, std::move(elt)));
 	return true;
 }
