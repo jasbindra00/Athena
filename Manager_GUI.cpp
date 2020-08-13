@@ -34,8 +34,7 @@ GUIStateStyles Manager_GUI::CreateStyleFromFile(const std::string& stylefile) {
 		LOG::Log(LOCATION::MANAGER_GUI, LOGTYPE::ERROR, __FUNCTION__, "Unable to open the style file of name " + stylefile);
 		return styles;
 	}
-	file.NextLine();
-	while (!file.EndOfFile()) {
+	while (!file.NextLine().GetFileStream()) {
 		auto currentstate = GUIState::NEUTRAL;{//conv scope to function
 			auto currentword = file.GetWord();
 			if (currentword == "GUIState") {
@@ -70,12 +69,11 @@ GUIElementPtr Manager_GUI::CreateElement(GUIInterface* parent, const Keys& keys)
 	using KeyProcessing::KeyPair;
 	std::string elttype = keys.at("ELEMENTTYPE");
 	std::string stylefile = keys.at("STYLEFILE");
-	Attributes initstream = KeyProcessing::DistillValuesToStream(keys, '#');
-	if (elttype == "NEWINTERFACE" || elttype == "NESTEDINTERFACE") return std::make_unique<GUIInterface>(parent, this, CreateStyleFromFile(stylefile), initstream);
+	if (elttype == "NEWINTERFACE" || elttype == "NESTEDINTERFACE") return std::make_unique<GUIInterface>(parent, this, CreateStyleFromFile(stylefile), keys);
 	else {
 		auto guielementtype = GUIData::GUITypeData::converter(elttype);
 		if (guielementtype == GUIType::NULLTYPE) throw CustomException("ELEMENTTYPE");
-		return elementfactory[guielementtype](parent, CreateStyleFromFile(stylefile), initstream);
+		return elementfactory[guielementtype](parent, CreateStyleFromFile(stylefile), keys);
 	}
 }
 GUIInterfacePtr Manager_GUI::CreateInterfaceFromFile(const std::string& interfacefile) {
@@ -104,7 +102,7 @@ GUIInterfacePtr Manager_GUI::CreateInterfaceFromFile(const std::string& interfac
 	while (file.NextLine().GetFileStream()) {
 		Keys linekeys = KeyProcessing::ExtractValidKeys(file.ReturnLine());
 		KeyProcessing::FillMissingKeys(std::vector<KeyPair>{ {"ELEMENTTYPE", "ERROR"}, { "STYLEFILE", "ERROR" }, { "ELEMENTNAME", "ERROR" },
-			{ "POSITIONX","0" }, { "POSITIONY","0" }, { "SIZEX","50" }, { "SIZEY","50" }}, linekeys, true);
+			{ "POSITIONX","0" }, { "POSITIONY","0" }, { "SIZEX","50" }, { "SIZEY","50" }}, linekeys);
 		{
 			bool err = false;
 			for (auto& key : linekeys) {

@@ -56,7 +56,6 @@ void Manager_Event::HandleEvent(const GUIEventInfo& evnt) {
 			++bindingobject->conditionsmet;
 			bindingobject->details.guiinfo = evnt;
 		}
-
 	}
 }
 using EventData::EventType;
@@ -151,12 +150,11 @@ void Manager_Event::LoadBindings(const std::string& filename) {
 		LOG::Log(LOCATION::MANAGER_EVENT, LOGTYPE::ERROR, __FUNCTION__, "Unable to open the binding file of name " + filename);
 		return;
 	}
-
 	while (file.NextLine().GetFileStream()) {
 		Keys keys = KeyProcessing::ExtractValidKeys(file.ReturnLine());
 		{
 			bool err = false;
-			std::vector<KeyPair> missingkeys = KeyProcessing::FillMissingKeys(std::vector<KeyPair>{ {"GAMESTATE", "ERROR"}, { "BINDINGTYPE", "ERROR" }, { "BINDINGNAME", "ERROR" }}, keys, false);
+			std::vector<KeyPair> missingkeys = KeyProcessing::FillMissingKeys(std::vector<KeyPair>{ {"GAMESTATE", "ERROR"}, { "BINDINGTYPE", "ERROR" }, { "BINDINGNAME", "ERROR" }}, keys);
 			for (auto& missingkey : missingkeys) {
 				LOG::Log(LOCATION::MAP, LOGTYPE::ERROR,__FUNCTION__, "Unable to identify essential binding key " + KeyProcessing::ConstructKeyStr(missingkey.first, missingkey.second) + "in bindingfile of name on line " + file.GetLineNumberString() + ". DID NOT READ BINDING..");
 				err = true;
@@ -169,16 +167,18 @@ void Manager_Event::LoadBindings(const std::string& filename) {
 		//check if the essential keys have valid args.
 		try{
 			if (gamestate == GameStateData::GameStateType::NULLSTATE)throw CustomException("Unable to identify binding Game State");
-			if (bindingtype != "GUIBINDING" || bindingtype != "GAMEBINDING") throw CustomException("Unable to identify binding type");
+			if (bindingtype != "GUIBINDING" && bindingtype != "GAMEBINDING") {
+				throw CustomException("Unable to identify binding type");
+			}
 			if (FindBindingData<Binding>(gamestate, bindingname).first) throw CustomException("Binding with name " + bindingname + " already exists in state " + std::to_string(Utility::ConvertToUnderlyingType(gamestate)));
 		}
 		catch (const CustomException& exception) {
 			LOG::Log(LOCATION::MANAGER_GUI, LOGTYPE::ERROR, __FUNCTION__, std::string{ exception.what() } + " on line " + file.GetLineNumberString() + ". DID NOT READ BINDING..");
 			continue;
 		}
-		keys.erase(keys.at("BINDINGTYPE"));
-		keys.erase(keys.at("BINDINGNAME"));
-		keys.erase(keys.at("GAMESTATE"));
+		keys.erase("BINDINGTYPE");
+		keys.erase("BINDINGNAME");
+		keys.erase("GAMESTATE");
 		try {
 			if (bindingtype == "GAMEBINDING") RegisterBindingObject<GameBinding>(gamestate, bindingname, std::move(keys));
 			else if (bindingtype == "GUIBINDING") RegisterBindingObject<GUIBinding>(gamestate, bindingname, std::move(keys));

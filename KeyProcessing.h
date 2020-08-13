@@ -4,7 +4,9 @@
 #include <algorithm>
 #include "StreamAttributes.h"
 #include <vector>
+#include <map>
 #include <unordered_map>
+#include <iostream>
 
 
 
@@ -91,7 +93,7 @@ namespace KeyProcessing {
 		Attributes linestream(line);
 		while (linestream.NextWord()) {
 			std::pair<bool, KeyPair> isvalid = ExtractKey(linestream.ReturnWord());
-			if (isvalid.first) keys[isvalid.second.first] = std::move(isvalid.second.second);
+			if (isvalid.first) keys.insert(std::move(isvalid.second));
 		}
 		return keys;
 	}
@@ -112,25 +114,12 @@ namespace KeyProcessing {
 		}
 		return Attributes(std::move(str));
 	}
-	static std::vector<KeyPair> FillMissingKeys(const std::vector<KeyPair>& missingkeys, Keys& keys, const bool& sort) {
+	static std::vector<KeyPair> FillMissingKeys(const std::vector<KeyPair>& missingkeys, Keys& keys) {
 		std::vector<KeyPair> filledkeys;
-		Keys newkeys;
-		for (auto& missingkey : missingkeys) {
-			if (GetKey(missingkey.first, keys).first) {
-				if (sort) newkeys.insert(KeyPair{ missingkey.first, keys.at(missingkey.first) });
-			}
-			else {
-				newkeys.insert(missingkey);
-				filledkeys.emplace_back(missingkey);
-			}
-		}
-		//sort = replace key sequence.
-		if (sort) keys = std::move(newkeys);
-		//no sort = append missing keys only
-		else {
-			std::for_each(newkeys.begin(), newkeys.end(), [&keys](const KeyPair& key) {
-				keys.insert(std::move(key));
-				});
+		for (const auto& key : missingkeys) {
+			if (GetKey(key.first, keys).first) continue;
+			keys.insert(key);
+			filledkeys.emplace_back(key);
 		}
 		return filledkeys;
 	}
@@ -145,7 +134,6 @@ namespace KeyProcessing {
 			str += ConstructKeyStr(key.first, key.second) + " ";
 		}
 		return Attributes(str);
-	}
-	
+	}	
 }
 #endif

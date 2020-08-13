@@ -5,8 +5,8 @@
 
 
 
-GUIInterface::GUIInterface(GUIInterface* p, Manager_GUI* mgr, const GUIStateStyles& styles, std::stringstream& stream) 
-	:GUIElement(p, GUIType::WINDOW, styles, stream),
+GUIInterface::GUIInterface(GUIInterface* p, Manager_GUI* mgr, const GUIStateStyles& styles, const KeyProcessing::Keys& keys) 
+	:GUIElement(p, GUIType::WINDOW, styles, keys),
 	guimgr(mgr){
 	if (parent == nullptr) parent = this;
 	layers = std::make_unique<GUIInterfaceLayers>(GetSize());
@@ -22,8 +22,8 @@ bool GUIInterface::AddElement(const std::string& eltname, std::unique_ptr<GUIEle
 	elements.emplace_back(std::make_pair(eltname, std::move(elt)));
 	return true;
 }
-void GUIInterface::ReadIn(std::stringstream& stream) {
-	GUIElement::ReadIn(stream);
+void GUIInterface::ReadIn(const KeyProcessing::Keys& keys) {
+	GUIElement::ReadIn(keys);
 }
 bool GUIInterface::RemoveElement(const std::string& eltname) {
 	return true;

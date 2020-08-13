@@ -42,7 +42,7 @@ protected:
 	virtual void ApplySize();
 	void CalibratePosition();
 public:
-	GUIElement(GUIInterface* parent, const GUIType& type, const GUIStateStyles& styles, std::stringstream& attributes);
+	GUIElement(GUIInterface* parent, const GUIType& type, const GUIStateStyles& styles, const KeyProcessing::Keys& attributes);
 
 	virtual void OnNeutral() = 0;
 	virtual void OnHover() = 0;
@@ -79,12 +79,7 @@ public:
 	sf::Vector2f GetGlobalPosition() const;
 	sf::FloatRect GetLocalBoundingBox() const;
 	
-	
-	friend std::stringstream& operator>>(std::stringstream& stream, GUIElement* elt) {
-		elt->ReadIn(stream);
-		return stream;
-	}
-	virtual void ReadIn(std::stringstream& stream);
+	virtual void ReadIn(const KeyProcessing::Keys& keys);
 
 	virtual ~GUIElement();
 	

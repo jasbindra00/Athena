@@ -29,7 +29,7 @@ protected:
 	Manager_GUI* guimgr{ nullptr };
 	
 public:
-	GUIInterface(GUIInterface* parent, Manager_GUI* guimgr, const GUIStateStyles& styles, std::stringstream& stream);
+	GUIInterface(GUIInterface* parent, Manager_GUI* guimgr, const GUIStateStyles& styles, const KeyProcessing::Keys& keys);
 
 	virtual void OnHover() override;
 	virtual void OnNeutral() override;
@@ -74,7 +74,7 @@ public:
 	virtual void ApplySize() override;
 	virtual void ApplyLocalPosition() override;
 
-	virtual void ReadIn(std::stringstream& stream) override;
+	virtual void ReadIn(const KeyProcessing::Keys& keys) override;
 	Manager_GUI* GetGUIManager() const;
 
 	virtual ~GUIInterface();

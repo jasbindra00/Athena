@@ -35,17 +35,26 @@ void GUIElement::ReleaseStyleResources(){
 		parent->GetGUIManager()->GetContext()->fontmgr->RequestResourceDealloc(activestyle.text.fontname);
 	}
 }
-void GUIElement::ReadIn(std::stringstream& stream) {
-	sf::Vector2f position;
-	sf::Vector2f size;
-	stream >> name >> position.x >> position.y >> size.x >> size.y;
+void GUIElement::ReadIn(const KeyProcessing::Keys& keys) {
+	sf::Vector2f position{ 0,0 };
+	sf::Vector2f size{ 40,40 };
+	try { position.x = std::stoi(keys.at("POSITIONX"));
+	position.y = std::stoi(keys.at("POSITIONY"));
+	size.x = std::stoi(keys.at("SIZEX"));
+	size.y = std::stoi(keys.at("SIZEY"));
+	}
+	catch (const std::exception& exception) {
+		LOG::Log(LOCATION::GUIELEMENT, LOGTYPE::ERROR, __FUNCTION__, "Unable to initialise dimension attributes for GUIElement of name " + name);
+	}
+
+
 	//note that these changes aren't applied immediately but will be applied in the next update cycle.
 	SetElementSize(size);
 	SetLocalPosition(position);
 }
-GUIElement::GUIElement(GUIInterface* p, const GUIType& t, const GUIStateStyles& stylemap, std::stringstream& attributes) :type(t), parent(p), controlelement(false) {
+GUIElement::GUIElement(GUIInterface* p, const GUIType& t, const GUIStateStyles& stylemap, const KeyProcessing::Keys& attributes) :type(t), parent(p), controlelement(false) {
 	statestyles = stylemap;
-	attributes >> this;
+	ReadIn(attributes);
 	ApplyCurrentStyle();
 }
 void GUIElement::SetState(const GUIState& state){
