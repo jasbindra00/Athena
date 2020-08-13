@@ -141,7 +141,7 @@ GUIInterfacePtr Manager_GUI::CreateInterfaceFromFile(const std::string& interfac
 	int interfacenum = 0; //interface
 	for (auto& structure : interfacehierarchy) {
 		auto currentinterface = static_cast<GUIInterface*>(structure.second[0].get());
-		if (structure.second.size() == 1) continue; //the structure has only a single interface. no elt linkage required
+		//if (structure.second.size() == 1) continue; //the structure has only a single interface. no elt linkage required
 		for (int i = structure.second.size() - 1; i > 0; --i) { //now, loop through all of the elements (coming after the first interface entry within the structure)
 			auto& element = structure.second[i];
 			if (!currentinterface->AddElement(element->GetName(), element)) { 

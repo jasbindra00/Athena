@@ -24,7 +24,7 @@ text local_position 50 50
 /ENDSTATE
 GUIState 2
 sbg color_outline 0 0 0 0
-sbg color_solid 51 51 51 255
+sbg color_solid 0 255 51 255
 sbg outline_thickness 0
 tbg texture_name
 tbg texture_rect 0 0 50 50

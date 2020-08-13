@@ -34,9 +34,9 @@ public:
 		context.fontmgr = fontmgr.get();
 
 		guimgr = std::make_unique<Manager_GUI>(&context);
-// 		guimgr->CreateStateInterface(GameStateType::GAME, "Interface_Bot", "Interface_Bot_Panel.txt");
-// 		guimgr->CreateStateInterface(GameStateType::GAME, "Interface_Right", "Interface_Right_Panel.txt");
-		guimgr->CreateStateInterface(GameStateType::GAME, "Interface_Top", "Interface_Top_Panel.txt");
+		guimgr->CreateStateInterface(GameStateType::GAME, "Interface_Bot", "Interface_Bot_Panel.txt");
+		//guimgr->CreateStateInterface(GameStateType::GAME, "Interface_Right", "Interface_Right_Panel.txt");
+		//guimgr->CreateStateInterface(GameStateType::GAME, "Interface_Top", "Interface_Top_Panel.txt");
 		guimgr->SetActiveState(GameStateType::GAME);
 
 		eventmanager = std::make_unique<Manager_Event>(guimgr.get()); //event manager needs to be made before statemanager.

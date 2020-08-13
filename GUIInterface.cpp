@@ -125,7 +125,12 @@ void GUIInterface::OnNeutral(){
 
 }
 void GUIInterface::OnClick(const sf::Vector2f& pos){
+	if (name == "BOT_SUB_PANEL") {
+		std::cout << "soif" << std::endl;
+	}
 	SetState(GUIState::CLICKED);
+	std::cout << "INTERFACE CLICKED : " << name << std::endl;
+
 	for (auto& element : elements) {
 		if (element.second->GetActiveState() != GUIState::CLICKED) { //if the element has not already been clicked
 			if (element.second->Contains(pos)) {
