@@ -39,7 +39,7 @@ namespace TileData {
 				texturemgr->RequestResourceDealloc(atlasmapname);
 			}
 		}
-		void InitTile(const Keys& keys) {
+		void InitTile(const KeyProcessing::Keys& keys) {
 			Attributes keyvalues = KeyProcessing::DistillValuesToStream(keys, '0');
 			std::string errorstring{ "" };
 			keyvalues >> texturerect.width >> texturerect.height >> texturerect.left >> texturerect.top >> friction.x >> friction.y >> atlasmapname;

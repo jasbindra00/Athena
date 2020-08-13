@@ -65,11 +65,10 @@ protected:
 	void HandleEvent(const EventData::GUIEventInfo& evnt);
 public:
 	Manager_Event(Manager_GUI* guimgr) noexcept;
-
 	void LoadBindings(const std::string& filename); //automatic loading and assigning of each binding object to a given state from a txt file. binding callables must be registered seperately.
 	bool RegisterBindingCallable(const GameStateType& state, const std::string& bindingname, const BindingTypes::BindingCallable& action); //assigns the callable to the already existing state binding
 	template<typename T, typename = typename std::enable_if_t<std::is_same_v<typename std::decay_t<T>, GameBinding> || std::is_same_v<typename std::decay_t<T>, GUIBinding>>>
-	bool RegisterBindingObject(const GameStateType& state, std::string& bindingname, Attributes* stream) {
+	bool RegisterBindingObject(const GameStateType& state, std::string& bindingname, const KeyProcessing::Keys& keys) {
 		auto bindingexists = FindBindingData<Binding>(state, bindingname);
 		if (bindingexists.first) {
 			LOG::Log(LOCATION::MANAGER_EVENT, LOGTYPE::ERROR, __FUNCTION__, "Binding of name " + bindingname + " within state " + std::to_string(Utility::ConvertToUnderlyingType(state)) + " already exists");
@@ -77,9 +76,16 @@ public:
 		}
 		auto& storage = statebindingobjects.at(state);
 		auto bindingobj = std::make_unique<T>(bindingname);
-		*stream >> bindingobj.get();
+
+		/**stream >> bindingobj.get();*/
 		storage.emplace_back(bindingname, std::move(bindingobj));
 		return true;
+
+
+
+
+		//keys
+		//or stream
 	}
 	template<typename T, typename = ENABLE_IF_CONTAINED<T>>
 	bool RemoveBindingData(const GameStateType& state, const std::string& bindingname) {

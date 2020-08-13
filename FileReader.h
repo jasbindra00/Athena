@@ -15,14 +15,6 @@ private:
 	int previouspos;
 public:
 
-	std::vector<std::pair<bool,std::string>> ReadKeyLine() const {
-		Attributes linestream(line);
-		std::vector<std::pair<bool, std::string>> result;
-		while (!linestream.eof()) {
-			result.push_back(KeyProcessing::CheckKeySyntax(linestream.GetWord()));
-		}
-		return result;
-	}
 	bool LoadFile(const std::string& name) {
 		if (file.is_open()) file.close();
 		file.open(name, std::ios::in);
@@ -81,32 +73,7 @@ public:
 			if (line == str) break;
 		}
 	}
-	bool SeekToLineKey(const std::string& key,const bool& reset, const bool& attr1, const bool& attr2) {
-		previouspos = file.tellg();
-		std::string attr1str;
-		std::string attr2str; {
-			Attributes keystream(KeyProcessing::ExtractAttributesToStream(key));
-			attr1str = keystream.GetWord();
-			attr2str = keystream.GetWord();
-		}
-		while (!file.eof()) {
-			
-			Attributes linestream = KeyProcessing::ExtractAttributesToStream(NextLine().ReturnLine());
-			std::string lineattr1 = linestream.PeekWord();
-			std::string lineattr2 = linestream.PeekWord();
-			if (attr1 && attr2) {
-				if ((lineattr1 == attr1str) && (lineattr2 == attr2str)) return true;
-			}
-			else if (attr1) {
-				if (attr1str == lineattr1) return true;
-			}
-			else if (attr2) {
-				if (attr2str == lineattr2) return true;
-			}
-		}
-		/*if(reset) file.seekg(previouspos);*/
-		return false;
-	}
+
 	std::streampos TellG() { return file.tellg(); }
 	std::string ReturnLine() { return line; }
 	std::ifstream& GetFileStream() { return file; }

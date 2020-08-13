@@ -149,21 +149,15 @@ void Manager_Event::LoadBindings(const std::string& filename) {
 		LOG::Log(LOCATION::MANAGER_EVENT, LOGTYPE::ERROR, __FUNCTION__, "Unable to open the binding file of name " + filename);
 		return;
 	}
-	if (!file.CheckStandardSyntax({ "***BINDING SYNTAX*** GAMESTATE BINDING BINDINGNAME {EVENTTYPE, CODE} ....n", "***GUIBINDING SYNTAX*** GAMESTATE GUIBINDING BINDINGNAME {GUIEVENTTYPE,TYPE} {GUISTATE,STATE} {HIERARCHY,ELTNAME}....{HIERARCHY,TARGET}" })){
-		LOG::Log(LOCATION::MANAGER_EVENT, LOGTYPE::ERROR, __FUNCTION__, "Binding Syntax Guidelines are incorrect in binding file of name " + filename);
-	}
-	auto attributes = static_cast<Attributes*>(&file.GetLineStream());
-	while (!file.EndOfFile()) {
-		file.NextLine();
-		GameStateType gamestate; 
-		if (attributes->PeekWord().empty()) continue;
-		gamestate = GameStateData::converter(file.GetWord());
-		if (gamestate == GameStateType::NULLSTATE) { LOG::Log(LOCATION::MANAGER_EVENT, LOGTYPE::ERROR, __FUNCTION__, "Unable to recognise the game state on line " + file.GetLineNumberString() + " in binding file of name " + filename); continue; }
-		auto bindingtype = attributes->GetWord();
-		auto bindingname = attributes->GetWord();
 
-		if (bindingtype == "BINDING") RegisterBindingObject<GameBinding>(gamestate,bindingname, attributes);
-		else if (bindingtype == "GUIBINDING") RegisterBindingObject<GUIBinding>(gamestate, bindingname,attributes);
+	while (file.NextLine().GetFileStream()) {
+		KeyProcessing::Keys keys = KeyProcessing::LazySortKeys("{GAMESTATE,x} {BINDINGTYPE,x} {BINDINGNAME,x}", file.ReturnLine(), true);
+		GameStateData::GameStateType gamestate = GameStateData::converter(keys.at(0).second);
+		std::string bindingtype = keys.at(1).second;
+		std::string bindingname = keys.at(2).second;
+		keys.erase(keys.begin(), keys.begin() + 2);
+		if (bindingtype == "BINDING") RegisterBindingObject<GameBinding>(gamestate,bindingname, std::move(keys));
+		else if (bindingtype == "GUIBINDING") RegisterBindingObject<GUIBinding>(gamestate, bindingname,std::move(keys));
 		else { LOG::Log(LOCATION::MANAGER_EVENT, LOGTYPE::ERROR, __FUNCTION__, "Unable to recognise the binding type on line " + file.GetLineNumberString());}
 	}
 	file.CloseFile();

@@ -46,6 +46,13 @@ public:
 	void InsertWord() {
 
 	}
+	std::string GetRemainingLine() {
+		int pos = tellg();
+		std::string str;
+		std::getline(*this, str);
+		seekg(pos);
+		return str;
+	}
 };
 
 #endif
