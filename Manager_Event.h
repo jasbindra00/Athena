@@ -76,16 +76,10 @@ public:
 		}
 		auto& storage = statebindingobjects.at(state);
 		auto bindingobj = std::make_unique<T>(bindingname);
-
-		/**stream >> bindingobj.get();*/
+		try { bindingobj->ReadIn(keys); }
+		catch (const CustomException& exception) { throw exception; }
 		storage.emplace_back(bindingname, std::move(bindingobj));
 		return true;
-
-
-
-
-		//keys
-		//or stream
 	}
 	template<typename T, typename = ENABLE_IF_CONTAINED<T>>
 	bool RemoveBindingData(const GameStateType& state, const std::string& bindingname) {

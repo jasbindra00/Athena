@@ -4,12 +4,13 @@
 #include <algorithm>
 #include "StreamAttributes.h"
 #include <vector>
+#include <unordered_map>
+
+
 
 namespace KeyProcessing {
-	using Key = std::pair<std::string, std::string>;
-	using Keys = std::vector<Key>;
-
-
+	using KeyPair = std::pair<std::string, std::string>;
+	using Keys = std::unordered_map<std::string, std::string>;
 	static std::string ToLowerString(const std::string& str) {
 		auto tmp = str;
 		std::for_each(tmp.begin(), tmp.end(), [](char& c) {
@@ -58,8 +59,6 @@ namespace KeyProcessing {
 		}
 		return { false,true };
 	}
-
-
 	static bool IsKey(const std::string& key) {
 		auto reduction = RemoveWhiteSpaces(key);
 		std::string extracted;
@@ -71,8 +70,8 @@ namespace KeyProcessing {
 			}), reduction.end());
 		return reduction == "{,}";
 	}
-	static std::pair<bool, Key> ExtractKey(const std::string& key) {
-		if (!IsKey(key)) return std::make_pair(false, Key{});
+	static std::pair<bool, KeyPair> ExtractKey(const std::string& key) {
+		if (!IsKey(key)) return std::make_pair(false, KeyPair{});
 		auto attributes = key;
 		attributes.erase(std::remove_if(attributes.begin(), attributes.end(), [](char& c) {
 			if (c == '{') return true;
@@ -81,22 +80,28 @@ namespace KeyProcessing {
 			}), attributes.end());
 		attributes[attributes.find(',')] = ' ';
 		Attributes keystream(attributes);
-		return std::make_pair(true, Key{ keystream.GetWord(), keystream.GetWord() });
+		return std::make_pair(true, KeyPair{ keystream.GetWord(), keystream.GetWord() });
 	}
-	static std::pair<bool, Keys::const_iterator> KeyExists(const std::string& keyname,const Keys& keys) {
-		auto foundkey = std::find_if(keys.begin(), keys.end(), [&keyname](const Key& key) {
-			return key.first == keyname;
-			});
+	static std::pair<bool, Keys::const_iterator> GetKey(const std::string& keyname,const Keys& keys) {
+		auto foundkey = keys.find(keyname);
 		return (foundkey == keys.end()) ? std::make_pair(false, foundkey) : std::make_pair(true, foundkey);
 	}
 	static Keys ExtractValidKeys(const std::string& line) {
 		Keys keys;
 		Attributes linestream(line);
 		while (linestream.NextWord()) {
-			std::pair<bool,Key> isvalid = ExtractKey(linestream.ReturnWord());
-			if (isvalid.first) keys.emplace_back(std::make_pair(isvalid.second.first, isvalid.second.second));
+			std::pair<bool, KeyPair> isvalid = ExtractKey(linestream.ReturnWord());
+			if (isvalid.first) keys[isvalid.second.first] = std::move(isvalid.second.second);
 		}
 		return keys;
+	}
+	static Keys OrderKeys(const std::vector<KeyPair>& order, const Keys& keys) {
+		Keys tmp;
+		for (const auto& orderkey : order) {
+			auto foundkey = keys.find(orderkey.first);
+			(foundkey == keys.end()) ? tmp.insert(orderkey) : tmp.insert(*foundkey);
+		}
+		return tmp;
 	}
 	static Attributes DistillValuesToStream(const Keys& keys, const char& emptyplaceholder) {
 		std::string str;
@@ -107,23 +112,29 @@ namespace KeyProcessing {
 		}
 		return Attributes(std::move(str));
 	}
-	static Keys SortKeys(const Keys& keyorder, const std::string& keyline, const bool& fill) {
-		Keys validkeys = ExtractValidKeys(keyline);
-		Keys sortedkeys;
-		//loop through the specified order and see if the valid keys contain this given order key.
-		for (auto& order : keyorder) {
-			auto keyexists = std::find_if(validkeys.begin(), validkeys.end(), [&order](const Key& key) {
-				return key.first == order.first;
-				});
-			if (keyexists != validkeys.end()) sortedkeys.emplace_back(*keyexists); //found key
-			else if (fill) {
-				sortedkeys.emplace_back(order);
+	static std::vector<KeyPair> FillMissingKeys(const std::vector<KeyPair>& missingkeys, Keys& keys, const bool& sort) {
+		std::vector<KeyPair> filledkeys;
+		Keys newkeys;
+		for (auto& missingkey : missingkeys) {
+			if (GetKey(missingkey.first, keys).first) {
+				if (sort) newkeys.insert(KeyPair{ missingkey.first, keys.at(missingkey.first) });
+			}
+			else {
+				newkeys.insert(missingkey);
+				filledkeys.emplace_back(missingkey);
 			}
 		}
-
-		return sortedkeys;
+		//sort = replace key sequence.
+		if (sort) keys = std::move(newkeys);
+		//no sort = append missing keys only
+		else {
+			std::for_each(newkeys.begin(), newkeys.end(), [&keys](const KeyPair& key) {
+				keys.insert(std::move(key));
+				});
+		}
+		return filledkeys;
 	}
-	static std::string ConstructKey(const std::string & arg1, const std::string & arg2) {
+	static std::string ConstructKeyStr(const std::string & arg1, const std::string & arg2) {
 		auto arg1tmp = RemoveWhiteSpaces(arg1);
 		auto arg2tmp = RemoveWhiteSpaces(arg2);
 		return std::string{ "{" + std::move(arg1tmp) + "," + std::move(arg2tmp) + "}" };
@@ -131,7 +142,7 @@ namespace KeyProcessing {
 	static Attributes InsertKeysIntoStream(const Keys& keys) {
 		std::string str;
 		for (auto& key : keys) {
-			str += ConstructKey(key.first, key.second) + " ";
+			str += ConstructKeyStr(key.first, key.second) + " ";
 		}
 		return Attributes(str);
 	}

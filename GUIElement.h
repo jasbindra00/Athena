@@ -5,7 +5,7 @@
 #include <string>
 #include "GUIFormatting.h"
 #include "GUIData.h"
-
+#include "KeyProcessing.h"
 class GUIInterface;
 class Manager_Texture;
 class Manager_Font;

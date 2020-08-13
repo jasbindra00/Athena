@@ -67,21 +67,21 @@ GUIStateStyles Manager_GUI::CreateStyleFromFile(const std::string& stylefile) {
   	return styles;
 }
 GUIElementPtr Manager_GUI::CreateElement(GUIInterface* parent, const Keys& keys){
-	std::string elttype{ attributes.GetWord() };
-	std::string stylefile{ attributes.GetWord() };
-	if (elttype == "NEWINTERFACE" || elttype == "NESTEDINTERFACE") return std::make_unique<GUIInterface>(parent, this, CreateStyleFromFile(stylefile), attributes);
+	using KeyProcessing::KeyPair;
+	std::string elttype = keys.at("ELEMENTTYPE");
+	std::string stylefile = keys.at("STYLEFILE");
+	Attributes initstream = KeyProcessing::DistillValuesToStream(keys, '#');
+	if (elttype == "NEWINTERFACE" || elttype == "NESTEDINTERFACE") return std::make_unique<GUIInterface>(parent, this, CreateStyleFromFile(stylefile), initstream);
 	else {
 		auto guielementtype = GUIData::GUITypeData::converter(elttype);
-		if (guielementtype == GUIType::NULLTYPE) {
-			LOG::Log(LOCATION::MANAGER_GUI, LOGTYPE::ERROR, __FUNCTION__, "Unable to read the element type");
-			return nullptr;
-		}
-		return elementfactory[guielementtype](parent, CreateStyleFromFile(stylefile), attributes);
+		if (guielementtype == GUIType::NULLTYPE) throw CustomException("ELEMENTTYPE");
+		return elementfactory[guielementtype](parent, CreateStyleFromFile(stylefile), initstream);
 	}
 }
 GUIInterfacePtr Manager_GUI::CreateInterfaceFromFile(const std::string& interfacefile) {
-	using KeyProcessing::Key;
+	using KeyProcessing::KeyPair;
 	using KeyProcessing::Keys;
+	std::string appenderrorstr{ " in interface file of name " + interfacefile+ ". " };
 	FileReader file;
 	if (!file.LoadFile(interfacefile)) {
 		LOG::Log(LOCATION::MANAGER_GUI, LOGTYPE::ERROR, __FUNCTION__, "Unable to open the interface template file of name " + interfacefile);
@@ -90,47 +90,41 @@ GUIInterfacePtr Manager_GUI::CreateInterfaceFromFile(const std::string& interfac
 	std::vector<std::pair<std::string,std::vector<GUIElementPtr>>> interfacehierarchy;
 	auto linestream = static_cast<Attributes*>(&file.GetLineStream());
 	//check if the first entry is a new interface. 
-	file.NextLine();{
+	file.NextLine();
 		auto type = linestream->PeekWord();
-		if (type != "NEWINTERFACE" || type == "NESTEDINTERFACE") { //cannot begin with nested interface.
-			LOG::Log(LOCATION::MANAGER_GUI, LOGTYPE::ERROR, __FUNCTION__, "Unable to identify leading interface in interface file of name " + interfacefile + ". Interface files must start with 'INTERFACE' first)");
+		if (type != "{ELEMENTTYPE,NEWINTERFACE}" || type == "{ELEMENTTYPE,NESTEDINTERFACE}") { //cannot begin with nested interface.
+			LOG::Log(LOCATION::MANAGER_GUI, LOGTYPE::ERROR, __FUNCTION__, "Unable to identify leading interface" + appenderrorstr + "Leading interfaces must start with INTERFACE. EXITING INTERFACE READ..");
 			return nullptr;
 		}
-	}
+	
 	file.PutBackLine();
 	GUIInterface* leadinginterface{ nullptr };
 	int ninterfaces{ 0 };
 
-	while (!file.NextLine().GetFileStream()) {
-		//sort the keys in this order - fill with order key if missing.
-		Keys linekeys = KeyProcessing::SortKeys(Keys{ Key{"ELEMENTTYPE","ERROR"}, Key{"ELEMENTSTYLE", "ERROR"}, Key{"ELEMENTNAME", "ERROR" },
-			Key{"POSITIONX","ERROR"}, Key{"POSITIONY","ERROR"}, Key{"SIZEX", "ERROR"}, Key{"SIZEY","ERROR"} }, file.ReturnLine(), true);
+	while (file.NextLine().GetFileStream()) {
+		Keys linekeys = KeyProcessing::ExtractValidKeys(file.ReturnLine());
+		KeyProcessing::FillMissingKeys(std::vector<KeyPair>{ {"ELEMENTTYPE", "ERROR"}, { "STYLEFILE", "ERROR" }, { "ELEMENTNAME", "ERROR" },
+			{ "POSITIONX","0" }, { "POSITIONY","0" }, { "SIZEX","50" }, { "SIZEY","50" }}, linekeys, true);
 		{
-			auto it = linekeys.begin();
-			//check if the first three essential keys are errors.
-			{
-				std::string fatalerrorstring;
-				while (it != linekeys.begin() + 3) {
-					if (it->second == "ERROR") fatalerrorstring += KeyProcessing::ConstructKey(it->first, it->second) + " ";
-					++it;
-				}
-				if (!fatalerrorstring.empty()) {
-					LOG::Log(LOCATION::MANAGER_GUI, LOGTYPE::ERROR, __FUNCTION__, "Fatal error in creating GUIElement on line " + file.GetLineNumberString() + " from interface file " + interfacefile + ". Could not read the following essential keys : " + fatalerrorstring + ". DID NOT READ ELEMENT..");
-					continue;
-				}
-				//read the remaining keys for any errors, log and default them.
-				while (it != linekeys.end()) {
-					if (it->second == "ERROR") {
-						it->second = "0";
-						LOG::Log(LOCATION::MANAGER_GUI, LOGTYPE::ERROR, __FUNCTION__, "The key on line " + file.GetLineNumberString() + " from interface file " + interfacefile + " could not be read and has been defaulted to 0 : " + KeyProcessing::ConstructKey(it->first, it->second));
-					}
+			bool err = false;
+			for (auto& key : linekeys) {
+				if (key.second == "ERROR") {
+					LOG::Log(LOCATION::MAP, LOGTYPE::ERROR, __FUNCTION__, "Invalid essential key " + KeyProcessing::ConstructKeyStr(key.first, key.second) + " for GUIElement initialisation on line " + file.GetLineNumberString() + appenderrorstr+ "DID NOT READ ELEMENT..");
+					err = true;
 				}
 			}
+			if (err) continue;
 		}
-		std::string elttype = linekeys[0].second;
-		auto element = CreateElement(leadinginterface, std::move(linekeys));
-		if (element == nullptr) continue;
+		GUIElementPtr element;
+		try { element = CreateElement(leadinginterface, std::move(linekeys)); }
+		catch (const CustomException& exception) {
+			if (std::string{ exception.what() } == "ELEMENTTYPE") {
+				LOG::Log(LOCATION::MANAGER_GUI, LOGTYPE::ERROR, __FUNCTION__, "Unable to read the GUIElement on line " + file.GetLineNumberString() + appenderrorstr + "DID NOT READ ELEMENT..");
+			}
+			continue;
+		}
 		if (dynamic_cast<GUIInterface*>(element.get())) {//if the element is an interface
+			std::string elttype = linekeys.at("ELEMENTTYPE");
 			//create a new structure line
 			interfacehierarchy.push_back(std::make_pair(elttype,std::vector<GUIElementPtr>{}));
 			//this is now the leading interface. subsequent nested interfaces will be relative to this one.
@@ -167,7 +161,6 @@ GUIInterfacePtr Manager_GUI::CreateInterfaceFromFile(const std::string& interfac
 				auto tmp = structure.second[0].get(); 
 				successful = leadinginterface->AddElement(currentinterface->GetName(), structure.second[0]);
 				leadinginterface = static_cast<GUIInterface*>(tmp);
-			
 			}
 			if (!successful) {
 				LOG::Log(LOCATION::MANAGER_GUI, LOGTYPE::ERROR, __FUNCTION__, "Ambiguous element name within interface file of name " + interfacefile);
