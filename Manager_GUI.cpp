@@ -129,6 +129,7 @@ GUIInterfacePtr Manager_GUI::CreateInterfaceFromFile(const std::string& interfac
 			continue;
 		}
 		if (dynamic_cast<GUIInterface*>(element.get())) {//if the element is an interface
+			if (ninterfaces == 0) masterinterface = static_cast<GUIInterface*>(element.get());
 			std::string elttype = linekeys.find("ELEMENTTYPE")->second;
 			//create a new structure line
 			interfacehierarchy.push_back(std::make_pair(elttype,std::vector<GUIElementPtr>{}));
