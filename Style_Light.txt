@@ -1,37 +1,12 @@
-GUIState 0
-sbg color_outline 0 0 0 255
-sbg color_solid 104 104 104 255
-sbg outline_thickness 4
-tbg texture_name
-tbg texture_rect 0 0 50 50
-text color 255 255 255 0
-text string hello
-text font_name
-text character_size 30
-text local_position 50 50
-/ENDSTATE
-GUIState 1
-sbg color_outline 0 0 0 255
-sbg color_solid 0 255 0 255
-sbg outline_thickness 4
-tbg texture_name
-tbg texture_rect 0 0 50 50
-text color 255 255 255 255
-text string hello
-text font_name
-text character_size 30
-text local_position 50 50
-/ENDSTATE
-GUIState 2
-sbg color_outline 0 0 0 255
-sbg color_solid 255 0 0 0 255
-sbg outline_thickness 4
-tbg texture_name
-tbg texture_rect 0 0 50 50
-text color 255 255 255 255
-text string hello
-text font_name
-text character_size 30
-text local_position 50 50
-/ENDSTATE
-/ENDSTATE
+{GUISTATE,NEUTRAL} {STYLE_PROPERTY,SBG} {PROPERTY_ATTRIBUTE,COLOR_SOLID} {R,104} {G,104} {B,104} {A,255}
+{GUISTATE,NEUTRAL} {STYLE_PROPERTY,SBG} {PROPERTY_ATTRIBUTE,COLOR_OUTLINE} {R,0} {G,0} {B,255} {A,255}
+{GUISTATE,NEUTRAL} {STYLE_PROPERTY,SBG} {PROPERTY_ATTRIBUTE,OUTLINE_THICKNESS} {THICKNESS,3}
+{GUISTATE,FOCUSED} {STYLE_PROPERTY,SBG} {PROPERTY_ATTRIBUTE,COLOR_SOLID} {R,0} {G,0} {B,255} {A,255}
+{GUISTATE,FOCUSED} {STYLE_PROPERTY,SBG} {PROPERTY_ATTRIBUTE,COLOR_OUTLINE} {R,0} {G,0} {B,255} {A,255}
+{GUISTATE,FOCUSED} {STYLE_PROPERTY,SBG} {PROPERTY_ATTRIBUTE,OUTLINE_THICKNESS} {THICKNESS,3}
+{GUISTATE,CLICKED} {STYLE_PROPERTY,SBG} {PROPERTY_ATTRIBUTE,COLOR_SOLID} {R,0} {G,255} {B,104} {A,255}
+{GUISTATE,CLICKED} {STYLE_PROPERTY,SBG} {PROPERTY_ATTRIBUTE,COLOR_OUTLINE} {R,0} {G,0} {B,255} {A,255}
+{GUISTATE,CLICKED} {STYLE_PROPERTY,SBG} {PROPERTY_ATTRIBUTE,OUTLINE_THICKNESS} {THICKNESS,3}
+
+
+

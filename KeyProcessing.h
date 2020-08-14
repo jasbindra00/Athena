@@ -111,15 +111,28 @@ namespace KeyProcessing {
 		}
 		return Attributes(std::move(str));
 	}
+	static bool FillMissingKey(const KeyPair& missingkey, Keys& keys) {
+		if (GetKey(missingkey.first, keys).first) return false;
+		keys.insert(missingkey);
+		return true;
+	}
 	static std::vector<KeyPair> FillMissingKeys(const std::vector<KeyPair>& missingkeys, Keys& keys) {
 		std::vector<KeyPair> filledkeys;
-		for (const auto& key : missingkeys) {
-			if (GetKey(key.first, keys).first) continue;
-			keys.insert(key);
-			filledkeys.emplace_back(key);
+		for (auto& missingkey : missingkeys) {
+			if (!FillMissingKey(missingkey, keys)) continue;
+			filledkeys.emplace_back(missingkey);
 		}
 		return filledkeys;
 	}
+// 	static std::vector<KeyPair> FillMissingKeys(const std::vector<KeyPair>& missingkeys, Keys& keys) {
+// 		std::vector<KeyPair> filledkeys;
+// 		for (const auto& key : missingkeys) {
+// 			if (GetKey(key.first, keys).first) continue;
+// 			keys.insert(key);
+// 			filledkeys.emplace_back(key);
+// 		}
+// 		return filledkeys;
+// 	}
 	static std::string ConstructKeyStr(const std::string & arg1, const std::string & arg2) {
 		auto arg1tmp = RemoveWhiteSpaces(arg1);
 		auto arg2tmp = RemoveWhiteSpaces(arg2);

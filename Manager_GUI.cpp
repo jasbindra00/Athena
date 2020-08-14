@@ -32,44 +32,78 @@ Manager_GUI::Manager_GUI(SharedContext* cntxt) :context(cntxt) {
 	stateinterfaces[GameStateType::GAME] = Interfaces{};
 	stateinterfaces[GameStateType::LEVELEDITOR] = Interfaces{  };
 }
-GUIStateStyles Manager_GUI::CreateStyleFromFile(const std::string& stylefile) {
+
+GUIStateStyles Manager_GUI::CreateStyleFromFile(const std::string& stylefile){
+	FileReader file(stylefile);
+	if (!file.IsOpen()) {
+		LOG::Log(LOCATION::MANAGER_GUI, LOGTYPE::ERROR, __FUNCTION__, "Unable to open the GUIStyle file of name " + stylefile + ". RETURNING DEFAULT STYLES..");
+		return GUIStateStyles{};
+	}
 	GUIStateStyles styles;
-	FileReader file;
-	if(!file.LoadFile(stylefile)){
-		LOG::Log(LOCATION::MANAGER_GUI, LOGTYPE::ERROR, __FUNCTION__, "Unable to open the style file of name " + stylefile);
-		return styles;
-	}
+	styles[(GUIState::NEUTRAL)] = GUIStyle{};
+	styles[(GUIState::FOCUSED)] = GUIStyle{};
+	styles[(GUIState::CLICKED)] = GUIStyle{};
+
 	while (file.NextLine().GetFileStream()) {
-		auto currentstate = GUIState::NEUTRAL;{//conv scope to function
-			auto currentword = file.GetWord();
-			if (currentword == "GUIState") {
-				unsigned int inputstate;
-				file.GetLineStream() >> inputstate;
-				currentstate = static_cast<GUIState>(inputstate);
-			}
-			else if (currentword == "/ENDSTATE") break;
-			else { LOG::Log(LOCATION::MANAGER_GUI, LOGTYPE::ERROR, __FUNCTION__, "Unable to find the beginning of state style. Ensure that state style begins with GUIState x"); break;}
+		Keys linekeys = KeyProcessing::ExtractValidKeys(file.ReturnLine());
+		GUIState currentstate;
+		try {
+			auto foundstatekey = linekeys.find("GUISTATE");
+			if (foundstatekey == linekeys.end()) throw CustomException("Unable to identify the {GUISTATE,STATE} key ");
+			currentstate = GUIData::GUIStateData::converter(foundstatekey->second);
+			if (currentstate == GUIState::NULLSTATE) throw CustomException("Unable to identify the GUISTATE argument ");
 		}
-		file.NextLine();
-		auto word = file.GetWord();
-		auto linestream = static_cast<Attributes*>(&file.GetLineStream());
- 		while (word != "/ENDSTATE" && !file.EndOfFile()) {
-			if (word == "sbg" || word == "tbg") *linestream >> styles[currentstate].background;
-			else if (word == "text") *linestream >> styles[currentstate].text;
-			else LOG::Log(LOCATION::MANAGER_GUI, LOGTYPE::ERROR, __FUNCTION__, "Unable to recognise state style attribute in stylefile of name " + stylefile + " on line number " + file.GetLineNumberString());
-			file.NextLine();
-			word = file.GetWord();
-			//user may have accidentally forgotten to put in /ENDSTATE
-			if (word == "GUIState") {
-				LOG::Log(LOCATION::MANAGER_GUI, LOGTYPE::ERROR, __FUNCTION__, "Stylefile of name " + stylefile + " terminated early on linenumber " + file.GetLineNumberString() + " in reading state style - could not find /ENDSTATE ");
-				linestream->PutBackPreviousWord();
-				break;
-			}
- 		}	
+		catch (const CustomException& exception) {
+			LOG::Log(LOCATION::MANAGER_GUI, LOGTYPE::ERROR, __FUNCTION__, std::string{ exception.what() } + " on line " + file.GetLineNumberString() + " in style file of name " + stylefile + ".DID NOT READ ATTRIBUTE...");
+			continue;
+		}
+		try { linekeys >> styles.at(currentstate); }
+		catch (const CustomException& exception) {
+
+		}
+
 	}
-	file.CloseFile();
-  	return styles;
+	return styles;
 }
+
+// GUIStateStyles Manager_GUI::CreateStyleFromFile(const std::string& stylefile) {
+// 	GUIStateStyles styles;
+// 	FileReader file;
+// 	if(!file.LoadFile(stylefile)){
+// 		LOG::Log(LOCATION::MANAGER_GUI, LOGTYPE::ERROR, __FUNCTION__, "Unable to open the style file of name " + stylefile);
+// 		return styles;
+// 	}
+// 	while (file.NextLine().GetFileStream()) {
+// 		auto currentstate = GUIState::NEUTRAL;{//conv scope to function
+// 			auto currentword = file.GetWord();
+// 			if (currentword == "GUIState") {
+// 				unsigned int inputstate;
+// 				file.GetLineStream() >> inputstate;
+// 				currentstate = static_cast<GUIState>(inputstate);
+// 			}
+// 			else if (currentword == "/ENDSTATE") break;
+// 			else { LOG::Log(LOCATION::MANAGER_GUI, LOGTYPE::ERROR, __FUNCTION__, "Unable to find the beginning of state style. Ensure that state style begins with GUIState x"); break;}
+// 		}
+// 		file.NextLine();
+// 		auto word = file.GetWord();
+// 		auto linestream = static_cast<Attributes*>(&file.GetLineStream());
+//  		while (word != "/ENDSTATE" && !file.EndOfFile()) {
+// 			if (word == "sbg" || word == "tbg") *linestream  styles[currentstate].background;
+// 			else if (word == "text") *linestream >> styles[currentstate].text;
+// 			else LOG::Log(LOCATION::MANAGER_GUI, LOGTYPE::ERROR, __FUNCTION__, "Unable to recognise state style attribute in stylefile of name " + stylefile + " on line number " + file.GetLineNumberString());
+// 			file.NextLine();
+// 			word = file.GetWord();
+// 			//user may have accidentally forgotten to put in /ENDSTATE
+// 			if (word == "GUIState") {
+// 				LOG::Log(LOCATION::MANAGER_GUI, LOGTYPE::ERROR, __FUNCTION__, "Stylefile of name " + stylefile + " terminated early on linenumber " + file.GetLineNumberString() + " in reading state style - could not find /ENDSTATE ");
+// 				linestream->PutBackPreviousWord();
+// 				break;
+// 			}
+//  		}	
+// 	}
+// 	file.CloseFile();
+//   	return styles;
+// }
 GUIElementPtr Manager_GUI::CreateElement(GUIInterface* parent, const Keys& keys) {
 	using KeyProcessing::KeyPair;
 	std::string elttype = keys.find("ELEMENTTYPE")->second;
@@ -109,24 +143,15 @@ GUIInterfacePtr Manager_GUI::CreateInterfaceFromFile(const std::string& interfac
 
 	while (file.NextLine().GetFileStream()) {
 		Keys linekeys = KeyProcessing::ExtractValidKeys(file.ReturnLine());
+
+		//fill the standard keys for base guielement.
 		KeyProcessing::FillMissingKeys(std::vector<KeyPair>{ {"ELEMENTTYPE", "FATALERROR"}, { "STYLEFILE", "FATALERROR" }, { "ELEMENTNAME", "FATALERROR" }, {"HIDDEN", "FALSE"},
 			{ "POSITIONX","ERROR" }, { "POSITIONY","ERROR" }, { "POSITIONX%", "ERROR" }, { "POSITIONY%", "ERROR" }, { "SIZEX", "ERROR" }, { "SIZEY","ERROR" },
-			{ "SIZEX%", "ERROR" }, { "SIZEY%", "ERROR" }, { "ORIGINX%","ERROR" }, { "ORIGINY%","ERROR" }}, linekeys);
-		{
-			bool err = false;
-			for (auto& key : linekeys) {
-				if (key.second == "FATALERROR") {
-					LOG::Log(LOCATION::MAP, LOGTYPE::ERROR, __FUNCTION__, "Invalid essential key " + KeyProcessing::ConstructKeyStr(key.first, key.second) + " for GUIElement initialisation on line " + file.GetLineNumberString() + appenderrorstr+ "DID NOT READ ELEMENT..");
-					err = true;
-				}
-			}
-			if (err) continue;
-		}
-
-
-
-		GUIElementPtr element;
+			{ "SIZEX%", "ERROR" }, { "SIZEY%", "ERROR" }, { "ORIGINX%","ERROR" }, { "ORIGINY%","ERROR" }}, linekeys);	
 		std::string elttype = linekeys.find("ELEMENTTYPE")->second;
+		//fill keys for derived guielements.
+		if (elttype == "TEXTFIELD") KeyProcessing::FillMissingKey(KeyPair{ "DEFAULTTEXT", "ENTER TEXT HERE.." }, linekeys);
+		GUIElementPtr element;
 		try { element = (elttype == "NESTEDINTERFACE" || elttype != "NEWINTERFACE") ? CreateElement(leadinginterface, linekeys) : CreateElement(masterinterface, linekeys); }
 		catch (const CustomException& exception) {
 			if (std::string{ exception.what() } == "ELEMENTTYPE") {

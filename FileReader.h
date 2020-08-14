@@ -14,7 +14,13 @@ private:
 	int linenumber;
 	int previouspos;
 public:
+	FileReader() {
 
+	}
+	FileReader(const std::string& filename){
+		LoadFile(filename);
+	}
+	bool IsOpen() const { return file.is_open(); }
 	bool LoadFile(const std::string& name) {
 		if (file.is_open()) file.close();
 		file.open(name, std::ios::in);
