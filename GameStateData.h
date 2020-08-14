@@ -3,7 +3,7 @@
 #include "EnumConverter.h"
 namespace GameStateData {
 	static enum class GameStateType {
-		INTRO, MAINMENU, OPTIONS, GAME, GAMELOST, NULLSTATE
+		INTRO, MAINMENU, OPTIONS, GAME, GAMELOST,LEVELEDITOR, NULLSTATE
 	};
 	static EnumConverter<GameStateType> converter([](const std::string& str)->GameStateType {
 		if (str == "INTRO") return GameStateType::INTRO;

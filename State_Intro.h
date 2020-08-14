@@ -13,7 +13,7 @@ protected:
 	sf::RectangleShape shape;
 	sf::Clock tick;
 public:
-	State_Intro(Manager_State* statemgr);
+	State_Intro(Manager_State* statemgr, Manager_GUI* guimgr);
 	void OnDestroy() override;
 	void OnCreate() override;
 	void Update(const float& dT) override;

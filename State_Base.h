@@ -8,15 +8,17 @@
 //need access to the window.
 
 class Manager_State;
+class Manager_GUI;
 class State_Base : public sf::Drawable //abstract base for all specialised states
 {
 protected:
 	sf::View stateview;
 	Manager_State* statemgr;
+	Manager_GUI* guimgr;
 	mutable bool transcendency;
 	mutable bool transparency;
 public:
-	State_Base(Manager_State* statemanager): statemgr(statemanager), transparency(true), transcendency(true){
+	State_Base(Manager_State* statemanager, Manager_GUI* guimanager): statemgr(statemanager),guimgr(guimanager), transparency(true), transcendency(true){
 	}
 	virtual ~State_Base(){}
 	virtual void draw(sf::RenderTarget& target, sf::RenderStates state) const override = 0;

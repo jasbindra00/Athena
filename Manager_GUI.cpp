@@ -15,9 +15,6 @@
 #include "GUIData.h"
 #include "EventData.h"
 #include <array>
-
-
-
 using GameStateData::GameStateType;
 using GUIData::GUITypeData::GUIType;
 using namespace EventData;
@@ -26,6 +23,7 @@ using namespace GUIData;
 Manager_GUI::Manager_GUI(SharedContext* cntxt) :context(cntxt) {
 	RegisterElementProducer<GUITextfield>(GUIType::TEXTFIELD);
 	stateinterfaces[GameStateType::GAME] = Interfaces{};
+	stateinterfaces[GameStateType::LEVELEDITOR] = Interfaces{  };
 }
 GUIStateStyles Manager_GUI::CreateStyleFromFile(const std::string& stylefile) {
 	GUIStateStyles styles;
@@ -104,9 +102,9 @@ GUIInterfacePtr Manager_GUI::CreateInterfaceFromFile(const std::string& interfac
 
 	while (file.NextLine().GetFileStream()) {
 		Keys linekeys = KeyProcessing::ExtractValidKeys(file.ReturnLine());
-		KeyProcessing::FillMissingKeys(std::vector<KeyPair>{ {"ELEMENTTYPE", "FATALERROR"}, { "STYLEFILE", "FATALERROR" }, { "ELEMENTNAME", "FATALERROR" },
+		KeyProcessing::FillMissingKeys(std::vector<KeyPair>{ {"ELEMENTTYPE", "FATALERROR"}, { "STYLEFILE", "FATALERROR" }, { "ELEMENTNAME", "FATALERROR" }, {"HIDDEN", "FALSE"},
 			{ "POSITIONX","ERROR" }, { "POSITIONY","ERROR" }, { "POSITIONX%", "ERROR" }, { "POSITIONY%", "ERROR" }, { "SIZEX", "ERROR" }, { "SIZEY","ERROR" },
-			{ "SIZEX%", "ERROR" }, { "SIZEY%", "ERROR" }}, linekeys);
+			{ "SIZEX%", "ERROR" }, { "SIZEY%", "ERROR" }, { "ORIGINX%","ERROR" }, { "ORIGINY%","ERROR" }}, linekeys);
 		{
 			bool err = false;
 			for (auto& key : linekeys) {
@@ -209,6 +207,7 @@ void Manager_GUI::HandleEvent(const sf::Event& evnt, sf::RenderWindow* winptr) {
 		auto clickcoords = sf::Vector2f{ static_cast<float>(evnt.mouseButton.x), static_cast<float>(evnt.mouseButton.y) };
 		SetActiveTextfield(nullptr);
 		for (auto& interfaceobj : activeinterfaces) {
+			if (interfaceobj.second->IsHidden()) continue;
 			interfaceobj.second->DefocusTextfields();
 			if (interfaceobj.second->Contains(clickcoords)) {
 				if (interfaceobj.second->GetActiveState() == GUIState::NEUTRAL) {
@@ -223,6 +222,7 @@ void Manager_GUI::HandleEvent(const sf::Event& evnt, sf::RenderWindow* winptr) {
 	}
 	case EventType::MOUSERELEASED: {
 		for (auto& interfaceobj : activeinterfaces) {
+			if (interfaceobj.second->IsHidden()) continue;
 			if (interfaceobj.second->GetActiveState() == GUIState::CLICKED) {
 				interfaceobj.second->OnRelease();
 			}
@@ -253,12 +253,15 @@ void Manager_GUI::Update(const float& dT){
 	globalmouseposition = static_cast<sf::Vector2f>(sf::Mouse::getPosition(*context->window->GetRenderWindow()));
 	auto &stategui = stateinterfaces.at(activestate);
 	for (auto& interfaceptr : stategui) {
+		if (interfaceptr.second->IsHidden()) continue;
 		interfaceptr.second->Update(dT);
+		std::cout << interfaceptr.second->GetHierarchyString() << std::endl;
 	}
 }
 void Manager_GUI::Draw() {
 	auto& stategui = stateinterfaces.at(activestate);
 	for (auto& interface : stategui) {
+		if (interface.second->IsHidden()) continue;
 		interface.second->Render();
 	}
 }

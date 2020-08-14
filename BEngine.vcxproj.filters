@@ -114,6 +114,9 @@
     <ClCompile Include="Map.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="State_Level_Editor.cpp">
+      <Filter>Source Files\Game States</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Game.h">
@@ -313,6 +316,9 @@
     </ClInclude>
     <ClInclude Include="CustomException.h">
       <Filter>Header Files\Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="State_Level_Editor.h">
+      <Filter>Header Files\States\States</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

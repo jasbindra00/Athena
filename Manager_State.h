@@ -25,6 +25,7 @@ namespace GameStateInfo {
 
 using namespace GameStateInfo;
 class EventManager;
+class Manager_GUI;
 class Manager_State
 {
 private:
@@ -33,17 +34,18 @@ private:
 	StateFactory statefactory;
 	StateObjects statestack;
 	SharedContext* context;
+	Manager_GUI* guimgr;
 	
 	template<typename T>
 	bool RegisterStateProducer(const GameStateType& state) {
-		statefactory[state] = [this](void) {return std::make_unique<T>(this); };
+		statefactory[state] = [this](void) {return std::make_unique<T>(this, guimgr); };
 		return true;
 	}
 	void ProcessDestructions();
 	void ProcessInsertions();
 	
 public:
-	Manager_State(SharedContext* context);
+	Manager_State(SharedContext* context, Manager_GUI* guimanager);
 	inline void QueueDestruction(const GameStateData::GameStateType& state) { destructionqueue.emplace_back(state); }
 	inline void QueueInsertion(const GameStateType& state) { insertionqueue.emplace_back(state); }
 	bool StateExists(const GameStateType& state) const;

@@ -40,6 +40,7 @@ void GUIInterface::RedrawContentLayer() {
 	auto contentlayer = layers->GetContentLayer();
 	contentlayer->clear(sf::Color::Color(255,255,255,0));
 	for (auto& element : elements) {
+		if (element.second->IsHidden()) continue;
 		if (!element.second->IsControl()) { //then it must be a content elt
 			element.second->Draw(*contentlayer);
 			element.second->MarkRedraw(false);
@@ -54,6 +55,7 @@ void GUIInterface::RedrawControlLayer() {
 	auto controllayer = layers->GetControlLayer();
 	controllayer->clear(sf::Color::Color(255, 0, 0, 0));
 	for (auto& element : elements) {
+		if (element.second->IsHidden()) continue;
 		if (element.second->IsControl() || dynamic_cast<GUIInterface*>(element.second.get())) { //draw nested interfaces onto the control layer.
 			element.second->Draw(*controllayer);
 		}
@@ -94,6 +96,7 @@ void GUIInterface::Update(const float& dT){
 	auto mouseposition = static_cast<sf::Vector2f>(sf::Mouse::getPosition(*guimgr->GetContext()->window->GetRenderWindow()));
 	GUIElement::Update(dT); //apply any pending movement / size changes
 	for (auto& element : elements) {
+		if (element.second->IsHidden()) continue;
 		if (element.second->Contains(mouseposition)) {
 			if (element.second->GetActiveState() == GUIState::NEUTRAL) {
 				element.second->OnHover();
@@ -132,6 +135,7 @@ void GUIInterface::OnClick(const sf::Vector2f& pos){
 	std::cout << "INTERFACE CLICKED : " << name << std::endl;
 
 	for (auto& element : elements) {
+		if (element.second->IsHidden()) continue;
 		if (element.second->GetActiveState() != GUIState::CLICKED) { //if the element has not already been clicked
 			if (element.second->Contains(pos)) {
 				element.second->OnClick(pos); //if its a click on a textfield, then the manager will defocus all active interface textfields via event.
@@ -147,6 +151,7 @@ void GUIInterface::OnClick(const sf::Vector2f& pos){
 void GUIInterface::OnRelease(){
 	SetState(GUIState::NEUTRAL);
 	for (auto& element : elements) {
+		if (element.second->IsHidden()) continue;
 		if (element.second->GetActiveState() == GUIState::CLICKED) {
 			element.second->OnRelease();
 		}

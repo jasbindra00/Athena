@@ -4,19 +4,17 @@
 #include "State_Game.h"
 #include "State_Menu.h"
 #include "State_Options.h"
-#include"State_Options.h"
+#include "State_Level_Editor.h"
 #include "SharedContext.h"
 #include "Window.h"
 
 #include "GameStateData.h"
-
-
 using GameStateData::GameStateType;
-Manager_State::Manager_State(SharedContext* c):context(c) {
-
+Manager_State::Manager_State(SharedContext* c, Manager_GUI* guimanager):context(c), guimgr(guimanager) {
+	RegisterStateProducer<State_LevelEditor>(GameStateType::LEVELEDITOR);
 	RegisterStateProducer<State_Intro>(GameStateType::INTRO);
 	RegisterStateProducer<State_Game>(GameStateType::GAME);
-	SwitchState(GameStateType::INTRO);
+	QueueInsertion(GameStateType::INTRO);
 }
 bool Manager_State::StateExists(const GameStateType& state) const{
 	auto pendingdestruction = std::find(destructionqueue.begin(), destructionqueue.end(), state);
@@ -40,15 +38,16 @@ void Manager_State::RemoveStateProducer(const GameStateType& state){
 }
 void Manager_State::Update(const float& dT) {
 	ProcessDestructions();
-	if (statestack.empty()) return;
-	auto currentstate = statestack.end() - 1;
-	while (currentstate > statestack.begin()) { //finding the first non transcendent state
-		if (currentstate->second->GetTranscendency() == false) break;
-		--currentstate;
-	}
-	while (currentstate != statestack.end()) { //updating upwards from that state.
-		currentstate->second->Update(dT);
-		++currentstate; 
+	if (!statestack.empty()) {
+		auto currentstate = statestack.end() - 1;
+		while (currentstate > statestack.begin()) { //finding the first non transcendent state
+			if (currentstate->second->GetTranscendency() == false) break;
+			--currentstate;
+		}
+		while (currentstate != statestack.end()) { //updating upwards from that state.
+			currentstate->second->Update(dT);
+			++currentstate;
+		}
 	}
 	ProcessInsertions();
 }

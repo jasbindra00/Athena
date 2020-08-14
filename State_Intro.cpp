@@ -3,7 +3,7 @@
 #include "GameStateData.h"
 
 using GameStateData::GameStateType;
-State_Intro::State_Intro(Manager_State* statemgr) :State_Base(statemgr) {
+State_Intro::State_Intro(Manager_State* statemgr,Manager_GUI* guimanager) :State_Base(statemgr, guimanager) {
 	transparency = false;
 	transcendency = false;
 	
@@ -36,7 +36,7 @@ void State_Intro::UpdateCamera()
 }
 
 void State_Intro::Continue(){
-	statemgr->QueueInsertion(GameStateType::GAME);
+	statemgr->QueueInsertion(GameStateType::LEVELEDITOR);
 	statemgr->QueueDestruction(GameStateType::INTRO);
 	
 }

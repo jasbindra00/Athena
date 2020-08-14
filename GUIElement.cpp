@@ -5,6 +5,7 @@
 
 
 
+
 bool GUIElement::RequestFontResources() {
 	auto& activestyle = statestyles[activestate];
 	if (activestyle.text.fontname.empty()) return false;
@@ -38,7 +39,6 @@ void GUIElement::ReleaseStyleResources(){
 void GUIElement::ReadIn(const KeyProcessing::Keys& keys) {
 	//REFACTOR THIS.
 
-
 	name = keys.find("ELEMENTNAME")->second;
 	std::string errorstr{ " for GUIElement of name " + name };
 	//need to check if the sizex% of sizey%
@@ -46,37 +46,44 @@ void GUIElement::ReadIn(const KeyProcessing::Keys& keys) {
 	sf::Vector2f position;
 	auto videomode = sf::VideoMode::getDesktopMode();
 	sf::Vector2f size{ static_cast<float>(videomode.width), static_cast<float>(videomode.height) };
+	sf::Vector2f origin;
+	sf::Vector2f parentdimensions = (parent == nullptr) ? sf::Vector2f{ static_cast<float>(videomode.width), static_cast<float>(videomode.height) } : parent->GetSize();
 
+	(keys.find("HIDDEN")->second == "FALSE") ? hidden = false : hidden = true;
 	try { size.x = std::stof(keys.find("SIZEX")->second); }
 	catch (const std::exception& exception) {
-		if (keys.find("SIZEX")->second == "STRETCH") position.x = 0;
-		else {
-			try {
-				size.x = std::stof(keys.find("SIZEX%")->second) / 100;
-				size.x*= (parent == nullptr) ? videomode.width : parent->GetSize().x;
-			}
-				
-			catch (const std::exception& exc) {
-				//invalid positionx. invalid positionx%.
-				LOG::Log(LOCATION::GUIELEMENT, LOGTYPE::ERROR, __FUNCTION__, "Unable to identify {SIZEX,x} / {SIZEX%,x%} key. DEFAULTING TO 10%.." + errorstr);
-				size.x*=0.1*(parent == nullptr) ? videomode.width : parent->GetSize().x;
-			}
+		
+		try {
+			size.x = std::stof(keys.find("SIZEX%")->second) / 100;
+			size.x*= (parent == nullptr) ? videomode.width : parent->GetSize().x;
 		}
+		catch (const std::exception& exc) {
+			//invalid positionx. invalid positionx%.
+			LOG::Log(LOCATION::GUIELEMENT, LOGTYPE::ERROR, __FUNCTION__, "Unable to identify {SIZEX,x} / {SIZEX%,x%} key. DEFAULTING TO 10%.." + errorstr);
+			size.x = 0.1*(parent == nullptr) ? videomode.width : parent->GetSize().x;
+		}
+		
 	}
 	try { size.y = std::stof(keys.find("SIZEY")->second); }
 	catch (const std::exception& exception) {
-		if (keys.find("SIZEY")->second == "STRETCH") position.y = 0;
-		else {
-			try { 
-				size.y = (std::stof(keys.find("SIZEY%")->second) / 100);
-				size.y*= (parent == nullptr) ? videomode.height : parent->GetSize().y; 
-			}
-			catch (const std::exception& exc) {
-				//invalid positionx. invalid positionx%.
-				LOG::Log(LOCATION::GUIELEMENT, LOGTYPE::ERROR, __FUNCTION__, "Unable to identify {SIZEY,x} / {SIZEY%,x%} key. DEFAULTING TO 10%.." + errorstr);
-				size.y = 0.1*(parent == nullptr) ? videomode.height : parent->GetSize().y;
-			}
+		try { 
+			size.y = (std::stof(keys.find("SIZEY%")->second) / 100);
+			size.y*= (parent == nullptr) ? videomode.height : parent->GetSize().y; 
 		}
+		catch (const std::exception& exc) {
+			//invalid positionx. invalid positionx%.
+			LOG::Log(LOCATION::GUIELEMENT, LOGTYPE::ERROR, __FUNCTION__, "Unable to identify {SIZEY,x} / {SIZEY%,x%} key. DEFAULTING TO 10%.." + errorstr);
+			size.y = 0.1*(parent == nullptr) ? videomode.height : parent->GetSize().y;
+		}
+		
+	}
+	try { origin.x = std::stof(keys.find("ORIGINX%")->second) / 100; }
+	catch (const std::exception& exception) {
+		LOG::Log(LOCATION::GUIELEMENT, LOGTYPE::ERROR, __FUNCTION__, "Unable to read {ORIGINX%,x%} key " + errorstr + "DEFAULTING TO 0%...");
+	}
+	try { origin.y = std::stof(keys.find("ORIGINY%")->second) / 100; }
+	catch (const std::exception& exception) {
+		LOG::Log(LOCATION::GUIELEMENT, LOGTYPE::ERROR, __FUNCTION__, "Unable to read {ORIGINY%,y%} key " + errorstr + "DEFAULTING TO 0%...");
 	}
 	try { position.x = std::stof(keys.find("POSITIONX")->second); }
 	catch (const std::exception& exception) {
@@ -88,21 +95,32 @@ void GUIElement::ReadIn(const KeyProcessing::Keys& keys) {
 				LOG::Log(LOCATION::GUIELEMENT, LOGTYPE::ERROR, __FUNCTION__, "Unable to identify {POSITIONX,x} / {POSITIONX%,x%} key. DEFAULTING TO 10%.." + errorstr);
 				position.x = 0.1*(parent == nullptr) ? videomode.width : parent->GetSize().x;
 			}
-			if (position.x == videomode.width) position.x -= size.x;
 	}
+
+
+
+	position.x -= (origin.x * size.x);
+	if (position.x < 0) position.x = 0;
+	//ensure that the element size remains clamped to the interface if overhang.
+	if (position.x + size.x > parentdimensions.x) size.x = parentdimensions.x - position.x;
 	try { position.y = std::stof(keys.find("POSITIONY")->second); }
 	catch (const std::exception& exception) {
 		try {
 			position.y = (std::stof(keys.find("POSITIONY%")->second) / 100);
-				position.y*= videomode.height; }
+			position.y *= (parent == nullptr) ? videomode.height : parent->GetSize().y;
+		}
 		catch (const std::exception& exc) {
 			//invalid positionx. invalid positionx%.
 			LOG::Log(LOCATION::GUIELEMENT, LOGTYPE::ERROR, __FUNCTION__, "Unable to identify {POSITIONY,y} / {POSITIONY%,y%} key. DEFAULTING TO 10%.." + errorstr);
 			position.y = 0.1 * (parent == nullptr) ? videomode.height : parent->GetSize().y;
 		}
-		if (position.y == videomode.height) position.y -= size.y;
 	}
 
+	
+	position.y -= (origin.y * size.y);
+ 	if (position.y < 0) position.y = 0;
+	if (position.y + size.y >= parentdimensions.y) size.y = parentdimensions.y - position.y;
+	position.y + size.y;
 	//note that these changes aren't applied immediately but will be applied in the next update cycle.
 	SetElementSize(std::move(size));
 	SetLocalPosition(std::move(position));
@@ -200,6 +218,17 @@ void GUIElement::SetElementSize(const sf::Vector2f& s) {
 	pendingcalibration = true;
 	pendingsizeapply = true;
 }
+
+std::string GUIElement::GetHierarchyString() const{
+	std::string str(name);
+	GUIInterface* mparent = parent;
+	while (mparent->GetParent() != nullptr) {
+		mparent = mparent->GetParent();
+		str += mparent->GetName() + " ";
+	}
+	return str;
+}
+
 sf::Vector2f GUIElement::GetGlobalPosition() const{
 	if (parent == this) return localposition;
 	return localposition + GetParent()->GetGlobalPosition(); 

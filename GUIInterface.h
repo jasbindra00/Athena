@@ -41,6 +41,7 @@ public:
 	
 	void DefocusTextfields() {
 		for (auto& elt : elements) {
+			if (elt.second->IsHidden()) continue;
 			if (elt.second->GetType() == GUIType::TEXTFIELD) {
 				if(elt.second->GetActiveState() != GUIState::NEUTRAL) elt.second->OnNeutral();
 			}

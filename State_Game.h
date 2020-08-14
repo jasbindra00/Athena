@@ -11,7 +11,7 @@ protected:
 	using State_Base::transparency;
 	using State_Base::statemgr;
 public:
-	State_Game(Manager_State* statemanager);
+	State_Game(Manager_State* statemanager, Manager_GUI* guimgr);
 	virtual void Update(const float& dT) override;
 	virtual void draw(sf::RenderTarget& target, sf::RenderStates state) const override;
 	virtual void OnCreate() override;

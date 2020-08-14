@@ -8,7 +8,7 @@
 
 using GameStateData::GameStateType;
 using EventData::EventDetails;
-State_Game::State_Game(Manager_State* statemgr) : State_Base(statemgr){
+State_Game::State_Game(Manager_State* statemgr, Manager_GUI* guimanager) : State_Base(statemgr,guimanager){
 	statemgr->GetContext()->eventmanager->RegisterBindingCallable(GameStateType::GAME, "Spacebar", [this](EventDetails* ptr) {this->KeyPress(ptr); });
 }
 

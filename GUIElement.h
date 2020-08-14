@@ -27,10 +27,12 @@ protected:
 	mutable GUIState activestate;
 	mutable bool controlelement; //used by the interface in determining which layer to redraw
 	mutable bool redrawrequired; //if it's changed, then the layer to which it forms within the interface must be redrawn.
+	mutable bool hidden; //an inactive element is hidden from the GUI.
 
 	mutable bool pendingpositionapply;
 	mutable bool pendingsizeapply;
 	mutable bool pendingcalibration;
+	
 
 	sf::Vector2f localposition;
 	sf::Vector2f elementsize;
@@ -63,11 +65,12 @@ public:
 	void SetLocalPosition(const sf::Vector2f& pos);
 	void SetParent(GUIInterface* p) { parent = p; }
 
-
+	void SetHidden(const bool& inp) const { hidden = inp; }
 	void MarkRedraw(const bool& inp) const { redrawrequired = inp; }
 	
 	bool RequiresRedraw() const { return redrawrequired; }
 	inline const bool& IsControl() const { return controlelement; }
+	inline const bool& IsHidden() const { return hidden; }
 
 	inline const GUIState& GetActiveState() const { return activestate; }
 	inline const sf::Vector2f& GetSize() const { return elementsize; }
@@ -76,6 +79,8 @@ public:
 	inline GUIStyle& GetActiveStyle() { return statestyles[activestate]; }
 	inline GUIInterface* GetParent() const { return parent; }
 	inline const sf::Vector2f& GetLocalPosition() const { return localposition; }
+	std::string GetHierarchyString() const;
+
 	
 	sf::Vector2f GetGlobalPosition() const;
 	sf::FloatRect GetLocalBoundingBox() const;

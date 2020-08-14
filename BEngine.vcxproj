@@ -169,6 +169,7 @@
     <ClCompile Include="Map.cpp" />
     <ClCompile Include="State_Game.cpp" />
     <ClCompile Include="State_Intro.cpp" />
+    <ClCompile Include="State_Level_Editor.cpp" />
     <ClCompile Include="System_Animation.cpp" />
     <ClCompile Include="System_State.cpp" />
   </ItemGroup>
@@ -202,6 +203,7 @@
     <ClInclude Include="MapTile.h" />
     <ClInclude Include="Origin.h" />
     <ClInclude Include="State_Intro.h" />
+    <ClInclude Include="State_Level_Editor.h" />
     <ClInclude Include="StaticContext.h" />
     <ClInclude Include="StreamAttributes.h" />
     <ClInclude Include="EnumConverter.h" />
