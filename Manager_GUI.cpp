@@ -119,9 +119,7 @@ GUIInterfacePtr Manager_GUI::CreateInterfaceFromFile(const std::string& interfac
 		}
 		GUIElementPtr element;
 		std::string elttype = linekeys.find("ELEMENTTYPE")->second;
-		try {
-			element = (elttype == "NESTEDINTERFACE" || elttype != "NEWINTERFACE") ? CreateElement(leadinginterface, linekeys) : CreateElement(masterinterface, linekeys);
-		}
+		try { element = (elttype == "NESTEDINTERFACE" || elttype != "NEWINTERFACE") ? CreateElement(leadinginterface, linekeys) : CreateElement(masterinterface, linekeys); }
 		catch (const CustomException& exception) {
 			if (std::string{ exception.what() } == "ELEMENTTYPE") {
 				LOG::Log(LOCATION::MANAGER_GUI, LOGTYPE::ERROR, __FUNCTION__, "Unable to read the GUIElement on line " + file.GetLineNumberString() + appenderrorstr + "DID NOT READ ELEMENT..");
@@ -129,7 +127,7 @@ GUIInterfacePtr Manager_GUI::CreateInterfaceFromFile(const std::string& interfac
 			continue;
 		}
 		if (dynamic_cast<GUIInterface*>(element.get())) {//if the element is an interface
-			if (ninterfaces == 0) masterinterface = static_cast<GUIInterface*>(element.get());
+			if (ninterfaces == 0) masterinterface = static_cast<GUIInterface*>(element.get()); //****************CHANGE THIS
 			std::string elttype = linekeys.find("ELEMENTTYPE")->second;
 			//create a new structure line
 			interfacehierarchy.push_back(std::make_pair(elttype,std::vector<GUIElementPtr>{}));
@@ -142,13 +140,9 @@ GUIInterfacePtr Manager_GUI::CreateInterfaceFromFile(const std::string& interfac
 		//if its an element, add the element to the lastmost active interface structure
 		else interfacehierarchy[ninterfaces - 1].second.emplace_back(std::move(element));
 	}
-	masterinterface = static_cast<GUIInterface*>(interfacehierarchy[0].second[0].get());
-	leadinginterface = masterinterface;
-	//link up all the individual interfaces to their elements.
-	int interfacenum = 0; //interface
+	//link up all the individual interfaces to their elements
 	for (auto& structure : interfacehierarchy) {
 		auto currentinterface = static_cast<GUIInterface*>(structure.second[0].get());
-		//if (structure.second.size() == 1) continue; //the structure has only a single interface. no elt linkage required
 		for (int i = structure.second.size() - 1; i > 0; --i) { //now, loop through all of the elements (coming after the first interface entry within the structure)
 			auto& element = structure.second[i];
 			if (!currentinterface->AddElement(element->GetName(), element)) { 
@@ -157,23 +151,17 @@ GUIInterfacePtr Manager_GUI::CreateInterfaceFromFile(const std::string& interfac
 				continue;
 			}
 		}
-		//link this interface up to its parent interface.
-		if (interfacenum > 0) { //if not at master interface
-			bool successful;
-			if (structure.first == "NEWINTERFACE") { 
-				leadinginterface = static_cast<GUIInterface*>(structure.second[0].get());  //this is now the leading interface. subsequent nested interfaces are linked to this.
-				successful = masterinterface->AddElement(currentinterface->GetName(), structure.second[0]);} //new interfaces are added to the master interface. technically nested relative to the master
-			else if (structure.first == "NESTEDINTERFACE"){
-				auto tmp = structure.second[0].get(); 
-				successful = leadinginterface->AddElement(currentinterface->GetName(), structure.second[0]);
-				leadinginterface = static_cast<GUIInterface*>(tmp);
-			}
-			if (!successful) {
-				LOG::Log(LOCATION::MANAGER_GUI, LOGTYPE::ERROR, __FUNCTION__, "Ambiguous element name within interface file of name " + interfacefile);
-				structure.second[0].reset();
-			}
+	}
+	//link up each interface to its parent 
+	for (int i = interfacehierarchy.size() - 1; i > 0; --i) {
+		auto& structure = interfacehierarchy.at(i);
+		auto& interfaceptr = structure.second.at(0);
+		//If the current element is a new interface, then the parent is the master (first) interface.
+		//Else if the current element is a nested interface, then the parent is the interface that which came immediately before it.
+		GUIInterface* parent = static_cast<GUIInterface*>((structure.first == "NEWINTERFACE") ? interfacehierarchy.at(0).second.at(0).get() : interfacehierarchy.at(i - 1).second.at(0).get());
+		if (!parent->AddElement(interfaceptr->GetName(), interfaceptr)) {
+			LOG::Log(LOCATION::MANAGER_GUI, LOGTYPE::ERROR, __FUNCTION__, "Ambiguous element name within interface file of name " + interfacefile + "DID NOT ADD ELEMENT..");
 		}
-		++interfacenum;
 	}
 	return std::unique_ptr<GUIInterface>(static_cast<GUIInterface*>(interfacehierarchy[0].second[0].release())); //return the master interface.
 }
