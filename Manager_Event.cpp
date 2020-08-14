@@ -21,6 +21,7 @@ Manager_Event::Manager_Event(Manager_GUI* guimanager) noexcept :guimgr(guimanage
 	statebindingobjects[GameStateType::INTRO];
 	statebindingobjects[GameStateType::MAINMENU];
 	statebindingobjects[GameStateType::GAME];
+	statebindingobjects[GameStateType::LEVELEDITOR];
 
 	bindingcallables[GameStateType::INTRO];
 	bindingcallables[GameStateType::MAINMENU];
@@ -28,6 +29,7 @@ Manager_Event::Manager_Event(Manager_GUI* guimanager) noexcept :guimgr(guimanage
 	bindingcallables[GameStateType::INTRO];
 	bindingcallables[GameStateType::MAINMENU];
 	bindingcallables[GameStateType::GAME];
+	bindingcallables[GameStateType::LEVELEDITOR];
 	LoadBindings("Bindings2.txt");
 }
 using BindingTypes::BindingCallable;
@@ -41,26 +43,31 @@ bool Manager_Event::RegisterBindingCallable(const GameStateType& state, const st
 	return true;
 }
 using EventData::GUIEventInfo;
-void Manager_Event::HandleEvent(const GUIEventInfo& evnt) {
+void Manager_Event::HandleEvent(const std::pair<EventType, GUIEventInfo>& evnt) {
 	auto& statebindings = statebindingobjects[activestate];
 	for (auto& binding : statebindings) {
 		auto& bindingobject = binding.second;
 		if (bindingobject->type != BINDINGTYPE::GUI) continue;
-		auto inputevnttype = evnt.guievnttype;
 		for (auto& condition : bindingobject->conditions) {
-			auto& guicondition = std::get<1>(condition.second);
-			if (evnt.guievnttype != guicondition.guievnttype) continue;
-			if (evnt.elementstate != guicondition.elementstate) continue;
-			if (evnt.interfacehierarchy != guicondition.interfacehierarchy) continue;
+			if (condition.first != evnt.first) continue;
+			auto& requiredevntinfo = std::get<1>(condition.second);
+			//if (requiredevntinfo.elementstate != evnt.second.elementstate) continue;
+// 			std::cout << requiredevntinfo.interfacehierarchy << std::endl;
+// 			std::cout << evnt.second.interfacehierarchy << std::endl;
+			if (requiredevntinfo.interfacehierarchy != evnt.second.interfacehierarchy) continue;
+			//if (evnt.elementstate != guicondition.elementstate) continue;
 			//its a full match.
 			++bindingobject->conditionsmet;
-			bindingobject->details.guiinfo = evnt;
+			bindingobject->details.guiinfo = evnt.second;
 		}
 	}
 }
 using EventData::EventType;
 void Manager_Event::HandleEvent(const sf::Event& evnt, sf::RenderWindow* winptr) { //only considering the bindings of the active state.
 	guimgr->HandleEvent(evnt, winptr); //checks if any of the events cause change within any active interfaces.
+	if (evnt.type == sf::Event::KeyPressed) {
+		int x = 4;
+	}
 	auto eventtype = static_cast<EventType>(evnt.type);
 	auto& statebindings = statebindingobjects[activestate];
 	for (auto& binding : statebindings){
@@ -133,9 +140,11 @@ void Manager_Event::Update(sf::RenderWindow* winptr) { //handling live input eve
 		}
 		if (bindingobject->conditionsmet == bindingobject->conditions.size()) { //checking if this binding has had all of its conditions met
 			auto foundcallable = FindBindingData<BindingCallable>(activestate, bindingobject->bindingname);
+			std::cout << "MATCH" << std::endl;
 			if (foundcallable.first) {
 				auto& callable = foundcallable.second->second;
 				callable(&bindingobject->details);
+				
 			}
 		}
 		bindingobject->conditionsmet = 0; //resetting after every iteration.
@@ -190,7 +199,7 @@ void Manager_Event::LoadBindings(const std::string& filename) {
 	file.CloseFile();
 }
 void Manager_Event::ProcessGUIEvents() {
-	GUIEventInfo evnt;
+	std::pair<EventType,GUIEventInfo> evnt;
 	while (guimgr->PollGUIEvent(evnt)) {
 		HandleEvent(std::move(evnt));
 	}

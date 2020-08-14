@@ -195,7 +195,7 @@ GUIInterface* Manager_GUI::GetInterface(const GameStateType& state, const std::s
 	if (foundinterface.first == false) return nullptr;
 	return foundinterface.second->second.get();
 }
-bool Manager_GUI::PollGUIEvent(GUIEventInfo& evnt){
+bool Manager_GUI::PollGUIEvent(std::pair<EventData::EventType, GUIEventInfo>& evnt){
 	if (guieventqueue.PollEvent(evnt)) return true;
 	return false;
 }
@@ -248,14 +248,12 @@ void Manager_GUI::HandleEvent(const sf::Event& evnt, sf::RenderWindow* winptr) {
 	}
 
 }
-
 void Manager_GUI::Update(const float& dT){
 	globalmouseposition = static_cast<sf::Vector2f>(sf::Mouse::getPosition(*context->window->GetRenderWindow()));
 	auto &stategui = stateinterfaces.at(activestate);
 	for (auto& interfaceptr : stategui) {
 		if (interfaceptr.second->IsHidden()) continue;
 		interfaceptr.second->Update(dT);
-		std::cout << interfaceptr.second->GetHierarchyString() << std::endl;
 	}
 }
 void Manager_GUI::Draw() {
@@ -265,7 +263,7 @@ void Manager_GUI::Draw() {
 		interface.second->Render();
 	}
 }
-void Manager_GUI::AddGUIEvent(const GUIEventInfo& evnt){
+void Manager_GUI::AddGUIEvent(const std::pair<EventData::EventType,GUIEventInfo>& evnt){
 	guieventqueue.InsertEvent(evnt);
 }
 

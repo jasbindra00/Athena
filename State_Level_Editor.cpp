@@ -3,9 +3,9 @@
 
 State_LevelEditor::State_LevelEditor(Manager_State* statemgr, Manager_GUI* guimanager):State_Base(statemgr,guimanager){
 	guimgr->CreateStateInterface(GameStateData::GameStateType::LEVELEDITOR, "Bot_Panel","Interface_StateLevelEditor_Bot_Panel.txt");
-//	guimgr->CreateStateInterface(GameStateData::GameStateType::LEVELEDITOR, "PopUp_Panel", "Interface_StateLevelEditor_PopUp_Panel.txt");
-//	guimgr->CreateStateInterface(GameStateData::GameStateType::LEVELEDITOR, "Right_Panel", "Interface_StateLevelEditor_Right_Panel.txt");
-	//guimgr->CreateStateInterface(GameStateData::GameStateType::LEVELEDITOR, "Top_Panel", "Interface_StateLevelEditor_Top_Panel.txt");
+	guimgr->CreateStateInterface(GameStateData::GameStateType::LEVELEDITOR, "PopUp_Panel", "Interface_StateLevelEditor_PopUp_Panel.txt");
+	guimgr->CreateStateInterface(GameStateData::GameStateType::LEVELEDITOR, "Right_Panel", "Interface_StateLevelEditor_Right_Panel.txt");
+	guimgr->CreateStateInterface(GameStateData::GameStateType::LEVELEDITOR, "Top_Panel", "Interface_StateLevelEditor_Top_Panel.txt");
 }
 
 void State_LevelEditor::draw(sf::RenderTarget& target, sf::RenderStates state) const{

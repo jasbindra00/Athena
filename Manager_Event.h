@@ -62,7 +62,7 @@ protected:
 		return (found == bindingcontainer.end()) ? std::make_pair(false, found) : std::make_pair(true, found);
 	}
 	void ProcessGUIEvents();
-	void HandleEvent(const EventData::GUIEventInfo& evnt);
+	void HandleEvent(const std::pair<EventData::EventType,EventData::GUIEventInfo>& evnt);
 public:
 	Manager_Event(Manager_GUI* guimgr) noexcept;
 	void LoadBindings(const std::string& filename); //automatic loading and assigning of each binding object to a given state from a txt file. binding callables must be registered seperately.

@@ -30,11 +30,8 @@ namespace EventData {
 		MOUSESCROLLED = sf::Event::EventType::MouseWheelScrolled,
 		MOUSEMOVED = sf::Event::EventType::MouseMoved,
 		TEXTENTERED = sf::Event::EventType::TextEntered,
-		GUI_HOVER = 12,
 		GUI_CLICK = 13,
 		GUI_RELEASE = 14,
-		GUI_FOCUS = 15,
-		GUI_LEAVE = 16,
 		NULLTYPE = 17
 	};
 	static EnumConverter<EventType> EventTypeConverter([](const std::string& str)->EventType {
@@ -44,17 +41,14 @@ namespace EventData {
 		else if (str == "MOUSERELEASED") return EventType::MOUSERELEASED;
 		else if (str == "MOUSESCROLLED") return EventType::MOUSESCROLLED;
 		else if (str == "MOUSEMOVED") return EventType::MOUSEMOVED;
-		else if (str == "GUI_HOVER") return EventType::GUI_HOVER;
 		else if (str == "GUI_CLICK") return EventType::GUI_CLICK;
 		else if (str == "GUI_RELEASE") return EventType::GUI_RELEASE;
-		else if (str == "GUI_FOCUS") return EventType::GUI_FOCUS;
-		else if (str == "GUI_LEAVE") return EventType::GUI_LEAVE;
+
 		return EventType::NULLTYPE;
 		});
 	struct GUIEventInfo {
 		std::string interfacehierarchy;
 		GUIData::GUIStateData::GUIState elementstate;
-		EventType guievnttype;
 	};
 	struct EventDetails {
 		EventDetails() {
@@ -143,7 +137,8 @@ namespace EventData {
 			std::string tmphierarchy;
 			//construct the hierarchy string using the remaining keys.
 			for (const auto& key : keys) {
-				if (key.first == "HIERARCHY") tmphierarchy += key.second + " ";
+				if (key.first == "HIERARCHY") tmphierarchy += key.second;
+				//tmphierarchy += ' ';
 				else LOG::Log(LOCATION::MANAGER_EVENT, LOGTYPE::ERROR, __FUNCTION__, "Unable to identify condition for GUIBinding of name " + bindingname);
 			}
 			GUIEventInfo evntinfo;

@@ -8,7 +8,6 @@
 GUIInterface::GUIInterface(GUIInterface* p, Manager_GUI* mgr, const GUIStateStyles& styles, const KeyProcessing::Keys& keys) 
 	:GUIElement(p, GUIType::WINDOW, styles, keys),
 	guimgr(mgr){
-	if (parent == nullptr) parent = this;
 	layers = std::make_unique<GUIInterfaceLayers>(GetSize());
 	MarkContentRedraw(true);
 	MarkControlRedraw(true);
@@ -86,7 +85,7 @@ void GUIInterface::Render(){
 	-if this gui interface has a parent, then we don't want to render directly to the window.
 	-we need to render this directly to its texture.
 	*/
-	if (parent != this) return; //we have already drawn our sprites onto parent layers.
+	if (parent != nullptr) return; //we have already drawn our sprites onto parent layers.
 	auto winptr = guimgr->GetContext()->window->GetRenderWindow();
 	winptr->draw(*layers->GetBackgroundSprite());
 	winptr->draw(*layers->GetContentSprite());
@@ -128,12 +127,7 @@ void GUIInterface::OnNeutral(){
 
 }
 void GUIInterface::OnClick(const sf::Vector2f& pos){
-	if (name == "BOT_SUB_PANEL") {
-		std::cout << "soif" << std::endl;
-	}
-	SetState(GUIState::CLICKED);
-	std::cout << "INTERFACE CLICKED : " << name << std::endl;
-
+	GUIElement::OnClick(pos); //dispatches event.
 	for (auto& element : elements) {
 		if (element.second->IsHidden()) continue;
 		if (element.second->GetActiveState() != GUIState::CLICKED) { //if the element has not already been clicked
@@ -145,10 +139,9 @@ void GUIInterface::OnClick(const sf::Vector2f& pos){
 			 }
 		}
 	}
-
 }
-
 void GUIInterface::OnRelease(){
+	//dispatch event here
 	SetState(GUIState::NEUTRAL);
 	for (auto& element : elements) {
 		if (element.second->IsHidden()) continue;
@@ -156,6 +149,10 @@ void GUIInterface::OnRelease(){
 			element.second->OnRelease();
 		}
 	}
+	EventData::GUIEventInfo evntinfo;
+	evntinfo.elementstate = GUIState::NEUTRAL;
+	evntinfo.interfacehierarchy = GetHierarchyString();
+	GetGUIManager()->AddGUIEvent(std::make_pair(EventData::EventType::GUI_RELEASE,std::move(evntinfo)));
 }
 
 std::pair<bool, sf::Vector2f> GUIInterface::EltOverhangs(const GUIElement* const elt){

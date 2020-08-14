@@ -11,6 +11,7 @@ namespace GameStateData {
 		else if (str == "OPTIONS") return GameStateType::OPTIONS;
 		else if (str == "GAME") return GameStateType::GAME;
 		else if (str == "GAMELOST") return GameStateType::GAMELOST;
+		else if (str == "LEVELEDITOR") return GameStateType::LEVELEDITOR;
 		return GameStateType::NULLSTATE;
 		});
 }

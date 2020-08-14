@@ -9,7 +9,7 @@ protected:
 public:
 	bool PollEvent(T& arg) {
 		if (eventqueue.empty()) return false;
-		auto evnt = eventqueue.front();
+		arg = eventqueue.front();
 		eventqueue.pop();
 		return true;
 	}

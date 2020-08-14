@@ -97,8 +97,6 @@ void GUIElement::ReadIn(const KeyProcessing::Keys& keys) {
 			}
 	}
 
-
-
 	position.x -= (origin.x * size.x);
 	if (position.x < 0) position.x = 0;
 	//ensure that the element size remains clamped to the interface if overhang.
@@ -115,8 +113,6 @@ void GUIElement::ReadIn(const KeyProcessing::Keys& keys) {
 			position.y = 0.1 * (parent == nullptr) ? videomode.height : parent->GetSize().y;
 		}
 	}
-
-	
 	position.y -= (origin.y * size.y);
  	if (position.y < 0) position.y = 0;
 	if (position.y + size.y >= parentdimensions.y) size.y = parentdimensions.y - position.y;
@@ -125,17 +121,21 @@ void GUIElement::ReadIn(const KeyProcessing::Keys& keys) {
 	SetElementSize(std::move(size));
 	SetLocalPosition(std::move(position));
 }
-
 Manager_GUI* GUIElement::GetGUIManager() {
 	if (dynamic_cast<GUIInterface*>(this)) return dynamic_cast<GUIInterface*>(this)->guimgr;
 	return parent->guimgr;
 }
-
-
 GUIElement::GUIElement(GUIInterface* p, const GUIType& t, const GUIStateStyles& stylemap, const KeyProcessing::Keys& attributes) :type(t), parent(p), controlelement(false) {
 	statestyles = stylemap;
 	ReadIn(attributes);
 	ApplyCurrentStyle();
+}
+
+void GUIElement::OnClick(const sf::Vector2f& mousepos){
+	SetState(GUIState::CLICKED);
+	EventData::GUIEventInfo evntinfo;
+	evntinfo.interfacehierarchy = GetHierarchyString();
+	GetGUIManager()->AddGUIEvent(std::make_pair(EventData::EventType::GUI_CLICK,std::move(evntinfo)));
 }
 void GUIElement::SetState(const GUIState& state){
 //in a state change, we must reflect the change in the visual.
@@ -154,7 +154,6 @@ void GUIElement::ApplyCurrentStyle(){
 	if (RequestFontResources()) {
 		visual.text.setFont(*visual.font);
 	}
-
 	visual.sbg.setFillColor(currentstyle.background.sbg_color);
 	visual.sbg.setOutlineThickness(currentstyle.background.outlinethickness);
 	visual.sbg.setOutlineColor(currentstyle.background.outlinecolor);
@@ -178,6 +177,7 @@ void GUIElement::Draw(sf::RenderTexture& texture){
 	//texture.draw(visual.text);
 }
 void GUIElement::Update(const float& dT){
+	
 	if (pendingcalibration) {
 		if (pendingsizeapply) {
 			ApplySize();
@@ -191,7 +191,6 @@ void GUIElement::Update(const float& dT){
 		pendingcalibration = false;
 	}
 }
-
 sf::FloatRect GUIElement::GetLocalBoundingBox() const {
 	return sf::FloatRect{ localposition, GetSize() };
 }
@@ -202,7 +201,7 @@ bool GUIElement::Contains(const sf::Vector2f& mouseglobal) const noexcept{
 }
 void GUIElement::CalibratePosition() {
 	return;
-	if (parent == this || parent == nullptr) return; //if in mid initialisation
+	if (parent == nullptr) return; //if in mid initialisation
 	auto overhangs = parent->EltOverhangs(this); //check if this entire elt still lies in interface after pos change
 	if (overhangs.first == false) return; //elt still lies within the interface.
 	SetLocalPosition(overhangs.second);
@@ -220,17 +219,19 @@ void GUIElement::SetElementSize(const sf::Vector2f& s) {
 }
 
 std::string GUIElement::GetHierarchyString() const{
+	if (parent == nullptr) return name;
 	std::string str(name);
 	GUIInterface* mparent = parent;
-	while (mparent->GetParent() != nullptr) {
+	while (mparent != nullptr) {
+		//str += " ";
+		str += mparent->GetName();
 		mparent = mparent->GetParent();
-		str += mparent->GetName() + " ";
-	}
+	}	
 	return str;
 }
 
 sf::Vector2f GUIElement::GetGlobalPosition() const{
-	if (parent == this) return localposition;
+	if (parent == nullptr) return localposition;
 	return localposition + GetParent()->GetGlobalPosition(); 
 }
 GUIElement::~GUIElement() {

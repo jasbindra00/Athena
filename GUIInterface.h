@@ -67,7 +67,7 @@ public:
 
 	const bool& RequiresContentRedraw() const { return contentredraw; }
 	const bool& RequiresControlRedraw() const { return controlredraw; }
-	const bool& RequiresBackgroundRedraw() const { return RequiresRedraw(); }
+	bool RequiresBackgroundRedraw() const { return RequiresRedraw(); }
 	const bool& RequiresParentRedraw() const { return parentredraw; }
 	
 	std::pair<bool, sf::Vector2f> EltOverhangs(const GUIElement* const elt);

@@ -34,7 +34,7 @@ using GUIElementFactory = std::unordered_map<GUIType, GUIElementProducer>;
 class Manager_GUI{
 private:
 	GameStateInterfaces stateinterfaces;
-	EventQueue<GUIEventInfo> guieventqueue;
+	EventQueue<std::pair<EventData::EventType,GUIEventInfo>> guieventqueue;
 	GUIElementFactory elementfactory;
 
 	sf::Vector2f globalmouseposition;
@@ -63,8 +63,8 @@ public:
 	void Update(const float& dT);
 	void Draw();
 
-	bool PollGUIEvent(GUIEventInfo& evnt);
-	void AddGUIEvent(const GUIEventInfo& evnt);
+	bool PollGUIEvent(std::pair<EventData::EventType,GUIEventInfo>& evnt);
+	void AddGUIEvent(const std::pair<EventData::EventType, GUIEventInfo>& evnt);
 	void HandleEvent(const sf::Event& evnt, sf::RenderWindow* winptr);
 	SharedContext* GetContext() const { return context; }
 	GUIInterface* GetInterface(const GameStateType& state, const std::string& interfacename);

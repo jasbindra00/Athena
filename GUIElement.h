@@ -49,7 +49,7 @@ public:
 
 	virtual void OnNeutral() = 0;
 	virtual void OnHover() = 0;
-	virtual void OnClick(const sf::Vector2f& mousepos) = 0;
+	virtual void OnClick(const sf::Vector2f& mousepos);
 	virtual void OnLeave() = 0;
 	virtual void OnRelease() = 0;
 
