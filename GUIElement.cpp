@@ -166,18 +166,10 @@ void GUIElement::ApplyCurrentStyle(){
 }
 void GUIElement::Draw(sf::RenderTexture& texture){
 	texture.draw(visual.sbg);
-	sf::RectangleShape x;
-	x.setFillColor(sf::Color::Red);
-	x.setOutlineColor(sf::Color::White);
-	x.setOutlineThickness(5);
-	x.setPosition(localposition);
-	x.setSize(elementsize);
-	texture.draw(x);
 	//texture.draw(visual.tbg);
 	//texture.draw(visual.text);
 }
 void GUIElement::Update(const float& dT){
-	
 	if (pendingcalibration) {
 		if (pendingsizeapply) {
 			ApplySize();

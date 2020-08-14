@@ -2,7 +2,7 @@
 #define STATE_LEVEL_EDITOR_H
 #include "State_Base.h"
 #include "GUIInterface.h"
-
+#include "EventData.h"
 class Manager_State;
 class State_LevelEditor : public State_Base {
 private:
@@ -17,6 +17,8 @@ public:
 	void OnDestroy() override;
 	void UpdateCamera() override;
 	void Continue() override;
+	void ActivatePopUp(EventData::EventDetails* details);
+	void DeactivatePopUp(EventData::EventDetails* details);
 
 protected:
 	

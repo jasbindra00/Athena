@@ -7,6 +7,9 @@
 #include "Manager_Texture.h"
 #include "Manager_Font.h"
 #include "GUITextfield.h"
+#include "GUIScrollbar.h"
+#include "GUICheckbox.h"
+#include "GUILabel.h"
 #include "Utility.h"
 #include "FileReader.h"
 #include "GameStateData.h"
@@ -22,6 +25,10 @@ using namespace GUIData;
 
 Manager_GUI::Manager_GUI(SharedContext* cntxt) :context(cntxt) {
 	RegisterElementProducer<GUITextfield>(GUIType::TEXTFIELD);
+	RegisterElementProducer<GUILabel>(GUIType::LABEL);
+	RegisterElementProducer<GUIScrollbar>(GUIType::SCROLLBAR);
+	RegisterElementProducer<GUICheckbox>(GUIType::CHECKBOX);
+
 	stateinterfaces[GameStateType::GAME] = Interfaces{};
 	stateinterfaces[GameStateType::LEVELEDITOR] = Interfaces{  };
 }
@@ -115,6 +122,9 @@ GUIInterfacePtr Manager_GUI::CreateInterfaceFromFile(const std::string& interfac
 			}
 			if (err) continue;
 		}
+
+
+
 		GUIElementPtr element;
 		std::string elttype = linekeys.find("ELEMENTTYPE")->second;
 		try { element = (elttype == "NESTEDINTERFACE" || elttype != "NEWINTERFACE") ? CreateElement(leadinginterface, linekeys) : CreateElement(masterinterface, linekeys); }

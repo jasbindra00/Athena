@@ -156,9 +156,11 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="BEngine.cpp" />
+    <ClCompile Include="GUICheckbox.cpp" />
     <ClCompile Include="GUIElement.cpp" />
     <ClCompile Include="GUIInterface.cpp" />
     <ClCompile Include="GUILabel.cpp" />
+    <ClCompile Include="GUIScrollbar.cpp" />
     <ClCompile Include="GUITextfield.cpp" />
     <ClCompile Include="Log.cpp" />
     <ClCompile Include="Manager_Entity.cpp" />
@@ -185,12 +187,14 @@
     <ClInclude Include="EventQueue.h" />
     <ClInclude Include="FileReader.h" />
     <ClInclude Include="EventData.h" />
+    <ClInclude Include="GUICheckbox.h" />
     <ClInclude Include="GUIElement.h" />
     <ClInclude Include="GUIFormatting.h" />
     <ClInclude Include="GUIData.h" />
     <ClInclude Include="GUIInterface.h" />
     <ClInclude Include="GUIInterfaceLayers.h" />
     <ClInclude Include="GUILabel.h" />
+    <ClInclude Include="GUIScrollbar.h" />
     <ClInclude Include="GUITextfield.h" />
     <ClInclude Include="KeyProcessing.h" />
     <ClInclude Include="Location.h" />
