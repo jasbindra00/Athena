@@ -6,8 +6,7 @@
 
 
 GUIInterface::GUIInterface(GUIInterface* p, Manager_GUI* mgr, const GUIStateStyles& styles, const KeyProcessing::Keys& keys) 
-	:GUIElement(p, GUIType::WINDOW, styles, keys),
-	guimgr(mgr){
+	:guimgr(mgr),GUIElement(p, GUIType::WINDOW, styles, keys){ //DANGEROUS. TEXTURE INIT REQUIRES GUI MGR. INITIALISATION MAY NOT BE IN ORDER FOR GUIMGR REQUEST.
 	layers = std::make_unique<GUIInterfaceLayers>(GetSize());
 	MarkContentRedraw(true);
 	MarkControlRedraw(true);
@@ -97,6 +96,9 @@ void GUIInterface::Update(const float& dT){
 	for (auto& element : elements) {
 		if (element.second->IsHidden()) continue;
 		if (element.second->Contains(mouseposition)) {
+			auto pos = static_cast<sf::Vector2f>(sf::Mouse::getPosition(*GetGUIManager()->GetContext()->window->GetRenderWindow()));
+			pos -= element.second->GetLocalPosition();
+			std::cout << "{" << pos.x << "," << pos.y << "}" << std::endl;
 			if (element.second->GetActiveState() == GUIState::NEUTRAL) {
 				element.second->OnHover();
 			}
@@ -120,7 +122,7 @@ void GUIInterface::Update(const float& dT){
 	if (RequiresControlRedraw()) RedrawControlLayer();
 }
 void GUIInterface::OnHover(){
-
+	GUIElement::OnHover();
 }
 
 void GUIInterface::OnNeutral(){

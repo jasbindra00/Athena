@@ -9,9 +9,8 @@ void GUILabel::OnNeutral(){
 
 }
 
-void GUILabel::OnHover()
-{
-
+void GUILabel::OnHover(){
+	GUIElement::OnHover();
 }
 
 void GUILabel::OnClick(const sf::Vector2f& mousepos){

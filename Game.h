@@ -21,6 +21,7 @@ protected:
 	std::unique_ptr<Manager_State> statemanager;
 	std::unique_ptr<Window> window;
 	std::unique_ptr<Manager_GUI> guimgr;
+
 	std::unique_ptr<Manager_Font> fontmgr;
 	std::unique_ptr<Manager_Texture> texturemgr;
 
@@ -40,10 +41,8 @@ public:
 		context.eventmanager = eventmanager.get();
 		
 		statemanager = std::make_unique<Manager_State>(&context, guimgr.get());
-	//	statemanager->QueueInsertion(GameStateType::LEVELEDITOR);
-		window = std::make_unique<Window>(eventmanager.get(), 1000, 1000, "MyWindow");
+		window = std::make_unique<Window>(eventmanager.get(), 500, 500, "MyWindow");
 		context.window = window.get();
-
 	}
 	void Update() {
 		float dT = clock.getElapsedTime().asSeconds();
@@ -51,16 +50,21 @@ public:
 		guimgr->Update(dT);
 		window->Update(dT);
 		clock.restart();
-		
-	
 	}
 	void Draw() {
 		window->GetRenderWindow()->clear();
 		statemanager->Draw();
 		guimgr->Draw();
-	
 		window->GetRenderWindow()->display();
-	
+	}
+	~Game() {
+		//resource managers destruct last.
+		window.reset();
+		eventmanager.reset();
+		guimgr.reset();
+		statemanager.reset();
+		fontmgr.reset();
+		texturemgr.reset();
 	}
 	sf::RenderWindow* GetRenderWindow() const { return window->GetRenderWindow(); }
 };

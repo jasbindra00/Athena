@@ -15,7 +15,7 @@ public:
 	}
 	Attributes& NextWord() {
 		previouswordpos = tellg();
-		*this >> currentword;
+		if (!(*this >> currentword)) currentword.clear();
 		return *this;
 	}
 	void ResetStream() {

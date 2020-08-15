@@ -15,8 +15,8 @@ private:
 	std::string winname;
 public:
 	Window(Manager_Event* evntmgr, const float& windowwidth, const float& windowheight, const std::string& windowname):eventmanager(evntmgr),winwidth(windowwidth), winheight(windowheight), winname(windowname) {
-		renderwindow = std::make_unique<sf::RenderWindow>(sf::VideoMode::getDesktopMode(), winname, sf::Style::Default);
-		//renderwindow = std::make_unique<sf::RenderWindow>(sf::VideoMode(500,500), winname, sf::Style::Default);
+		//renderwindow = std::make_unique<sf::RenderWindow>(sf::VideoMode::getDesktopMode(), winname, sf::Style::Default);
+		renderwindow = std::make_unique<sf::RenderWindow>(sf::VideoMode(500,500), winname, sf::Style::Default);
 	}
 	void Update(const float& dT) {
 		sf::Event e;

@@ -46,6 +46,10 @@ GUIStateStyles Manager_GUI::CreateStyleFromFile(const std::string& stylefile){
 
 	while (file.NextLine().GetFileStream()) {
 		Keys linekeys = KeyProcessing::ExtractValidKeys(file.ReturnLine());
+		if (KeyProcessing::GetKey("TEXTURE_NAME", linekeys).first) {
+			int x = 3;
+			auto tmp = KeyProcessing::ExtractValidKeys(file.ReturnLine());
+		}
 		GUIState currentstate;
 		try {
 			auto foundstatekey = linekeys.find("GUISTATE");
@@ -61,49 +65,9 @@ GUIStateStyles Manager_GUI::CreateStyleFromFile(const std::string& stylefile){
 		catch (const CustomException& exception) {
 
 		}
-
 	}
 	return styles;
 }
-
-// GUIStateStyles Manager_GUI::CreateStyleFromFile(const std::string& stylefile) {
-// 	GUIStateStyles styles;
-// 	FileReader file;
-// 	if(!file.LoadFile(stylefile)){
-// 		LOG::Log(LOCATION::MANAGER_GUI, LOGTYPE::ERROR, __FUNCTION__, "Unable to open the style file of name " + stylefile);
-// 		return styles;
-// 	}
-// 	while (file.NextLine().GetFileStream()) {
-// 		auto currentstate = GUIState::NEUTRAL;{//conv scope to function
-// 			auto currentword = file.GetWord();
-// 			if (currentword == "GUIState") {
-// 				unsigned int inputstate;
-// 				file.GetLineStream() >> inputstate;
-// 				currentstate = static_cast<GUIState>(inputstate);
-// 			}
-// 			else if (currentword == "/ENDSTATE") break;
-// 			else { LOG::Log(LOCATION::MANAGER_GUI, LOGTYPE::ERROR, __FUNCTION__, "Unable to find the beginning of state style. Ensure that state style begins with GUIState x"); break;}
-// 		}
-// 		file.NextLine();
-// 		auto word = file.GetWord();
-// 		auto linestream = static_cast<Attributes*>(&file.GetLineStream());
-//  		while (word != "/ENDSTATE" && !file.EndOfFile()) {
-// 			if (word == "sbg" || word == "tbg") *linestream  styles[currentstate].background;
-// 			else if (word == "text") *linestream >> styles[currentstate].text;
-// 			else LOG::Log(LOCATION::MANAGER_GUI, LOGTYPE::ERROR, __FUNCTION__, "Unable to recognise state style attribute in stylefile of name " + stylefile + " on line number " + file.GetLineNumberString());
-// 			file.NextLine();
-// 			word = file.GetWord();
-// 			//user may have accidentally forgotten to put in /ENDSTATE
-// 			if (word == "GUIState") {
-// 				LOG::Log(LOCATION::MANAGER_GUI, LOGTYPE::ERROR, __FUNCTION__, "Stylefile of name " + stylefile + " terminated early on linenumber " + file.GetLineNumberString() + " in reading state style - could not find /ENDSTATE ");
-// 				linestream->PutBackPreviousWord();
-// 				break;
-// 			}
-//  		}	
-// 	}
-// 	file.CloseFile();
-//   	return styles;
-// }
 GUIElementPtr Manager_GUI::CreateElement(GUIInterface* parent, const Keys& keys) {
 	using KeyProcessing::KeyPair;
 	std::string elttype = keys.find("ELEMENTTYPE")->second;
@@ -112,6 +76,9 @@ GUIElementPtr Manager_GUI::CreateElement(GUIInterface* parent, const Keys& keys)
 		return std::make_unique<GUIInterface>(parent, this, CreateStyleFromFile(stylefile), keys);
 	}
 	else {
+		if (keys.find("ELEMENTNAME")->second == "SPRITESHEETNAME") {
+			int x = 3;
+		}
 		auto guielementtype = GUIData::GUITypeData::converter(elttype);
 		if (guielementtype == GUIType::NULLTYPE) throw CustomException("ELEMENTTYPE");
 		return elementfactory[guielementtype](parent, CreateStyleFromFile(stylefile), keys);
@@ -145,9 +112,9 @@ GUIInterfacePtr Manager_GUI::CreateInterfaceFromFile(const std::string& interfac
 		Keys linekeys = KeyProcessing::ExtractValidKeys(file.ReturnLine());
 
 		//fill the standard keys for base guielement.
-		KeyProcessing::FillMissingKeys(std::vector<KeyPair>{ {"ELEMENTTYPE", "FATALERROR"}, { "STYLEFILE", "FATALERROR" }, { "ELEMENTNAME", "FATALERROR" }, {"HIDDEN", "FALSE"},
+		KeyProcessing::FillMissingKeys(std::vector<KeyPair>{ {"ELEMENTTYPE", "FATALERROR"}, { "STYLEFILE", "FATALERROR" }, { "ELEMENTNAME", "FATALERROR" }, { "HIDDEN", "FALSE" },
 			{ "POSITIONX","ERROR" }, { "POSITIONY","ERROR" }, { "POSITIONX%", "ERROR" }, { "POSITIONY%", "ERROR" }, { "SIZEX", "ERROR" }, { "SIZEY","ERROR" },
-			{ "SIZEX%", "ERROR" }, { "SIZEY%", "ERROR" }, { "ORIGINX%","ERROR" }, { "ORIGINY%","ERROR" }}, linekeys);	
+			{ "SIZEX%", "ERROR" }, { "SIZEY%", "ERROR" }, { "ORIGINX%","ERROR" }, { "ORIGINY%","ERROR" }, { "WINX", std::to_string(this->context->window->GetRenderWindow()->getSize().x) }, { "WINY",std::to_string(this->context->window->GetRenderWindow()->getSize().y) }}, linekeys);
 		std::string elttype = linekeys.find("ELEMENTTYPE")->second;
 		//fill keys for derived guielements.
 		if (elttype == "TEXTFIELD") KeyProcessing::FillMissingKey(KeyPair{ "DEFAULTTEXT", "ENTER TEXT HERE.." }, linekeys);

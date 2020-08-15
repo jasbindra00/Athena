@@ -24,18 +24,19 @@ protected:
 
 	GUIType type;
 	GUIState currentstate;
-	mutable GUIState activestate;
 	mutable bool controlelement; //used by the interface in determining which layer to redraw
+	mutable GUIState activestate;
 	mutable bool redrawrequired; //if it's changed, then the layer to which it forms within the interface must be redrawn.
 	mutable bool hidden; //an inactive element is hidden from the GUI.
 
 	mutable bool pendingpositionapply;
 	mutable bool pendingsizeapply;
-	mutable bool pendingcalibration;
-	
+	mutable bool pendingstyleapply;
+	mutable bool pendingchange;
 
-	sf::Vector2f localposition;
+	sf::Vector2f localposition; //position relative to its parent. this will be the position of its background textures.
 	sf::Vector2f elementsize;
+
 
 	void ReleaseStyleResources();
 	bool RequestTextureResources();
@@ -48,7 +49,7 @@ public:
 	GUIElement(GUIInterface* parent, const GUIType& type, const GUIStateStyles& styles, const KeyProcessing::Keys& attributes);
 
 	virtual void OnNeutral() = 0;
-	virtual void OnHover() = 0;
+	virtual void OnHover();
 	virtual void OnClick(const sf::Vector2f& mousepos);
 	virtual void OnLeave() = 0;
 	virtual void OnRelease() = 0;
@@ -61,6 +62,8 @@ public:
 
 	void ApplyCurrentStyle();
 
+	void SetText(const std::string& str);
+	void SetStyle(const GUIState& state);
 	void SetElementSize(const sf::Vector2f& s);
 	void SetLocalPosition(const sf::Vector2f& pos);
 	void SetParent(GUIInterface* p) { parent = p; }
@@ -88,7 +91,6 @@ public:
 	virtual void ReadIn(const KeyProcessing::Keys& keys);
 	Manager_GUI* GetGUIManager();
 	virtual ~GUIElement();
-	
 };
 
 

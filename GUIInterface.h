@@ -56,8 +56,7 @@ public:
 
 	bool AddElement(const std::string& eltname, std::unique_ptr<GUIElement>& elt);
 	bool RemoveElement(const std::string& eltname);
-	void AdjustContentSize();
-
+	
 
 	void MarkBackgroundRedraw(const bool& inp) const { MarkRedraw(inp); }
 	void MarkContentRedraw(const bool& inp) const { contentredraw = inp; }

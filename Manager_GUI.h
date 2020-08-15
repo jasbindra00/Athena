@@ -59,7 +59,6 @@ public:
 
 	inline void SetActiveState(const GameStateType& state) const { activestate = state; }
 	
-	
 	void Update(const float& dT);
 	void Draw();
 
