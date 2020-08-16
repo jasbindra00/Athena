@@ -7,7 +7,7 @@ class GUITextfield : public GUIElement {
 protected:
 	
 public:
-	GUITextfield(GUIInterface* parent, const GUIStateStyles& styles, const KeyProcessing::Keys& attributes);
+	GUITextfield(GUIInterface* parent, const GUIStateStyles& styles,KeyProcessing::Keys& attributes);
 	void OnNeutral() override;
 	void OnHover() override;
 	void OnClick(const sf::Vector2f& mousepos) override;

@@ -5,7 +5,7 @@
 
 
 
-GUIInterface::GUIInterface(GUIInterface* p, Manager_GUI* mgr, const GUIStateStyles& styles, const KeyProcessing::Keys& keys) 
+GUIInterface::GUIInterface(GUIInterface* p, Manager_GUI* mgr, const GUIStateStyles& styles, KeyProcessing::Keys& keys) 
 	:guimgr(mgr),GUIElement(p, GUIType::WINDOW, styles, keys){ //DANGEROUS. TEXTURE INIT REQUIRES GUI MGR. INITIALISATION MAY NOT BE IN ORDER FOR GUIMGR REQUEST.
 	layers = std::make_unique<GUIInterfaceLayers>(GetSize());
 	MarkContentRedraw(true);
@@ -20,7 +20,7 @@ bool GUIInterface::AddElement(const std::string& eltname, std::unique_ptr<GUIEle
 	elements.emplace_back(std::make_pair(eltname, std::move(elt)));
 	return true;
 }
-void GUIInterface::ReadIn(const KeyProcessing::Keys& keys) {
+void GUIInterface::ReadIn(KeyProcessing::Keys& keys) {
 	GUIElement::ReadIn(keys);
 }
 bool GUIInterface::RemoveElement(const std::string& eltname) {

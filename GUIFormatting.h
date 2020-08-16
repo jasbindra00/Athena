@@ -73,10 +73,10 @@ namespace GUIFormatting {
 		sf::Vector2f originproportion{ 0,0 };
 		sf::Color textcolor{ sf::Color::Color(255,255,255,255 )};
 		std::string fontname{ "arial.ttf" };
+		bool texthidden = true;
 		unsigned int charactersize{ maxcharactersize };
 			void ReadIn(KeyProcessing::Keys& keys, const std::string& attributetype) {
 			using KeyProcessing::KeyPair;
-			std::string missingkeystr;
 			//REFACTOR THIS
 			if (attributetype == "COLOR_SOLID") {
 				KeyProcessing::FillMissingKeys(std::vector<KeyPair>{ {"R", "ERROR"}, { "G","ERROR" }, { "B","ERROR" }, { "A","ERROR" }}, keys);
@@ -87,14 +87,6 @@ namespace GUIFormatting {
 					textcolor.a = std::stoi(keys.find("A")->second);
 				}
 				catch (const std::exception& exception) { throw CustomException("Invalid R/G/B/A value for {PROPERTY_ATTRIBUTE," + attributetype + "} has been defaulted to 255 "); }
-			}
-			else if (attributetype == "CHARACTER_SIZE") {
-				auto charkey = keys.find("CHARACTER_SIZE");
-				if (charkey->second == "MAX") charactersize = maxcharactersize;
-				else {
-					try { charactersize = std::stoi(charkey->second); }
-					catch (const std::exception& exception) { throw CustomException("Character size attribute for {PROPERTY_ATTRIBUTE," + attributetype + "} has been defaulted to MAX "); }
-				}
 			}
 			else if (attributetype == "ORIGIN%") {
 				KeyProcessing::FillMissingKeys(std::vector<KeyPair>{ {"ORIGINX%", "ERROR"}, { "ORIGINY%", "ERROR" }}, keys);
@@ -116,6 +108,23 @@ namespace GUIFormatting {
 				}
 				catch (const std::exception& exception) { throw CustomException("Invalid position% argument for {PROPERTY_ATTRIBUTE," + attributetype + "} has been defaulted to 0%"); }
 			}
+			//init single key attributes here.
+			else {
+				KeyProcessing::FillMissingKey(KeyProcessing::KeyPair{ attributetype, "ERROR" }, keys);
+				auto key = keys.find(attributetype);
+				if (attributetype == "TEXT_HIDDEN") {
+					texthidden = (key->second == "TRUE");
+				}
+				else if (attributetype == "CHARACTER_SIZE") {
+					auto charkey = keys.find("CHARACTER_SIZE");
+					if (charkey->second == "MAX") charactersize = maxcharactersize;
+					else {
+						try { charactersize = std::stoi(charkey->second); }
+						catch (const std::exception& exception) { throw CustomException("Character size attribute for {PROPERTY_ATTRIBUTE," + attributetype + "} has been defaulted to MAX "); }
+					}
+				}
+			}
+			
 		}
 	};
 	struct GUIStyle {
@@ -142,6 +151,11 @@ namespace GUIFormatting {
 
 				}
 			}
+		}
+		void AdjustForSystemTexture() {
+			background.outlinecolor = sf::Color::Transparent;
+			background.outlinethickness = 0;
+			background.sbg_color = sf::Color::Color(255, 255, 255, 255);
 		}
 	};
 	class GUIVisual {

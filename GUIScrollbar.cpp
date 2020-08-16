@@ -1,6 +1,6 @@
 #include "GUIScrollbar.h"
 
-GUIScrollbar::GUIScrollbar(GUIInterface* parent, const GUIStateStyles& styles, const KeyProcessing::Keys& keys) :GUIElement(parent, GUIType::SCROLLBAR, styles, keys)
+GUIScrollbar::GUIScrollbar(GUIInterface* parent, const GUIStateStyles& styles, KeyProcessing::Keys& keys) :GUIElement(parent, GUIType::SCROLLBAR, styles, keys)
 {
 
 }
@@ -40,7 +40,7 @@ void GUIScrollbar::Update(const float& dT)
 
 }
 
-void GUIScrollbar::ReadIn(const KeyProcessing::Keys& keys)
+void GUIScrollbar::ReadIn(KeyProcessing::Keys& keys)
 {
 
 }

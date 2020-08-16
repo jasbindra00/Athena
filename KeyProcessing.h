@@ -9,7 +9,7 @@
 #include <iostream>
 namespace KeyProcessing {
 	using KeyPair = std::pair<std::string, std::string>;
-	using Keys = std::multimap<std::string, std::string>;
+	using Keys = std::unordered_multimap<std::string, std::string>;
 	static std::string ToLowerString(const std::string& str) {
 		auto tmp = str;
 		std::for_each(tmp.begin(), tmp.end(), [](char& c) {
@@ -58,6 +58,7 @@ namespace KeyProcessing {
 		}
 		return { false,true };
 	}
+
 	static bool IsKey(const std::string& key) {
 		auto reduction = RemoveWhiteSpaces(key);
 		std::string extracted;
@@ -68,6 +69,11 @@ namespace KeyProcessing {
 			return true;
 			}), reduction.end());
 		return reduction == "{,}";
+	}
+
+	static void EraseKeyOccurrences(const std::string& keytype, Keys& keys, const bool& all) {
+		auto duplicates = keys.equal_range(keytype);
+		keys.erase(duplicates.first, duplicates.second);
 	}
 	static std::pair<bool, KeyPair> ExtractKey(const std::string& key) {
 		if (!IsKey(key)) return std::make_pair(false, KeyPair{});
@@ -81,7 +87,7 @@ namespace KeyProcessing {
 		Attributes keystream(attributes);
 		return std::make_pair(true, KeyPair{ keystream.GetWord(), keystream.GetWord() });
 	}
-	static std::pair<bool, Keys::const_iterator> GetKey(const std::string& keyname,const Keys& keys) {
+	static std::pair<bool, Keys::iterator> GetKey(const std::string& keyname,Keys& keys) {
 		auto foundkey = keys.find(keyname);
 		return (foundkey == keys.end()) ? std::make_pair(false, foundkey) : std::make_pair(true, foundkey);
 	}

@@ -64,7 +64,7 @@ GUIStateStyles Manager_GUI::CreateStyleFromFile(const std::string& stylefile){
 	}
 	return styles;
 }
-GUIElementPtr Manager_GUI::CreateElement(GUIInterface* parent, const Keys& keys) {
+GUIElementPtr Manager_GUI::CreateElement(GUIInterface* parent, Keys& keys) {
 	using KeyProcessing::KeyPair;
 	std::string elttype = keys.find("ELEMENTTYPE")->second;
 	std::string stylefile = keys.find("STYLEFILE")->second;
@@ -107,13 +107,15 @@ GUIInterfacePtr Manager_GUI::CreateInterfaceFromFile(const std::string& interfac
 		Keys linekeys = KeyProcessing::ExtractValidKeys(file.ReturnLine());
 
 		//fill the standard keys for base guielement.
-		KeyProcessing::FillMissingKeys(std::vector<KeyPair>{ {"ELEMENTTYPE", "FATALERROR"}, { "STYLEFILE", "FATALERROR" }, { "ELEMENTNAME", "FATALERROR" }, { "HIDDEN", "FALSE" },
+		KeyProcessing::FillMissingKeys(std::vector<KeyPair>{ {"ELEMENTTYPE", "FATALERROR"}, { "STYLEFILE", "FATALERROR" }, { "ELEMENTNAME", "FATALERROR" }, { "ELEMENT_HIDDEN", "FALSE" },
 			{ "POSITIONX","ERROR" }, { "POSITIONY","ERROR" }, { "POSITIONX%", "ERROR" }, { "POSITIONY%", "ERROR" }, { "SIZEX", "ERROR" }, { "SIZEY","ERROR" },
 			{ "SIZEX%", "ERROR" }, { "SIZEY%", "ERROR" }, { "ORIGINX%","ERROR" }, { "ORIGINY%","ERROR" }, { "WINX", std::to_string(this->context->window->GetRenderWindow()->getSize().x) }, { "WINY",std::to_string(this->context->window->GetRenderWindow()->getSize().y) }}, linekeys);
 		KeyProcessing::FillMissingKey(KeyPair{ "CUSTOM_TEXT",linekeys.find("ELEMENTNAME")->second }, linekeys);
 		std::string elttype = linekeys.find("ELEMENTTYPE")->second;
 		//fill keys for derived guielements.
-		if (elttype == "TEXTFIELD") KeyProcessing::FillMissingKey(KeyPair{ "DEFAULTTEXT", "ENTER TEXT HERE.." }, linekeys);
+		if (elttype == "CHECKBOX") {
+			
+		}
 		GUIElementPtr element;
 		try { element = (elttype == "NESTEDINTERFACE" || elttype != "NEWINTERFACE") ? CreateElement(leadinginterface, linekeys) : CreateElement(masterinterface, linekeys); }
 		catch (const CustomException& exception) {

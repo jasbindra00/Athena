@@ -1,2 +1,6 @@
 A1.png D:\Desktop\REFACTORS\Game Engine\BEngine\A1.png
 Tiles.png D:\Desktop\REFACTORS\Game Engine\BEngine\Tiles.png
+GUICheckbox_Checked_SQUARE.png D:\Desktop\REFACTORS\Game Engine\BEngine\GUICheckbox_Checked_SQUARE.png
+GUICheckbox_Unchecked_SQUARE.png D:\Desktop\REFACTORS\Game Engine\BEngine\GUICheckbox_Unchecked_SQUARE.png
+GUICheckbox_Checked_CIRCLE.png D:\Desktop\REFACTORS\Game Engine\BEngine\GUICheckbox_Checked_CIRCLE.png
+GUICheckbox_Unchecked_CIRCLE.png D:\Desktop\REFACTORS\Game Engine\BEngine\GUICheckbox_Unchecked_CIRCLE.png

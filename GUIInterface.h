@@ -29,7 +29,7 @@ protected:
 	Manager_GUI* guimgr{ nullptr };
 	
 public:
-	GUIInterface(GUIInterface* parent, Manager_GUI* guimgr, const GUIStateStyles& styles, const KeyProcessing::Keys& keys);
+	GUIInterface(GUIInterface* parent, Manager_GUI* guimgr, const GUIStateStyles& styles, KeyProcessing::Keys& keys);
 
 	virtual void OnHover() override;
 	virtual void OnNeutral() override;
@@ -38,7 +38,6 @@ public:
 	virtual void OnLeave() override {
 
 	}
-	
 	void DefocusTextfields() {
 		for (auto& elt : elements) {
 			if (elt.second->IsHidden()) continue;
@@ -74,7 +73,7 @@ public:
 	virtual void ApplySize() override;
 	virtual void ApplyLocalPosition() override;
 
-	virtual void ReadIn(const KeyProcessing::Keys& keys) override;
+	virtual void ReadIn(KeyProcessing::Keys& keys) override;
 
 
 	virtual ~GUIInterface();

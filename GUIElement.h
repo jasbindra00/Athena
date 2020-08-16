@@ -61,15 +61,15 @@ protected:
 	virtual void ApplySize();
 	void CalibratePosition();
 public:
-	GUIElement(GUIInterface* parent, const GUIType& type, const GUIStateStyles& styles, const KeyProcessing::Keys& attributes);
+	GUIElement(GUIInterface* parent, const GUIType& type, const GUIStateStyles& styles,KeyProcessing::Keys& attributes);
 
-	virtual void OnNeutral() = 0;
+	virtual void OnNeutral();
 	virtual void OnHover();
 	virtual void OnClick(const sf::Vector2f& mousepos);
 	virtual void OnLeave() = 0;
 	virtual void OnRelease() = 0;
 
-	void SetState(const GUIState& state);
+	bool SetState(const GUIState& state);
 	virtual void Draw(sf::RenderTexture& texture);
 	virtual void Update(const float& dT);
 	bool Contains(const sf::Vector2f& mousepos) const noexcept;
@@ -103,7 +103,7 @@ public:
 	sf::Vector2f GetGlobalPosition() const;
 	sf::FloatRect GetLocalBoundingBox() const;
 	
-	virtual void ReadIn(const KeyProcessing::Keys& keys);
+	virtual void ReadIn(KeyProcessing::Keys& keys);
 	Manager_GUI* GetGUIManager();
 	virtual ~GUIElement();
 };

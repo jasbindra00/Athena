@@ -3,13 +3,21 @@
 #include "Manager_Font.h"
 #include "Manager_GUI.h"
 #include "Window.h"
+#include <array>
 
 
-
-GUIElement::GUIElement(GUIInterface* p, const GUIType& t, const GUIStateStyles& stylemap, const KeyProcessing::Keys& attributes) :type(t), parent(p), controlelement(false) {
+GUIElement::GUIElement(GUIInterface* p, const GUIType& t, const GUIStateStyles& stylemap, KeyProcessing::Keys& attributes) :type(t), parent(p), controlelement(false) {
 	statestyles = stylemap;
 	ReadIn(attributes);
 	SetStyle(activestate);
+}
+
+void GUIElement::OnNeutral(){
+	SetState(GUIState::NEUTRAL);
+	EventData::GUIEventInfo evntinfo;
+	evntinfo.interfacehierarchy = GetHierarchyString();
+	GetGUIManager()->AddGUIEvent(std::make_pair(EventData::EventType::GUI_CLICK, std::move(evntinfo)));
+
 }
 void GUIElement::ApplyLocalPosition(){
 	visual.SetPosition(localposition); 
@@ -29,9 +37,10 @@ void GUIElement::ReleaseStyleResources(){
 		GetGUIManager()->GetContext()->fontmgr->RequestResourceDealloc(activestyle.text.fontname);
 	}
 }
-void GUIElement::ReadIn(const KeyProcessing::Keys& keys) {
+void GUIElement::ReadIn(KeyProcessing::Keys& keys) {
+	//TO DEFAULT THE KEYS TO ERROR OR TO SEARCH FOR EACH INDIVIDUAL KEY?
 	name = keys.find("ELEMENTNAME")->second;
-	(keys.find("HIDDEN")->second == "FALSE") ? hidden = false : hidden = true;
+	(keys.find("ELEMENT_HIDDEN")->second == "FALSE") ? hidden = false : hidden = true;
 	std::string errorstr{ " for GUIElement of name " + name };
 	std::string unabletoidentify{ "Unable to identify " };
 	const sf::Vector2f parentdimensions = (parent == nullptr) ? sf::Vector2f{ std::stof(keys.find("WINX")->second), std::stof(keys.find("WINY")->second) } : parent->GetSize();
@@ -39,17 +48,17 @@ void GUIElement::ReadIn(const KeyProcessing::Keys& keys) {
 	sf::Vector2f origin;
 	sf::Vector2f position;
 	try {size.x = std::stof(keys.find("SIZEX%")->second) / 100;}
-	catch (const std::exception& exc) { LOG::Log(LOCATION::GUIELEMENT, LOGTYPE::ERROR, __FUNCTION__, unabletoidentify + "{SIZEX,x} / {SIZEX%,x%} key" + errorstr);}
+	catch (const std::exception& exc) {}// { LOG::Log(LOCATION::GUIELEMENT, LOGTYPE::ERROR, __FUNCTION__, unabletoidentify + "{SIZEX,x} / {SIZEX%,x%} key" + errorstr); }
 	try { size.y = (std::stof(keys.find("SIZEY%")->second) / 100); }
-	catch (const std::exception& exc) {LOG::Log(LOCATION::GUIELEMENT, LOGTYPE::ERROR, __FUNCTION__, unabletoidentify + "{SIZEY,x} / {SIZEY%,x%} key" + errorstr);}
+	catch (const std::exception& exc) {}// {LOG::Log(LOCATION::GUIELEMENT, LOGTYPE::ERROR, __FUNCTION__, unabletoidentify + "{SIZEY,x} / {SIZEY%,x%} key" + errorstr); }
 	try { position.x = (std::stof(keys.find("POSITIONX%")->second) / 100); }
-	catch (const std::exception& exc) { LOG::Log(LOCATION::GUIELEMENT, LOGTYPE::ERROR, __FUNCTION__, unabletoidentify + "{POSITIONX,x} / {POSITIONX%,x%} key "+ errorstr); }
+	catch (const std::exception& exc) {}// { LOG::Log(LOCATION::GUIELEMENT, LOGTYPE::ERROR, __FUNCTION__, unabletoidentify + "{POSITIONX,x} / {POSITIONX%,x%} key " + errorstr); }
 	try { position.y = (std::stof(keys.find("POSITIONY%")->second) / 100); }
-	catch (const std::exception& exc) { LOG::Log(LOCATION::GUIELEMENT, LOGTYPE::ERROR, __FUNCTION__, unabletoidentify + "{POSITIONY,y} / {POSITIONY%,y%} key " + errorstr); }
+	catch (const std::exception& exc) {}// { LOG::Log(LOCATION::GUIELEMENT, LOGTYPE::ERROR, __FUNCTION__, unabletoidentify + "{POSITIONY,y} / {POSITIONY%,y%} key " + errorstr); }
 	try { origin.x = std::stof(keys.find("ORIGINX%")->second) / 100; }
-	catch (const std::exception& exception) { LOG::Log(LOCATION::GUIELEMENT, LOGTYPE::ERROR, __FUNCTION__, unabletoidentify + "{ORIGINX%,x%} key " + errorstr);}
+	catch (const std::exception& exception) {}// { //LOG::Log(LOCATION::GUIELEMENT, LOGTYPE::ERROR, __FUNCTION__, unabletoidentify + "{ORIGINX%,x%} key " + errorstr);}
 	try { origin.y = std::stof(keys.find("ORIGINY%")->second) / 100; }
-	catch (const std::exception& exception) {LOG::Log(LOCATION::GUIELEMENT, LOGTYPE::ERROR, __FUNCTION__, unabletoidentify +"{ORIGINY%,y%} key " + errorstr);}
+	catch (const std::exception& exception) {}// {LOG::Log(LOCATION::GUIELEMENT, LOGTYPE::ERROR, __FUNCTION__, unabletoidentify + "{ORIGINY%,y%} key " + errorstr); }
 	position.y *= parentdimensions.y;
 	position.x *= parentdimensions.x;
 	size.y *= parentdimensions.y;
@@ -63,6 +72,24 @@ void GUIElement::ReadIn(const KeyProcessing::Keys& keys) {
 	if (position.x + size.x >= parentdimensions.x) size.x = parentdimensions.x - position.x;
 	if (position.y + size.y >= parentdimensions.y) size.y = parentdimensions.y - position.y;
 	visual.text.setString(name);
+	//VISUAL KEYS
+	//::TEXTURE OVERRIDE KEYS
+	
+		KeyProcessing::EraseKeyOccurrences("TEXTURE_HAS_BEEN_OVERRIDEN", keys, true); //user may have defined this key. we need it for logging purposes.
+		std::array<std::pair<bool, KeyProcessing::Keys::iterator>, 3> textureoverrides;
+		std::array<GUIState, 3> states = { GUIState::NEUTRAL, GUIState::CLICKED, GUIState::FOCUSED };
+		textureoverrides[0] = KeyProcessing::GetKey("TEXTURE_NEUTRAL", keys);
+		textureoverrides[1] = KeyProcessing::GetKey("TEXTURE_CLICKED", keys);
+		textureoverrides[2] = KeyProcessing::GetKey("TEXTURE_FOCUSED", keys);
+		// alert functions with access to these keys (element ctor) which may subsequently change the texture, that the texture should not be changed any further
+		for (int i = 0; i < 3; ++i) {
+			auto itpair = textureoverrides[i];
+			if (itpair.first) {
+				GUIState state = states[i];
+				statestyles[state].background.tbg_name = itpair.second->second;
+				keys.insert(std::make_pair("TEXTURE_HAS_BEEN_OVERRIDEN", std::to_string(Utility::ConvertToUnderlyingType(states[i])))); 
+			}
+		}
 	SetElementSize(std::move(size));
 	SetLocalPosition(std::move(position));
 }
@@ -71,6 +98,7 @@ Manager_GUI* GUIElement::GetGUIManager() {
 	return parent->guimgr;
 }
 void GUIElement::OnHover(){
+	
 }
 void GUIElement::OnClick(const sf::Vector2f& mousepos){
 	SetState(GUIState::CLICKED);
@@ -78,13 +106,18 @@ void GUIElement::OnClick(const sf::Vector2f& mousepos){
 	evntinfo.interfacehierarchy = GetHierarchyString();
 	GetGUIManager()->AddGUIEvent(std::make_pair(EventData::EventType::GUI_CLICK,std::move(evntinfo)));
 }
-void GUIElement::SetState(const GUIState& state){
-	if (state == activestate) return; //no visual change.
+
+bool GUIElement::SetState(const GUIState& state){
+	if (state == activestate) return false; //no visual change.
 	activestate = state;
 	ReleaseStyleResources();
 	SetStyle(state);
+	return true;
 }
 void GUIElement::ApplyCurrentStyle(){
+	if (type == GUIType::CHECKBOX) {
+		int y = 4;
+	}
 	auto& currentstyle = statestyles[activestate];
 	//apply dynamically allocated resources to visuals
 	if (RequestVisualResource<sf::Texture>()) { //request the required resources for the font and tbg.
@@ -104,11 +137,9 @@ void GUIElement::ApplyCurrentStyle(){
 	visual.ApplyStyle(currentstyle, rect, currentstyle.text.localpositionproportion, currentstyle.text.localpositionproportion, currentstyle.text.charactersize);
 	MarkRedraw(true); //now the interface knows to redraw the layer.
 }
-
 void GUIElement::SetText(const std::string& str){
 	visual.text.setString(str);
 }
-
 void GUIElement::Draw(sf::RenderTexture& texture) {
 	auto& currentstyle = statestyles[activestate];
 	texture.draw(visual.sbg);
@@ -136,9 +167,6 @@ void GUIElement::Update(const float& dT){
 sf::FloatRect GUIElement::GetLocalBoundingBox() const {
 	return sf::FloatRect{ localposition, GetSize() };
 }
-
-
-
 bool GUIElement::Contains(const sf::Vector2f& mouseglobal) const noexcept{
 	auto globalpos = GetGlobalPosition();
 	auto rect = sf::FloatRect{ globalpos, elementsize };
@@ -161,7 +189,7 @@ void GUIElement::SetElementSize(const sf::Vector2f& s) {
 	pendingchange = true;
 	pendingsizeapply = true;
 }
-void GUIElement::SetStyle(const GUIState& state) {
+void GUIElement::SetStyle(const GUIState& state) {//queues a pending style application
 	pendingchange = true;
 	pendingstyleapply = true;
 }

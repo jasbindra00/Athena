@@ -28,7 +28,7 @@ using Interfaces = std::vector<std::pair<std::string,GUIInterfacePtr>>;
 using GameStateInterfaces = std::unordered_map<GameStateType, Interfaces>; //each game state has a number of GUI interfaces.
 
 using GUIElementPtr = std::unique_ptr<GUIElement>;
-using GUIElementProducer = std::function<GUIElementPtr(GUIInterface*, GUIStateStyles, KeyProcessing::Keys)>;
+using GUIElementProducer = std::function<GUIElementPtr(GUIInterface*, GUIStateStyles, KeyProcessing::Keys&)>;
 using GUIElementFactory = std::unordered_map<GUIType, GUIElementProducer>;
 
 class Manager_GUI{
@@ -44,11 +44,11 @@ private:
 
 	template<typename T>
 	void RegisterElementProducer(const GUIType& type) { //factory pattern
-		elementfactory[type] = [type](GUIInterface* parent, const GUIStateStyles& style, const KeyProcessing::Keys& keys) {return std::make_unique<T>(parent, style, keys); };
+		elementfactory[type] = [type](GUIInterface* parent, const GUIStateStyles& style, KeyProcessing::Keys& keys) {return std::make_unique<T>(parent, style, keys); };
 	}
 	GUIStateStyles CreateStyleFromFile(const std::string& stylefile);
 
-	GUIElementPtr CreateElement(GUIInterface* parent, const Keys& keys);
+	GUIElementPtr CreateElement(GUIInterface* parent, Keys& keys);
 	GUIInterfacePtr CreateInterfaceFromFile(const std::string& interfacefile);
 	std::pair<bool,Interfaces::iterator> FindInterface(const GameStateType& state, const std::string& interfacename) noexcept;
 public:

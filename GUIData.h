@@ -4,14 +4,13 @@
 
 namespace GUIData {
 	namespace GUIStateData {
-		static enum class GUIState {
-			NEUTRAL, FOCUSED, CLICKED, HOVER, NULLSTATE
+		static enum class GUIState {//BEWARE WHEN CHANGING, CONVERTER INTEGRALS DEPENDANT 
+			NEUTRAL, FOCUSED, CLICKED, NULLSTATE
 		};
 		static EnumConverter<GUIState> converter([](const std::string& str)->GUIState {
-			if (str == "NEUTRAL") return GUIState::NEUTRAL;
-			else if (str == "FOCUSED") return GUIState::FOCUSED;
-			else if (str == "CLICKED") return GUIState::CLICKED;
-			else if (str == "HOVER") return GUIState::HOVER;
+			if (str == "NEUTRAL" || str == "0") return GUIState::NEUTRAL;
+			else if (str == "FOCUSED" || str == "1") return GUIState::FOCUSED;
+			else if (str == "CLICKED" || str == "2") return GUIState::CLICKED;
 			return GUIState::NULLSTATE;
 			});
 	}

@@ -3,7 +3,7 @@
 #include "Manager_GUI.h"
 #include <iostream>
 
-GUITextfield::GUITextfield(GUIInterface* parent, const GUIStateStyles& styles, const KeyProcessing::Keys& attributes):GUIElement(parent, GUIType::TEXTFIELD, styles, attributes) {
+GUITextfield::GUITextfield(GUIInterface* parent, const GUIStateStyles& styles, KeyProcessing::Keys& attributes):GUIElement(parent, GUIType::TEXTFIELD, styles, attributes) {
 	controlelement = false;
 }
 sf::Text& GUITextfield::GetText() {

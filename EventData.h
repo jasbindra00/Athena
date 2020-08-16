@@ -80,7 +80,7 @@ namespace EventData {
 			conditions.emplace_back(evnttype, evntinfo);
 		}
 		virtual void ReadIn(KeyProcessing::Keys keys) = 0;
-		friend Binding* operator>>(const KeyProcessing::Keys& keys, Binding* obj) {
+		friend Binding* operator>>(KeyProcessing::Keys& keys, Binding* obj) {
 			obj->ReadIn(keys);
 			return obj;
 		}

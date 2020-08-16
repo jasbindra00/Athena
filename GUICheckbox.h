@@ -1,23 +1,34 @@
 #ifndef GUICHECKBOX_H
 #define GUICHECKBOX_H
 #include "GUIElement.h"
+#include <array>
 
 
+
+//checkbox can be a square with a tick, or a nested circle.
+//all we have to do, is change the texture.
 class GUICheckbox : public GUIElement {
 public:
-	GUICheckbox(GUIInterface* parent, const GUIStateStyles& styles, const KeyProcessing::Keys& keys);
+	GUICheckbox(GUIInterface* parent, const GUIStateStyles& styles, KeyProcessing::Keys& keys);
 	void OnNeutral() override;
 	void OnHover() override;
 	void OnClick(const sf::Vector2f& mousepos) override;
 	void OnLeave() override;
+	void OnFocus();
 	void OnRelease() override;
-	void Draw(sf::RenderTexture& texture) override;
-	void Update(const float& dT) override;
-	void ReadIn(const KeyProcessing::Keys& keys) override;
+	void ReadIn(KeyProcessing::Keys& keys) override;
 private:
+	mutable bool checked;
+	std::array<char, 6> checkboxtype;
 protected:
-	void ApplyLocalPosition() override;
-	void ApplySize() override;
+
+	const bool& IsChecked() const { return checked; }
+	void ToggleChecked();
+	void CheckboxCallback() {
+
+	}
+	
+
 
 };
 
