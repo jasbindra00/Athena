@@ -144,7 +144,7 @@ namespace GUIFormatting {
 		}
 	};
 	struct GUIVisual {
-		const static unsigned int maxcharactersize = 100;
+		const static unsigned int maxcharactersize = 50;
 		sf::RectangleShape sbg;
 		sf::RectangleShape tbg;
 		sf::Text text;
@@ -165,30 +165,38 @@ namespace GUIFormatting {
 			sbg.setSize(size);
 			tbg.setSize(size);
 		}
-		inline sf::FloatRect CalibrateText(const sf::FloatRect& eltlocalboundingbox, const sf::Vector2f& originproportion, const unsigned int& charactersize, const sf::Vector2f& positionproportion) {
-			text.setCharacterSize(charactersize);
-			//adjust the text position such that its specified position matches the input origin and position
-			sf::FloatRect textbounds = text.getLocalBounds();
-			const sf::Vector2f textsize{ textbounds.width, textbounds.height };
-			const sf::Vector2f localorigin{ originproportion.x * textsize.x, originproportion.y * textsize.y };
-			text.setOrigin(localorigin);
-			sf::Vector2f textposition = sf::Vector2f{ eltlocalboundingbox.left, eltlocalboundingbox.top } + sf::Vector2f{ positionproportion.x * eltlocalboundingbox.width, positionproportion.y * eltlocalboundingbox.height };
-			textposition -= sf::Vector2f{ text.getLocalBounds().left, text.getLocalBounds().top }; //sfml has a padding around the text which messes up the offset. padding encapsulated by local bound coords.
-			text.setPosition(textposition);
-			auto TextFits = [&textposition, &textsize, &eltlocalboundingbox]()->bool {
-				return !(textposition.x < 0 || textposition.x + textsize.x > eltlocalboundingbox.width || textposition.y < 0 || textposition.y + textsize.y > eltlocalboundingbox.height);
+		inline void CalibrateText(const sf::FloatRect& eltlocalboundingbox, const sf::Vector2f& originproportion, const unsigned int& charactersize, const sf::Vector2f& positionproportion, const std::string& eltname) {
+			sf::Vector2f textsize;
+			sf::Vector2f localorigin;
+			sf::Vector2f textposition;
+			auto CalculateAndApply = [&textsize, &localorigin, &textposition, &originproportion, &positionproportion, &eltlocalboundingbox](sf::Text& text, const unsigned int& charactersize) {
+				text.setCharacterSize(charactersize);
+				textsize = sf::Vector2f{ text.getLocalBounds().width, text.getLocalBounds().height }; //size of the bounding box.
+				localorigin = { originproportion.x * textsize.x, originproportion.y * textsize.y }; //local origin as a proportion of the size.
+				textposition = sf::Vector2f{ eltlocalboundingbox.left, eltlocalboundingbox.top };//plus the top left position of the element its being drawn relative to
+				textposition += sf::Vector2f{ positionproportion.x * eltlocalboundingbox.width, positionproportion.y * eltlocalboundingbox.height };//plus the position of the actual text itself as a proportion of the parent element size
+				textposition -= sf::Vector2f{ text.getLocalBounds().left, text.getLocalBounds().top };//minus the default padding that sfml inserts with sf::Text::getLocalBounds()
+				text.setOrigin(localorigin);
+				text.setPosition(textposition);
 			};
-			return text.getLocalBounds();
-// 			if (!TextFits()) {
-// 				//must find the maximum charactersize, while maintaining this position, which allows us to fit in our element.
-// 				unsigned int charactersize = 1;
-// 				while (charactersize < GUIVisual::maxcharactersize) {
-// 					text.setCharacterSize(charactersize);
-// 					text.setPosition(textposition);
-// 					if (TextFits()) break;
-// 					++charactersize;
-// 				}
-// 			}
+			auto TextFits = [&eltlocalboundingbox,&textposition, &localorigin,&textsize,&originproportion,&positionproportion]()->bool {
+				sf::Vector2f texttopleft{ textposition - localorigin };
+				if (texttopleft.x < eltlocalboundingbox.left) return false;
+				if (texttopleft.x + textsize.x > eltlocalboundingbox.left + eltlocalboundingbox.width) return false;
+				if (texttopleft.y < eltlocalboundingbox.top) return false;
+				if (texttopleft.y + textsize.y > eltlocalboundingbox.top + eltlocalboundingbox.height) return false;
+				return true;
+			};
+			CalculateAndApply(text, charactersize);
+			if (!TextFits()) {
+				//must find the maximum charactersize, while maintaining this position, which allows us to fit in our element.
+				unsigned int newcharsize = GUIVisual::maxcharactersize;
+				while (newcharsize > 1){
+					CalculateAndApply(text,newcharsize);
+					if (TextFits()) break; //text fits snugly in our element
+					--newcharsize;
+				}
+			}
 			
 		}
 		

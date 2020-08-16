@@ -75,6 +75,8 @@ void GUIInterface::RedrawBackgroundLayer() {
 	MarkRedrawToParent(true); //if nested interface, this change in interface needs to be reflected in the layer of its parent
 }
 void GUIInterface::Draw(sf::RenderTexture& texture) { //part of another interface
+
+	
 	texture.draw(*layers->GetBackgroundSprite());
 	texture.draw(*layers->GetContentSprite());
 	texture.draw(*layers->GetControlSprite());

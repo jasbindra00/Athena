@@ -53,96 +53,38 @@ void GUIElement::ReleaseStyleResources(){
 	}
 }
 void GUIElement::ReadIn(const KeyProcessing::Keys& keys) {
-	//REFACTOR THIS.
 	name = keys.find("ELEMENTNAME")->second;
-	
-	if (name == "POP_UP_PANEL") {
-		int x = 4;
-	}
-	std::string errorstr{ " for GUIElement of name " + name };
-	//need to check if the sizex% of sizey%
-	//need to check if the positionx% or positiony%
-	sf::Vector2f position;
-	auto videomode = sf::VideoMode::getDesktopMode();
-	float wx = std::stof(keys.find("WINX")->second);
-	float wy = std::stof(keys.find("WINY")->second);
-	sf::Vector2f size{ wx,wy };
-	sf::Vector2f origin;
-
-
-// 	auto windim = static_cast<sf::Vector2f>(win->getSize());
-	//const sf::Vector2f parentdimensions = (parent == nullptr) ? sf::Vector2f{ static_cast<float>(videomode.width), static_cast<float>(videomode.height) } : parent->GetSize();
-	const sf::Vector2f parentdimensions = (parent == nullptr)? size : parent->GetSize();
-	//parentdimensions = { wx,wy };
 	(keys.find("HIDDEN")->second == "FALSE") ? hidden = false : hidden = true;
-	try { size.x = std::stof(keys.find("SIZEX")->second); }
-	catch (const std::exception& exception) {
-		
-		try {
-			size.x = std::stof(keys.find("SIZEX%")->second) / 100;
-			size.x *= parentdimensions.x;
-		}
-		catch (const std::exception& exc) {
-			//invalid positionx. invalid positionx%.
-			LOG::Log(LOCATION::GUIELEMENT, LOGTYPE::ERROR, __FUNCTION__, "Unable to identify {SIZEX,x} / {SIZEX%,x%} key. DEFAULTING TO 10%.." + errorstr);
-			size.x = 0.1 * parentdimensions.x;
-		}
-		
-	}
-	try { size.y = std::stof(keys.find("SIZEY")->second); }
-	catch (const std::exception& exception) {
-		try { 
-			size.y = (std::stof(keys.find("SIZEY%")->second) / 100);
-			size.y *= parentdimensions.y;
-		}
-		catch (const std::exception& exc) {
-			//invalid positionx. invalid positionx%.
-			LOG::Log(LOCATION::GUIELEMENT, LOGTYPE::ERROR, __FUNCTION__, "Unable to identify {SIZEY,x} / {SIZEY%,x%} key. DEFAULTING TO 10%.." + errorstr);
-			size.y = 0.1 * parentdimensions.x;
-		}
-		
-	}
+	std::string errorstr{ " for GUIElement of name " + name };
+	std::string unabletoidentify{ "Unable to identify " };
+	const sf::Vector2f parentdimensions = (parent == nullptr) ? sf::Vector2f{ std::stof(keys.find("WINX")->second), std::stof(keys.find("WINY")->second) } : parent->GetSize();
+	sf::Vector2f size;
+	sf::Vector2f origin;
+	sf::Vector2f position;
+	try {size.x = std::stof(keys.find("SIZEX%")->second) / 100;}
+	catch (const std::exception& exc) { LOG::Log(LOCATION::GUIELEMENT, LOGTYPE::ERROR, __FUNCTION__, unabletoidentify + "{SIZEX,x} / {SIZEX%,x%} key" + errorstr);}
+	try { size.y = (std::stof(keys.find("SIZEY%")->second) / 100); }
+	catch (const std::exception& exc) {LOG::Log(LOCATION::GUIELEMENT, LOGTYPE::ERROR, __FUNCTION__, unabletoidentify + "{SIZEY,x} / {SIZEY%,x%} key" + errorstr);}
+	try { position.x = (std::stof(keys.find("POSITIONX%")->second) / 100); }
+	catch (const std::exception& exc) { LOG::Log(LOCATION::GUIELEMENT, LOGTYPE::ERROR, __FUNCTION__, unabletoidentify + "{POSITIONX,x} / {POSITIONX%,x%} key "+ errorstr); }
+	try { position.y = (std::stof(keys.find("POSITIONY%")->second) / 100); }
+	catch (const std::exception& exc) { LOG::Log(LOCATION::GUIELEMENT, LOGTYPE::ERROR, __FUNCTION__, unabletoidentify + "{POSITIONY,y} / {POSITIONY%,y%} key " + errorstr); }
 	try { origin.x = std::stof(keys.find("ORIGINX%")->second) / 100; }
-	catch (const std::exception& exception) {
-		LOG::Log(LOCATION::GUIELEMENT, LOGTYPE::ERROR, __FUNCTION__, "Unable to read {ORIGINX%,x%} key " + errorstr + "DEFAULTING TO 0%...");
-	}
+	catch (const std::exception& exception) { LOG::Log(LOCATION::GUIELEMENT, LOGTYPE::ERROR, __FUNCTION__, unabletoidentify + "{ORIGINX%,x%} key " + errorstr);}
 	try { origin.y = std::stof(keys.find("ORIGINY%")->second) / 100; }
-	catch (const std::exception& exception) {
-		LOG::Log(LOCATION::GUIELEMENT, LOGTYPE::ERROR, __FUNCTION__, "Unable to read {ORIGINY%,y%} key " + errorstr + "DEFAULTING TO 0%...");
-	}
-	try { position.x = std::stof(keys.find("POSITIONX")->second); }
-	catch (const std::exception& exception) {
-		try {
-			position.x = (std::stof(keys.find("POSITIONX%")->second) / 100);
-			position.x *= parentdimensions.x;
-		}
-			catch (const std::exception& exc) {
-				//invalid positionx. invalid positionx%.
-				LOG::Log(LOCATION::GUIELEMENT, LOGTYPE::ERROR, __FUNCTION__, "Unable to identify {POSITIONX,x} / {POSITIONX%,x%} key. DEFAULTING TO 10%.." + errorstr);
-				position.x = 0.1 * parentdimensions.y;
-			}
-	}
+	catch (const std::exception& exception) {LOG::Log(LOCATION::GUIELEMENT, LOGTYPE::ERROR, __FUNCTION__, unabletoidentify +"{ORIGINY%,y%} key " + errorstr);}
+	position.y *= parentdimensions.y;
+	position.x *= parentdimensions.x;
+	size.y *= parentdimensions.y;
+	size.x *= parentdimensions.x;
 	//move the position to acccount for the origin
 	position.x -= (origin.x * size.x);
-	if (position.x < 0) position.x = 0;
-	//ensure that the element size remains clamped to the interface if overhang. 
-	if (position.x + size.x >= parentdimensions.x) size.x = parentdimensions.x - position.x;
-	try { position.y = std::stof(keys.find("POSITIONY")->second); }
-	catch (const std::exception& exception) {
-		try {
-			position.y = (std::stof(keys.find("POSITIONY%")->second) / 100);
-			position.y *= parentdimensions.y;
-		}
-		catch (const std::exception& exc) {
-			//invalid positionx. invalid positionx%.
-			LOG::Log(LOCATION::GUIELEMENT, LOGTYPE::ERROR, __FUNCTION__, "Unable to identify {POSITIONY,y} / {POSITIONY%,y%} key. DEFAULTING TO 10%.." + errorstr);
-			position.y = 0.1 * parentdimensions.y;
-		}
-	}
 	position.y -= (origin.y * size.y);
- 	if (position.y < 0) position.y = 0;
+	//adjust if elt overhangs parent
+	if (position.x < 0) position.x = 0; 
+	if (position.y < 0) position.y = 0;
+	if (position.x + size.x >= parentdimensions.x) size.x = parentdimensions.x - position.x;
 	if (position.y + size.y >= parentdimensions.y) size.y = parentdimensions.y - position.y;
-	//note that these changes aren't applied immediately but will be applied in the next update cycle.
 	visual.text.setString(name);
 	SetElementSize(std::move(size));
 	SetLocalPosition(std::move(position));
@@ -181,16 +123,22 @@ void GUIElement::ApplyCurrentStyle(){
 	if (RequestFontResources()) {
 		visual.text.setFont(*visual.font);
 	}
-	if (name == "RIGHT_SUB_PANEL") {
+	if (name == "M_PANEL") {
 		int x = 4;
+		visual.text.setPosition(sf::Vector2f{ 50,50 });
 	}
 	visual.sbg.setFillColor(currentstyle.background.sbg_color);
 	visual.sbg.setOutlineThickness(currentstyle.background.outlinethickness);
 	visual.sbg.setOutlineColor(currentstyle.background.outlinecolor);
 	visual.text.setFillColor(currentstyle.text.textcolor);
-	visual.CalibrateText(GetLocalBoundingBox(), currentstyle.text.originproportion, currentstyle.text.charactersize, currentstyle.text.localpositionproportion);
-	//check if the character height exceeds the element.
-	//check if the text exceeds the gui.
+
+	sf::Vector2f pos;
+	//nested interface
+	sf::FloatRect rect = GetLocalBoundingBox();
+	//if its an interface, we must draw the text relative to our own co-ordinate system since we have our own layers
+	//if its an element, text is drawn relative to its parent, and thus local position (position relative to its parent) must be taken into account.
+	if (type == GUIType::WINDOW) { rect.left = 0; rect.top = 0; }
+	visual.CalibrateText(rect, currentstyle.text.originproportion, currentstyle.text.charactersize, currentstyle.text.localpositionproportion, name);
 	MarkRedraw(true); //now the interface knows to redraw the layer.
 	
 }
@@ -202,6 +150,7 @@ void GUIElement::SetText(const std::string& str){
 void GUIElement::Draw(sf::RenderTexture& texture) {
 	auto& currentstyle = statestyles[activestate];
 	texture.draw(visual.sbg);
+
 	//texture.draw(visual.tbg);
 	texture.draw(visual.text);	
 }
