@@ -98,9 +98,9 @@ void GUIInterface::Update(const float& dT){
 	for (auto& element : elements) {
 		if (element.second->IsHidden()) continue;
 		if (element.second->Contains(mouseposition)) {
-			auto pos = static_cast<sf::Vector2f>(sf::Mouse::getPosition(*GetGUIManager()->GetContext()->window->GetRenderWindow()));
-			pos -= element.second->GetLocalPosition();
-			std::cout << "{" << pos.x << "," << pos.y << "}" << std::endl;
+// 			auto pos = static_cast<sf::Vector2f>(sf::Mouse::getPosition(*GetGUIManager()->GetContext()->window->GetRenderWindow()));
+// 			pos -= element.second->GetLocalPosition();
+// 			std::cout << "{" << pos.x << "," << pos.y << "}" << std::endl;
 			if (element.second->GetActiveState() == GUIState::NEUTRAL) {
 				element.second->OnHover();
 			}

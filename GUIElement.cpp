@@ -11,35 +11,12 @@ GUIElement::GUIElement(GUIInterface* p, const GUIType& t, const GUIStateStyles& 
 	ReadIn(attributes);
 	SetStyle(activestate);
 }
-bool GUIElement::RequestFontResources() {
-	auto& activestyle = statestyles[activestate];
-	if (activestyle.text.fontname.empty()) return false;
-	visual.font = GetGUIManager()->GetContext()->fontmgr->RequestResource(activestyle.text.fontname);
-	if (visual.font == nullptr) {
-
-		//dont default the font. they should know that something is wrong.
-// 		activestyle.text.fontname = std::string{ "arial.ttf" }; //default the font
-// 		GetGUIManager()->GetContext()->fontmgr->RequestResource(activestyle.text.fontname);
-		return false;
-	}
-	return true;
-}
 void GUIElement::ApplyLocalPosition(){
 	visual.SetPosition(localposition); 
 }
 void GUIElement::ApplySize() {
 	visual.SetSize(elementsize);
 
-}
-bool GUIElement::RequestTextureResources() {
-	auto& activestyle = statestyles[activestate];
-	if (activestyle.background.tbg_name.empty()) return false;
-	visual.tbg_texture = GetGUIManager()->GetContext()->texturemgr->RequestResource(activestyle.background.tbg_name);
-	if (visual.tbg_texture == nullptr) {
-		activestyle.background.tbg_name.clear();
-		return false;
-	}
-	return true;
 }
 void GUIElement::ReleaseStyleResources(){
 	auto& activestyle = GetActiveStyle();
@@ -93,16 +70,9 @@ Manager_GUI* GUIElement::GetGUIManager() {
 	if (GetType() == GUIType::WINDOW) return static_cast<GUIInterface*>(this)->guimgr; //GUITYPE::Window := GUIInterface
 	return parent->guimgr;
 }
-
 void GUIElement::OnHover(){
-
-
 }
-
 void GUIElement::OnClick(const sf::Vector2f& mousepos){
-	if (name == "RIGHT_SUB_PANEL") {
-		int x = 4;
-	}
 	SetState(GUIState::CLICKED);
 	EventData::GUIEventInfo evntinfo;
 	evntinfo.interfacehierarchy = GetHierarchyString();
@@ -110,37 +80,29 @@ void GUIElement::OnClick(const sf::Vector2f& mousepos){
 }
 void GUIElement::SetState(const GUIState& state){
 	if (state == activestate) return; //no visual change.
-	ReleaseStyleResources();
 	activestate = state;
+	ReleaseStyleResources();
 	SetStyle(state);
 }
 void GUIElement::ApplyCurrentStyle(){
 	auto& currentstyle = statestyles[activestate];
 	//apply dynamically allocated resources to visuals
-	if (RequestTextureResources()) { //request the required resources for the font and tbg.
+	if (RequestVisualResource<sf::Texture>()) { //request the required resources for the font and tbg.
 		visual.tbg.setTexture(visual.tbg_texture.get());
+		sf::Color tmp(255, 255, 255, 255);
+		visual.tbg.setFillColor(std::move(tmp));
 	}
-	if (RequestFontResources()) {
+	else {//if unsucessful texture request, we don't want the default sfml error texture to show.
+		sf::Color tmp(255, 255, 255, 0);
+		visual.tbg.setFillColor(std::move(tmp));
+	}
+	if (RequestVisualResource<sf::Font>()) {
 		visual.text.setFont(*visual.font);
 	}
-	if (name == "M_PANEL") {
-		int x = 4;
-		visual.text.setPosition(sf::Vector2f{ 50,50 });
-	}
-	visual.sbg.setFillColor(currentstyle.background.sbg_color);
-	visual.sbg.setOutlineThickness(currentstyle.background.outlinethickness);
-	visual.sbg.setOutlineColor(currentstyle.background.outlinecolor);
-	visual.text.setFillColor(currentstyle.text.textcolor);
-
-	sf::Vector2f pos;
-	//nested interface
 	sf::FloatRect rect = GetLocalBoundingBox();
-	//if its an interface, we must draw the text relative to our own co-ordinate system since we have our own layers
-	//if its an element, text is drawn relative to its parent, and thus local position (position relative to its parent) must be taken into account.
 	if (type == GUIType::WINDOW) { rect.left = 0; rect.top = 0; }
-	visual.CalibrateText(rect, currentstyle.text.originproportion, currentstyle.text.charactersize, currentstyle.text.localpositionproportion, name);
+	visual.ApplyStyle(currentstyle, rect, currentstyle.text.localpositionproportion, currentstyle.text.localpositionproportion, currentstyle.text.charactersize);
 	MarkRedraw(true); //now the interface knows to redraw the layer.
-	
 }
 
 void GUIElement::SetText(const std::string& str){
@@ -150,8 +112,7 @@ void GUIElement::SetText(const std::string& str){
 void GUIElement::Draw(sf::RenderTexture& texture) {
 	auto& currentstyle = statestyles[activestate];
 	texture.draw(visual.sbg);
-
-	//texture.draw(visual.tbg);
+	texture.draw(visual.tbg);
 	texture.draw(visual.text);	
 }
 void GUIElement::Update(const float& dT){

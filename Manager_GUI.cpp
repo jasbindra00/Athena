@@ -46,10 +46,6 @@ GUIStateStyles Manager_GUI::CreateStyleFromFile(const std::string& stylefile){
 
 	while (file.NextLine().GetFileStream()) {
 		Keys linekeys = KeyProcessing::ExtractValidKeys(file.ReturnLine());
-		if (KeyProcessing::GetKey("TEXTURE_NAME", linekeys).first) {
-			int x = 3;
-			auto tmp = KeyProcessing::ExtractValidKeys(file.ReturnLine());
-		}
 		GUIState currentstate;
 		try {
 			auto foundstatekey = linekeys.find("GUISTATE");
@@ -102,7 +98,6 @@ GUIInterfacePtr Manager_GUI::CreateInterfaceFromFile(const std::string& interfac
 			LOG::Log(LOCATION::MANAGER_GUI, LOGTYPE::ERROR, __FUNCTION__, "Unable to identify leading interface" + appenderrorstr + "Leading interfaces must start with INTERFACE. EXITING INTERFACE READ..");
 			return nullptr;
 		}
-	
 	file.PutBackLine();
 	GUIInterface* leadinginterface{ nullptr };
 	GUIInterface* masterinterface{ nullptr };
@@ -115,6 +110,7 @@ GUIInterfacePtr Manager_GUI::CreateInterfaceFromFile(const std::string& interfac
 		KeyProcessing::FillMissingKeys(std::vector<KeyPair>{ {"ELEMENTTYPE", "FATALERROR"}, { "STYLEFILE", "FATALERROR" }, { "ELEMENTNAME", "FATALERROR" }, { "HIDDEN", "FALSE" },
 			{ "POSITIONX","ERROR" }, { "POSITIONY","ERROR" }, { "POSITIONX%", "ERROR" }, { "POSITIONY%", "ERROR" }, { "SIZEX", "ERROR" }, { "SIZEY","ERROR" },
 			{ "SIZEX%", "ERROR" }, { "SIZEY%", "ERROR" }, { "ORIGINX%","ERROR" }, { "ORIGINY%","ERROR" }, { "WINX", std::to_string(this->context->window->GetRenderWindow()->getSize().x) }, { "WINY",std::to_string(this->context->window->GetRenderWindow()->getSize().y) }}, linekeys);
+		KeyProcessing::FillMissingKey(KeyPair{ "CUSTOM_TEXT",linekeys.find("ELEMENTNAME")->second }, linekeys);
 		std::string elttype = linekeys.find("ELEMENTTYPE")->second;
 		//fill keys for derived guielements.
 		if (elttype == "TEXTFIELD") KeyProcessing::FillMissingKey(KeyPair{ "DEFAULTTEXT", "ENTER TEXT HERE.." }, linekeys);

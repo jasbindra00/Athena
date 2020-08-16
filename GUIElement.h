@@ -3,9 +3,13 @@
 #include <SFML/Graphics.hpp>
 #include <unordered_map>
 #include <string>
+#include <vector>
 #include "GUIFormatting.h"
 #include "GUIData.h"
 #include "KeyProcessing.h"
+#include "SharedContext.h"
+#include "Manager_Texture.h"
+#include "Manager_Font.h"
 class GUIInterface;
 class Manager_Texture;
 class Manager_Font;
@@ -37,11 +41,22 @@ protected:
 	sf::Vector2f localposition; //position relative to its parent. this will be the position of its background textures.
 	sf::Vector2f elementsize;
 
-
+	template<typename T, typename = typename ManagedResourceData::ENABLE_IF_MANAGED_RESOURCE<T>>
+	bool RequestVisualResource() {
+		auto& activestyle = GetActiveStyle();
+		std::string *resname;
+		if constexpr (std::is_same_v<typename std::decay_t<T>, sf::Texture>) resname = &activestyle.background.tbg_name;
+		else if constexpr (std::is_same_v<typename std::decay_t<T>, sf::Font>) resname = &activestyle.text.fontname;
+		if (resname->empty()) return false;
+		auto newres = GetGUIManager()->GetContext()->GetResourceManager<T>()->RequestResource(*resname);
+		if (newres == nullptr) {
+			resname->clear();
+			return false;
+		}
+		visual.GetResource<T>() = std::move(newres);
+		return true;
+	}
 	void ReleaseStyleResources();
-	bool RequestTextureResources();
-	bool RequestFontResources();
-
 	virtual void ApplyLocalPosition();
 	virtual void ApplySize();
 	void CalibratePosition();

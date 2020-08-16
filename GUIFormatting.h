@@ -11,9 +11,14 @@
 #include "GUIData.h"
 #include "KeyProcessing.h"
 #include "CustomException.h"
-
-
+#include "ManagedResources.h"
+class GUIElement;
+class GUIInterface;
+class GUILabel;
+class GUITextfield;
+class GUICheckbox;
 namespace GUIFormatting {
+	static const unsigned int maxcharactersize = 30;
 	struct Background {
 		sf::Color sbg_color{ sf::Color::Color(255,255,255,255 )};
 		std::string tbg_name{ "" };
@@ -65,22 +70,17 @@ namespace GUIFormatting {
 	};
 	struct Text {
 		sf::Vector2f localpositionproportion;
+		sf::Vector2f originproportion{ 0,0 };
 		sf::Color textcolor{ sf::Color::Color(255,255,255,255 )};
 		std::string fontname{ "arial.ttf" };
-		unsigned int charactersize{ 30 };
-		sf::Vector2f originproportion{ 0,0 };
+		unsigned int charactersize{ maxcharactersize };
 			void ReadIn(KeyProcessing::Keys& keys, const std::string& attributetype) {
 			using KeyProcessing::KeyPair;
-			std::vector<KeyPair> missingkeys = KeyProcessing::FillMissingKeys(std::vector<KeyPair>{ {"LOCAL_POSITION", "ERROR"}, { "ORIGINX%", "ERROR" }, { "ORIGINY%", "ERROR" }, { "FONT_NAME", "ERROR" }}, keys);
 			std::string missingkeystr;
-			for (auto& missingkey : missingkeys) {
-				missingkeystr += KeyProcessing::ConstructKeyStr(missingkey.first, missingkey.second) + " ";
-			}
 			//REFACTOR THIS
 			if (attributetype == "COLOR_SOLID") {
 				KeyProcessing::FillMissingKeys(std::vector<KeyPair>{ {"R", "ERROR"}, { "G","ERROR" }, { "B","ERROR" }, { "A","ERROR" }}, keys);
 				try {
-
 					textcolor.r = std::stoi(keys.find("R")->second);
 					textcolor.g = std::stoi(keys.find("G")->second);
 					textcolor.b = std::stoi(keys.find("B")->second);
@@ -89,10 +89,14 @@ namespace GUIFormatting {
 				catch (const std::exception& exception) { throw CustomException("Invalid R/G/B/A value for {PROPERTY_ATTRIBUTE," + attributetype + "} has been defaulted to 255 "); }
 			}
 			else if (attributetype == "CHARACTER_SIZE") {
-				try { charactersize = std::stoi(keys.find("CHARACTER_SIZE")->second); }
-				catch (const std::exception& exception) { throw CustomException("Character size attribute for {PROPERTY_ATTRIBUTE," + attributetype + "} has been defaulted to 30 "); }
+				auto charkey = keys.find("CHARACTER_SIZE");
+				if (charkey->second == "MAX") charactersize = maxcharactersize;
+				else {
+					try { charactersize = std::stoi(charkey->second); }
+					catch (const std::exception& exception) { throw CustomException("Character size attribute for {PROPERTY_ATTRIBUTE," + attributetype + "} has been defaulted to MAX "); }
+				}
 			}
-			else if (attributetype == "ORIGIN") {
+			else if (attributetype == "ORIGIN%") {
 				KeyProcessing::FillMissingKeys(std::vector<KeyPair>{ {"ORIGINX%", "ERROR"}, { "ORIGINY%", "ERROR" }}, keys);
 				try {
 					originproportion.x = std::stof(keys.find("ORIGINX%")->second) / 100;
@@ -104,7 +108,7 @@ namespace GUIFormatting {
 				if (KeyProcessing::FillMissingKey(KeyPair{ "FONT_NAME", "ERROR" }, keys)) throw CustomException("Invalid font name argument for {PROPERTY_ATTRIBUTE,", fontname + "} has been defaulted to arial.ttf ");
 				fontname = keys.find("FONT_NAME")->second;
 			}
-			else if (attributetype == "LOCAL_POSITION") {
+			else if (attributetype == "LOCAL_POSITION%") {
 				KeyProcessing::FillMissingKeys(std::vector<KeyPair>{ {"POSITIONX%", "ERROR"}, { "POSITIONY%", "ERROR" }}, keys);
 				try {
 					localpositionproportion.x = std::stof(keys.find("POSITIONX%")->second) / 100;
@@ -117,7 +121,7 @@ namespace GUIFormatting {
 	struct GUIStyle {
 		Text text;
 		Background background;
-
+		//reading one line at a time. a single line has multiple keys.
 		friend void operator>>(KeyProcessing::Keys& keys, GUIStyle& style) {
 			using KeyProcessing::Keys;
 			using KeyProcessing::KeyPair;
@@ -125,14 +129,11 @@ namespace GUIFormatting {
 			if (KeyProcessing::FillMissingKey(KeyPair{ "PROPERTY_ATTRIBUTE","ERROR" }, keys)) throw CustomException("Unable to identify the {PROPERTY_ATTRIBUTE,ATTRIBUTE} key");
 			auto styleproperty = keys.find("STYLE_PROPERTY");
 			std::string propertytype = styleproperty->second;
-			keys.erase(styleproperty);
 			auto propertyattribute = keys.find("PROPERTY_ATTRIBUTE");
 			std::string attributetype = propertyattribute->second;
-			keys.erase(propertyattribute);
 			if (propertytype == "SBG" || propertytype == "TBG") {
 				try { style.background.ReadIn(keys, attributetype); }
 				catch (const CustomException& exception) {
-
 				}
 			}
 			else if (propertytype == "TEXT") {
@@ -143,29 +144,25 @@ namespace GUIFormatting {
 			}
 		}
 	};
-	struct GUIVisual {
-		const static unsigned int maxcharactersize = 50;
+	class GUIVisual {
+		friend class GUIElement;
+		friend class GUIInterface;
+		friend class GUILabel;
+		friend class GUITextfield;
+		friend class GUICheckbox;
+	protected:
+		std::vector<sf::Text> customtext;
 		sf::RectangleShape sbg;
 		sf::RectangleShape tbg;
 		sf::Text text;
 		std::shared_ptr<sf::Font> font{ nullptr };
 		std::shared_ptr<sf::Texture> tbg_texture{ nullptr };
-		GUIVisual() {
-			tbg.setFillColor(sf::Color::Transparent);
-			text.setFillColor(sf::Color::Transparent);
-			text.setPosition(sf::Vector2f{ 0,0 });
+		template<typename T, typename  = typename ManagedResourceData::ENABLE_IF_MANAGED_RESOURCE<T>>
+		std::shared_ptr<T>& GetResource() {
+			if constexpr (std::is_same_v<typename std::decay_t<T>, sf::Font>) return font;
+			else if constexpr (std::is_same_v<typename std::decay_t<T>, sf::Texture>) return tbg_texture;
 		}
-		inline void SetPosition(const sf::Vector2f& pos) { //move entire elt visual.
-
-			sbg.setPosition(pos);
-			tbg.setPosition(pos);
-			text.setPosition(pos); //origin maintained.
-		}
-		inline void SetSize(const sf::Vector2f& size) {
-			sbg.setSize(size);
-			tbg.setSize(size);
-		}
-		inline void CalibrateText(const sf::FloatRect& eltlocalboundingbox, const sf::Vector2f& originproportion, const unsigned int& charactersize, const sf::Vector2f& positionproportion, const std::string& eltname) {
+		inline void CalibrateText(const sf::FloatRect& eltlocalboundingbox, const sf::Vector2f& positionproportion, const sf::Vector2f& originproportion, const unsigned int& charactersize) {
 			sf::Vector2f textsize;
 			sf::Vector2f localorigin;
 			sf::Vector2f textposition;
@@ -179,7 +176,7 @@ namespace GUIFormatting {
 				text.setOrigin(localorigin);
 				text.setPosition(textposition);
 			};
-			auto TextFits = [&eltlocalboundingbox,&textposition, &localorigin,&textsize,&originproportion,&positionproportion]()->bool {
+			auto TextFits = [&eltlocalboundingbox, &textposition, &localorigin, &textsize, &originproportion, &positionproportion]()->bool {
 				sf::Vector2f texttopleft{ textposition - localorigin };
 				if (texttopleft.x < eltlocalboundingbox.left) return false;
 				if (texttopleft.x + textsize.x > eltlocalboundingbox.left + eltlocalboundingbox.width) return false;
@@ -190,14 +187,36 @@ namespace GUIFormatting {
 			CalculateAndApply(text, charactersize);
 			if (!TextFits()) {
 				//must find the maximum charactersize, while maintaining this position, which allows us to fit in our element.
-				unsigned int newcharsize = GUIVisual::maxcharactersize;
-				while (newcharsize > 1){
-					CalculateAndApply(text,newcharsize);
+				unsigned int newcharsize = maxcharactersize;
+				while (newcharsize > 1) {
+					CalculateAndApply(text, newcharsize);
 					if (TextFits()) break; //text fits snugly in our element
 					--newcharsize;
 				}
 			}
+		}
+	public:
+		GUIVisual() {
+			tbg.setFillColor(sf::Color::Transparent);
+			text.setFillColor(sf::Color::Transparent);
+			text.setPosition(sf::Vector2f{ 0,0 });
+		}
+		inline void SetPosition(const sf::Vector2f& pos) { //move entire elt visual.
+			sbg.setPosition(pos);
+			tbg.setPosition(pos);
+			text.setPosition(pos); //origin maintained.
+		}
+		inline void SetSize(const sf::Vector2f& size) {
+			sbg.setSize(size);
+			tbg.setSize(size);
+		}
+		inline void ApplyStyle(const GUIStyle& style, sf::FloatRect& eltrect, const sf::Vector2f& textpositionproportion, const sf::Vector2f& textoriginproportion, const unsigned int& charactersize) {
+			sbg.setFillColor(style.background.sbg_color);
+			sbg.setOutlineColor(style.background.outlinecolor);
+			sbg.setOutlineThickness(style.background.outlinethickness);
+			text.setFillColor(style.text.textcolor);
 			
+			CalibrateText(eltrect, textpositionproportion, textoriginproportion, charactersize);
 		}
 		
 	};
