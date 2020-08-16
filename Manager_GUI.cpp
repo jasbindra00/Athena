@@ -72,9 +72,6 @@ GUIElementPtr Manager_GUI::CreateElement(GUIInterface* parent, Keys& keys) {
 		return std::make_unique<GUIInterface>(parent, this, CreateStyleFromFile(stylefile), keys);
 	}
 	else {
-		if (keys.find("ELEMENTNAME")->second == "SPRITESHEETNAME") {
-			int x = 3;
-		}
 		auto guielementtype = GUIData::GUITypeData::converter(elttype);
 		if (guielementtype == GUIType::NULLTYPE) throw CustomException("ELEMENTTYPE");
 		return elementfactory[guielementtype](parent, CreateStyleFromFile(stylefile), keys);
@@ -113,9 +110,16 @@ GUIInterfacePtr Manager_GUI::CreateInterfaceFromFile(const std::string& interfac
 		KeyProcessing::FillMissingKey(KeyPair{ "CUSTOM_TEXT",linekeys.find("ELEMENTNAME")->second }, linekeys);
 		std::string elttype = linekeys.find("ELEMENTTYPE")->second;
 		//fill keys for derived guielements.
-		if (elttype == "CHECKBOX") {
-			
-		}
+
+
+
+
+
+
+
+
+
+
 		GUIElementPtr element;
 		try { element = (elttype == "NESTEDINTERFACE" || elttype != "NEWINTERFACE") ? CreateElement(leadinginterface, linekeys) : CreateElement(masterinterface, linekeys); }
 		catch (const CustomException& exception) {
@@ -231,8 +235,8 @@ void Manager_GUI::HandleEvent(const sf::Event& evnt, sf::RenderWindow* winptr) {
 	}
 	case EventType::TEXTENTERED: {
 		if (activetextfield != nullptr) {
-			activetextfield->AppendChar(evnt.text.unicode);
-			std::cout << activetextfield->GetStdString() << std::endl;
+			char c = evnt.text.unicode;
+			activetextfield->AppendChar(std::move(c));
 		}
 		break;
 	}
@@ -240,13 +244,14 @@ void Manager_GUI::HandleEvent(const sf::Event& evnt, sf::RenderWindow* winptr) {
 		if (activetextfield != nullptr) {
 			if (evnt.key.code == sf::Keyboard::Key::Backspace) {
 				activetextfield->PopChar();
-				std::cout << activetextfield->GetStdString() << std::endl;
+			}
+			if (evnt.key.code == sf::Keyboard::Key::Enter) {
+				activetextfield->OnEnter();
 			}
 		}
 		break;
 	}
 	}
-
 }
 void Manager_GUI::Update(const float& dT){
 	globalmouseposition = static_cast<sf::Vector2f>(sf::Mouse::getPosition(*context->window->GetRenderWindow()));

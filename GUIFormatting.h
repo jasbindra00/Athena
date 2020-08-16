@@ -73,7 +73,7 @@ namespace GUIFormatting {
 		sf::Vector2f originproportion{ 0,0 };
 		sf::Color textcolor{ sf::Color::Color(255,255,255,255 )};
 		std::string fontname{ "arial.ttf" };
-		bool texthidden = true;
+		bool texthidden = false;
 		unsigned int charactersize{ maxcharactersize };
 			void ReadIn(KeyProcessing::Keys& keys, const std::string& attributetype) {
 			using KeyProcessing::KeyPair;
@@ -155,7 +155,7 @@ namespace GUIFormatting {
 		void AdjustForSystemTexture() {
 			background.outlinecolor = sf::Color::Transparent;
 			background.outlinethickness = 0;
-			background.sbg_color = sf::Color::Color(255, 255, 255, 255);
+			background.sbg_color = sf::Color::Color(255, 255, 255, 0);
 		}
 	};
 	class GUIVisual {
@@ -207,6 +207,7 @@ namespace GUIFormatting {
 					if (TextFits()) break; //text fits snugly in our element
 					--newcharsize;
 				}
+				if (newcharsize != 1) CalculateAndApply(text, newcharsize - 1); //go 1px below max.
 			}
 		}
 	public:

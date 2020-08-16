@@ -5,62 +5,53 @@
 
 GUITextfield::GUITextfield(GUIInterface* parent, const GUIStateStyles& styles, KeyProcessing::Keys& attributes):GUIElement(parent, GUIType::TEXTFIELD, styles, attributes) {
 	controlelement = false;
+	//override the character size here.
+	statestyles[GUIState::FOCUSED].text.charactersize = GUIFormatting::maxcharactersize;
+	statestyles[GUIState::NEUTRAL].text.charactersize = GUIFormatting::maxcharactersize;
+	statestyles[GUIState::CLICKED].text.charactersize = GUIFormatting::maxcharactersize;
+	visual.text.setString(customtext);
 }
 sf::Text& GUITextfield::GetText() {
 	return visual.text;
 }
-
-std::string GUITextfield::GetStdString(){
-	return static_cast<std::string>(GetText().getString());
-}
-
 void GUITextfield::OnNeutral(){
 	SetState(GUIState::NEUTRAL);	
 }
 void GUITextfield::Update(const float& dT){
 	GUIElement::Update(dT);
 }
-
 void GUITextfield::OnHover(){
 
 }
-
 void GUITextfield::OnClick(const sf::Vector2f& mousepos) {
-	GUIElement::OnClick(mousepos);
 	SetState(GUIState::FOCUSED);
-// 	GUIEventInfo evnt;
-// 	evnt.interfacehierarchy = name;
-// 	parent->GetGUIManager()->AddGUIEvent(std::move(evnt));
-	std::cout << "TEXTFIELD CLICK" << std::endl;
+
 }
 void GUITextfield::OnLeave(){
-
 }
-
 void GUITextfield::OnRelease(){
-
 }
 void GUITextfield::Draw(sf::RenderTexture& texture){
+	GUIElement::Draw(texture);
 	texture.draw(visual.sbg);
+	texture.draw(visual.text);
 
 }
-
-void GUITextfield::AppendChar(const std::uint32_t& unicode){
-	auto str = GetText().getString();
-	str.insert(str.getSize(), unicode);
-	GetText().setString(std::move(str));
-	
-	
+void GUITextfield::AppendChar(const char& c){
+	textfieldstr += c;
+	GetText().setString(textfieldstr);
+	requirestextcalibration = true;
+	MarkRedraw(true);
 }
-
 void GUITextfield::PopChar() {
-	auto str = static_cast<std::string>(GetText().getString());
-	str.pop_back();
-	GetText().setString(std::move(str));
+	if (textfieldstr[textfieldstr.size() - 1] == '\b') textfieldstr.pop_back();
+	textfieldstr = textfieldstr.substr(0, textfieldstr.length() - 1);
+	//GetText().setString((textfieldstr.empty()) ? customtext : textfieldstr);
+	GetText().setString(textfieldstr);
+	requirestextcalibration = true;
+	MarkRedraw(true);
 }
-void GUITextfield::ClearString(){
-	
-}
+
 
 
 

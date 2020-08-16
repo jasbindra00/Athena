@@ -42,7 +42,16 @@ void GUIInterface::RedrawContentLayer() {
 		if (!element.second->IsControl()) { //then it must be a content elt
 			element.second->Draw(*contentlayer);
 			element.second->MarkRedraw(false);
+			if (element.second->GetType() == GUIType::TEXTFIELD) {
+				auto ptr = static_cast<GUITextfield*>(element.second.get());
+				if (ptr->requirestextcalibration) {
+					auto& style = ptr->GetActiveStyle();
+					ptr->visual.CalibrateText(ptr->GetLocalBoundingBox(), style.text.localpositionproportion, style.text.originproportion, style.text.charactersize);
+					ptr->requirestextcalibration = false;
+				}
+			}
 		}
+		
 	}
 	contentlayer->display();
 	layers->GetContentSprite()->setTexture(layers->GetContentLayer()->getTexture());
@@ -68,15 +77,13 @@ void GUIInterface::RedrawBackgroundLayer() {
 	backgroundlayer->clear(sf::Color::Color(255,0,0,255));
 	backgroundlayer->draw(visual.sbg);
 	backgroundlayer->draw(visual.tbg);
-	backgroundlayer->draw(visual.text);
+	if(!statestyles[activestate].text.texthidden) backgroundlayer->draw(visual.text);
 	backgroundlayer->display();
 	layers->GetBackgroundSprite()->setTexture(backgroundlayer->getTexture());
 	MarkBackgroundRedraw(false);
 	MarkRedrawToParent(true); //if nested interface, this change in interface needs to be reflected in the layer of its parent
 }
 void GUIInterface::Draw(sf::RenderTexture& texture) { //part of another interface
-
-	
 	texture.draw(*layers->GetBackgroundSprite());
 	texture.draw(*layers->GetContentSprite());
 	texture.draw(*layers->GetControlSprite());

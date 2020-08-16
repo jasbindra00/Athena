@@ -23,6 +23,7 @@ class GUIElement { //abstract base class for specialised GUIElements.
 protected:
 	GUIStateStyles statestyles; //each GUI state has its own style.
 	GUIVisual visual;
+	std::string customtext;
 	std::string name;
 	GUIInterface* parent{ nullptr };
 
@@ -37,6 +38,7 @@ protected:
 	mutable bool pendingsizeapply;
 	mutable bool pendingstyleapply;
 	mutable bool pendingchange;
+	mutable bool requirestextcalibration;
 
 	sf::Vector2f localposition; //position relative to its parent. this will be the position of its background textures.
 	sf::Vector2f elementsize;
@@ -76,7 +78,6 @@ public:
 
 
 	void ApplyCurrentStyle();
-
 	void SetText(const std::string& str);
 	void SetStyle(const GUIState& state);
 	void SetElementSize(const sf::Vector2f& s);

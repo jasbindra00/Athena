@@ -2,10 +2,12 @@
 #define GUITEXTFIELD_H
 #include "GUIElement.h"
 #include <stdint.h>
+#include <iostream>
 
 class GUITextfield : public GUIElement {
+	friend class GUIInterface;
 protected:
-	
+	std::string textfieldstr;
 public:
 	GUITextfield(GUIInterface* parent, const GUIStateStyles& styles,KeyProcessing::Keys& attributes);
 	void OnNeutral() override;
@@ -14,12 +16,15 @@ public:
 	virtual void OnLeave() override;
 	virtual void OnRelease() override;
 	void Draw(sf::RenderTexture& texture) override;
-	void AppendChar(const std::uint32_t& code);
+	void AppendChar(const char& c);
 	void PopChar();
-	void ClearString();
+
 	void Update(const float& dT) override;
+	void OnEnter() {
+		std::cout << "ENTER TEXTFIELD" << std::endl;
+	}
 	sf::Text& GetText();
-	std::string GetStdString();
+	
 
 
 };
