@@ -16,8 +16,9 @@ bool GUIInterface::AddElement(const std::string& eltname, std::unique_ptr<GUIEle
 		return p.first == eltname;
 		});
 	if (eltexists != elements.end()) return false;
-	//elt->SetParent(this);
+//	(eltexists->second->IsControl()) ? MarkControlRedraw(true) : MarkContentRedraw(true);
 	elements.emplace_back(std::make_pair(eltname, std::move(elt)));
+	
 	return true;
 }
 void GUIInterface::ReadIn(KeyProcessing::Keys& keys) {
@@ -51,7 +52,6 @@ void GUIInterface::RedrawContentLayer() {
 				}
 			}
 		}
-		
 	}
 	contentlayer->display();
 	layers->GetContentSprite()->setTexture(layers->GetContentLayer()->getTexture());
@@ -164,6 +164,28 @@ void GUIInterface::OnRelease(){
 	evntinfo.elementstate = GUIState::NEUTRAL;
 	evntinfo.interfacehierarchy = GetHierarchyString();
 	GetGUIManager()->AddGUIEvent(std::make_pair(EventData::EventType::GUI_RELEASE,std::move(evntinfo)));
+}
+
+void GUIInterface::SetEnabled(const bool& inp) const
+{
+	//apply change to all elements.
+	GUIElement::SetEnabled(inp);
+	for (auto& elt : elements) {
+		elt.second->SetEnabled(inp);
+	}
+}
+
+void GUIInterface::DefocusTextfields()
+{
+	for (auto& elt : elements) {
+		if (elt.second->IsHidden()) continue;
+		if (elt.second->GetType() == GUIType::TEXTFIELD) {
+			if (elt.second->GetActiveState() != GUIState::NEUTRAL) elt.second->OnNeutral();
+		}
+		else if (elt.second->GetType() == GUIType::WINDOW) {
+			static_cast<GUIInterface*>(elt.second.get())->DefocusTextfields();
+		}
+	}
 }
 
 std::pair<bool, sf::Vector2f> GUIInterface::EltOverhangs(const GUIElement* const elt){

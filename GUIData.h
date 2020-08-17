@@ -27,7 +27,6 @@ namespace GUIData {
 			return GUIType::NULLTYPE;
 			});
 	}
-
 }
 
 

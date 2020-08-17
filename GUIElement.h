@@ -20,10 +20,10 @@ using namespace GUIData::GUITypeData;
 using namespace GUIFormatting;
 using GUIStateStyles = std::unordered_map<GUIState, GUIStyle>;
 class GUIElement { //abstract base class for specialised GUIElements.
+	friend class GUIInterface;
 protected:
 	GUIStateStyles statestyles; //each GUI state has its own style.
 	GUIVisual visual;
-	std::string customtext;
 	std::string name;
 	GUIInterface* parent{ nullptr };
 
@@ -31,8 +31,9 @@ protected:
 	GUIState currentstate;
 	mutable bool controlelement; //used by the interface in determining which layer to redraw
 	mutable GUIState activestate;
-	mutable bool redrawrequired; //if it's changed, then the layer to which it forms within the interface must be redrawn.
+	mutable bool backgroundredraw; //if it's changed, then the layer to which it forms within the interface must be redrawn.
 	mutable bool hidden; //an inactive element is hidden from the GUI.
+	mutable bool enabled;
 
 	mutable bool pendingpositionapply;
 	mutable bool pendingsizeapply;
@@ -62,6 +63,10 @@ protected:
 	virtual void ApplyLocalPosition();
 	virtual void ApplySize();
 	void CalibratePosition();
+	bool SetState(const GUIState& state);
+	virtual void Draw(sf::RenderTexture& texture);
+	virtual void Update(const float& dT);
+	void ApplyCurrentStyle();
 public:
 	GUIElement(GUIInterface* parent, const GUIType& type, const GUIStateStyles& styles,KeyProcessing::Keys& attributes);
 
@@ -71,26 +76,28 @@ public:
 	virtual void OnLeave() = 0;
 	virtual void OnRelease() = 0;
 
-	bool SetState(const GUIState& state);
-	virtual void Draw(sf::RenderTexture& texture);
-	virtual void Update(const float& dT);
+	
+
 	bool Contains(const sf::Vector2f& mousepos) const noexcept;
 
 
-	void ApplyCurrentStyle();
-	void SetText(const std::string& str);
+	
+	virtual void SetEnabled(const bool& inp) const { enabled = inp; }
 	void SetStyle(const GUIState& state);
+	void SetText(const std::string& str);
 	void SetElementSize(const sf::Vector2f& s);
 	void SetLocalPosition(const sf::Vector2f& pos);
 	void SetParent(GUIInterface* p) { parent = p; }
 
 	void SetHidden(const bool& inp) const { hidden = inp; }
-	void MarkRedraw(const bool& inp) const { redrawrequired = inp; }
+	void MarkRedraw(const bool& inp) const { backgroundredraw = inp; }
 	
-	bool RequiresRedraw() const { return redrawrequired; }
+	bool RequiresRedraw() const { return backgroundredraw; }
 	inline const bool& IsControl() const { return controlelement; }
 	inline const bool& IsHidden() const { return hidden; }
 
+
+	inline const bool& IsEnabled() const { return enabled; }
 	inline const GUIState& GetActiveState() const { return activestate; }
 	inline const sf::Vector2f& GetSize() const { return elementsize; }
 	inline const GUIType& GetType() const { return type; }

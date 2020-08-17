@@ -14,7 +14,4 @@ public:
 protected:
 
 };
-
-
-
 #endif

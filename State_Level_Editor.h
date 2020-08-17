@@ -19,7 +19,7 @@ public:
 	void Continue() override;
 	void ActivatePopUp(EventData::EventDetails* details);
 	void DeactivatePopUp(EventData::EventDetails* details);
-
+	void ConfirmButtonPopUp(EventData::EventDetails* details);
 protected:
 	
 

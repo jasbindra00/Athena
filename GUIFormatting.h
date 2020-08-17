@@ -66,13 +66,13 @@ namespace GUIFormatting {
 			}
 			else if (attributetype == "TEXTURE_NAME") tbg_name = attributekey->second;
 		}
-			
 	};
 	struct Text {
 		sf::Vector2f localpositionproportion;
 		sf::Vector2f originproportion{ 0,0 };
 		sf::Color textcolor{ sf::Color::Color(255,255,255,255 )};
 		std::string fontname{ "arial.ttf" };
+		std::string customtext;
 		bool texthidden = false;
 		unsigned int charactersize{ maxcharactersize };
 			void ReadIn(KeyProcessing::Keys& keys, const std::string& attributetype) {
@@ -110,7 +110,7 @@ namespace GUIFormatting {
 			}
 			//init single key attributes here.
 			else {
-				KeyProcessing::FillMissingKey(KeyProcessing::KeyPair{ attributetype, "ERROR" }, keys);
+				KeyProcessing::FillMissingKey(KeyProcessing::KeyPair{ attributetype, "" }, keys);
 				auto key = keys.find(attributetype);
 				if (attributetype == "TEXT_HIDDEN") {
 					texthidden = (key->second == "TRUE");
@@ -123,6 +123,12 @@ namespace GUIFormatting {
 						catch (const std::exception& exception) { throw CustomException("Character size attribute for {PROPERTY_ATTRIBUTE," + attributetype + "} has been defaulted to MAX "); }
 					}
 				}
+				else if (attributetype == "CUSTOM_TEXT_STRING") {
+					customtext = key->second;
+					std::replace(customtext.begin(), customtext.end(), '+', ' ');
+				}
+				
+
 			}
 			
 		}
@@ -165,7 +171,6 @@ namespace GUIFormatting {
 		friend class GUITextfield;
 		friend class GUICheckbox;
 	protected:
-		std::vector<sf::Text> customtext;
 		sf::RectangleShape sbg;
 		sf::RectangleShape tbg;
 		sf::Text text;

@@ -1,5 +1,7 @@
 #pragma once
 #include <stdint.h>
+#include <bitset>
+#include <iostream>
 #include <vector>
 
 using Bitset = uint32_t;
@@ -23,7 +25,10 @@ public:
 	}
 
 	bool GetBit(const unsigned int& l_pos)const {
-		return ((bits & (1 << l_pos)) != 0);
+		//REFACTOR BITMASK
+		std::bitset<32> myset(bits);
+		std::cout << myset << std::endl;
+		return (myset[31 -l_pos] == true);
 	}
 	void TurnOnBit(const unsigned int& l_pos) {
 		bits |= 1 << l_pos;

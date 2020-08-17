@@ -14,6 +14,7 @@ using GUIElements = std::vector <std::pair<std::string, GUIElementPtr>>;
 
 class GUIInterface : public GUIElement {
 	friend class GUIElement;
+	friend class Manager_GUI;
 protected:
 	
 	GUIElements elements;
@@ -27,6 +28,18 @@ protected:
 	void RedrawControlLayer();
 
 	Manager_GUI* guimgr{ nullptr };
+
+	void Draw(sf::RenderTexture& texture) override; //draw to another interface.
+	void Render();
+	void Update(const float& dT) override;
+
+	void MarkBackgroundRedraw(const bool& inp) const { MarkRedraw(inp); }
+	void MarkContentRedraw(const bool& inp) const { contentredraw = inp; }
+	void MarkControlRedraw(const bool& inp) const { controlredraw = inp; }
+	void MarkRedrawToParent(const bool& inp) const { parentredraw = inp; }
+
+	virtual void ApplySize() override;
+	virtual void ApplyLocalPosition() override;
 	
 public:
 	GUIInterface(GUIInterface* parent, Manager_GUI* guimgr, const GUIStateStyles& styles, KeyProcessing::Keys& keys);
@@ -36,42 +49,19 @@ public:
 	virtual void OnClick(const sf::Vector2f& pos) override;
 	virtual void OnRelease();
 	virtual void OnLeave() override {
-
 	}
-	void DefocusTextfields() {
-		for (auto& elt : elements) {
-			if (elt.second->IsHidden()) continue;
-			if (elt.second->GetType() == GUIType::TEXTFIELD) {
-				if(elt.second->GetActiveState() != GUIState::NEUTRAL) elt.second->OnNeutral();
-			}
-			else if (elt.second->GetType() == GUIType::WINDOW) {
-				static_cast<GUIInterface*>(elt.second.get())->DefocusTextfields();
-			}
-		}
-	}
-	void Draw(sf::RenderTexture& texture) override; //draw to another interface.
-	void Render();
-	void Update(const float& dT) override;
+	virtual void SetEnabled(const bool& inp) const override;
+	void DefocusTextfields();
 
 	bool AddElement(const std::string& eltname, std::unique_ptr<GUIElement>& elt);
 	bool RemoveElement(const std::string& eltname);
 	
-
-	void MarkBackgroundRedraw(const bool& inp) const { MarkRedraw(inp); }
-	void MarkContentRedraw(const bool& inp) const { contentredraw = inp; }
-	void MarkControlRedraw(const bool& inp) const { controlredraw = inp; }
-	void MarkRedrawToParent(const bool& inp) const { parentredraw = inp; }
-
-
 	const bool& RequiresContentRedraw() const { return contentredraw; }
 	const bool& RequiresControlRedraw() const { return controlredraw; }
-	bool RequiresBackgroundRedraw() const { return RequiresRedraw(); }
+	const bool& RequiresBackgroundRedraw() const { return backgroundredraw; }
 	const bool& RequiresParentRedraw() const { return parentredraw; }
 	
 	std::pair<bool, sf::Vector2f> EltOverhangs(const GUIElement* const elt);
-
-	virtual void ApplySize() override;
-	virtual void ApplyLocalPosition() override;
 
 	virtual void ReadIn(KeyProcessing::Keys& keys) override;
 

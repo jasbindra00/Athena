@@ -68,7 +68,6 @@ public:
 		auto componentptr = foundentity->second.second.at(t).get();
 		return dynamic_cast<T*>(componentptr);
 	}
-	
 };
 
 #endif

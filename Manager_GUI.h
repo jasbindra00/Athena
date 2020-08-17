@@ -36,32 +36,30 @@ private:
 	GameStateInterfaces stateinterfaces;
 	EventQueue<std::pair<EventData::EventType,GUIEventInfo>> guieventqueue;
 	GUIElementFactory elementfactory;
-
 	sf::Vector2f globalmouseposition;
 	SharedContext* context;
 	mutable GameStateType activestate;
 	mutable GUITextfield* activetextfield{ nullptr };
-
 	template<typename T>
 	void RegisterElementProducer(const GUIType& type) { //factory pattern
 		elementfactory[type] = [type](GUIInterface* parent, const GUIStateStyles& style, KeyProcessing::Keys& keys) {return std::make_unique<T>(parent, style, keys); };
 	}
 	GUIStateStyles CreateStyleFromFile(const std::string& stylefile);
-
+	Interfaces& GetActiveInterfaces() { return stateinterfaces.at(activestate); }
 	GUIElementPtr CreateElement(GUIInterface* parent, Keys& keys);
 	GUIInterfacePtr CreateInterfaceFromFile(const std::string& interfacefile);
 	std::pair<bool,Interfaces::iterator> FindInterface(const GameStateType& state, const std::string& interfacename) noexcept;
 public:
 	Manager_GUI(SharedContext* context);
-	
-	bool CreateStateInterface(const GameStateType& state, const std::string& name, const std::string& interfacefile);
+	GUIInterface* CreateStateInterface(const GameStateType& state, const std::string& name, const std::string& interfacefile);
 	bool RemoveStateInterface(const GameStateType& state, const std::string& name);
 
-	inline void SetActiveState(const GameStateType& state) const { activestate = state; }
+	inline void SetActiveState(const GameStateType& state) const { activestate = state; activetextfield = nullptr; }
 	
 	void Update(const float& dT);
 	void Draw();
 
+	void SetActiveInterfacesEnable(const GUIInterface* const exceptthis, const bool& enabled);
 	bool PollGUIEvent(std::pair<EventData::EventType,GUIEventInfo>& evnt);
 	void AddGUIEvent(const std::pair<EventData::EventType, GUIEventInfo>& evnt);
 	void HandleEvent(const sf::Event& evnt, sf::RenderWindow* winptr);

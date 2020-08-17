@@ -28,7 +28,6 @@ Manager_GUI::Manager_GUI(SharedContext* cntxt) :context(cntxt) {
 	RegisterElementProducer<GUILabel>(GUIType::LABEL);
 	RegisterElementProducer<GUIScrollbar>(GUIType::SCROLLBAR);
 	RegisterElementProducer<GUICheckbox>(GUIType::CHECKBOX);
-
 	stateinterfaces[GameStateType::GAME] = Interfaces{};
 	stateinterfaces[GameStateType::LEVELEDITOR] = Interfaces{  };
 }
@@ -106,20 +105,9 @@ GUIInterfacePtr Manager_GUI::CreateInterfaceFromFile(const std::string& interfac
 		//fill the standard keys for base guielement.
 		KeyProcessing::FillMissingKeys(std::vector<KeyPair>{ {"ELEMENTTYPE", "FATALERROR"}, { "STYLEFILE", "FATALERROR" }, { "ELEMENTNAME", "FATALERROR" }, { "ELEMENT_HIDDEN", "FALSE" },
 			{ "POSITIONX","ERROR" }, { "POSITIONY","ERROR" }, { "POSITIONX%", "ERROR" }, { "POSITIONY%", "ERROR" }, { "SIZEX", "ERROR" }, { "SIZEY","ERROR" },
-			{ "SIZEX%", "ERROR" }, { "SIZEY%", "ERROR" }, { "ORIGINX%","ERROR" }, { "ORIGINY%","ERROR" }, { "WINX", std::to_string(this->context->window->GetRenderWindow()->getSize().x) }, { "WINY",std::to_string(this->context->window->GetRenderWindow()->getSize().y) }}, linekeys);
-		KeyProcessing::FillMissingKey(KeyPair{ "CUSTOM_TEXT",linekeys.find("ELEMENTNAME")->second }, linekeys);
+			{ "SIZEX%", "ERROR" }, { "SIZEY%", "ERROR" }, { "ORIGINX%","ERROR" }, { "ORIGINY%","ERROR" }, { "CUSTOMTEXT", "ERROR" }, { "ENABLED","TRUE" }, { "WINX", std::to_string(this->context->window->GetRenderWindow()->getSize().x) }, { "WINY",std::to_string(this->context->window->GetRenderWindow()->getSize().y) }}, linekeys);
 		std::string elttype = linekeys.find("ELEMENTTYPE")->second;
 		//fill keys for derived guielements.
-
-
-
-
-
-
-
-
-
-
 		GUIElementPtr element;
 		try { element = (elttype == "NESTEDINTERFACE" || elttype != "NEWINTERFACE") ? CreateElement(leadinginterface, linekeys) : CreateElement(masterinterface, linekeys); }
 		catch (const CustomException& exception) {
@@ -174,16 +162,17 @@ std::pair<bool,Interfaces::iterator> Manager_GUI::FindInterface(const GameStateT
 		});
 	return (foundinterface == interfaces.end()) ? std::make_pair(false, foundinterface) : std::make_pair(true, foundinterface);
 }
-bool Manager_GUI::CreateStateInterface(const GameStateType& state, const std::string& name, const std::string& interfacefile){
+GUIInterface* Manager_GUI::CreateStateInterface(const GameStateType& state, const std::string& name, const std::string& interfacefile){
 	auto interfaceexists = FindInterface(state, name);
 	if (interfaceexists.first == true) {
 		LOG::Log(LOCATION::MANAGER_GUI, LOGTYPE::ERROR, __FUNCTION__, "Interface of name " + name + " within the game state " + std::to_string(Utility::ConvertToUnderlyingType(state)) + " already exists.");
-		return false;
+		return nullptr;
 	}
 	auto interfaceobj = CreateInterfaceFromFile(interfacefile);
-	if (interfaceobj == nullptr) return false;
+	if (interfaceobj == nullptr) return nullptr;
+	GUIInterface* ptr = interfaceobj.get();
 	stateinterfaces[state].emplace_back(std::make_pair(name, std::move(interfaceobj)));
-	return true;
+	return ptr;
 }
 bool Manager_GUI::RemoveStateInterface(const GameStateType& state, const std::string& name){
 	auto foundinterface = FindInterface(state, name);
@@ -211,7 +200,7 @@ void Manager_GUI::HandleEvent(const sf::Event& evnt, sf::RenderWindow* winptr) {
 		auto clickcoords = sf::Vector2f{ static_cast<float>(evnt.mouseButton.x), static_cast<float>(evnt.mouseButton.y) };
 		SetActiveTextfield(nullptr);
 		for (auto& interfaceobj : activeinterfaces) {
-			if (interfaceobj.second->IsHidden()) continue;
+			if (interfaceobj.second->IsHidden() || !interfaceobj.second->IsEnabled()) continue;
 			interfaceobj.second->DefocusTextfields();
 			if (interfaceobj.second->Contains(clickcoords)) {
 				if (interfaceobj.second->GetActiveState() == GUIState::NEUTRAL) {
@@ -236,14 +225,15 @@ void Manager_GUI::HandleEvent(const sf::Event& evnt, sf::RenderWindow* winptr) {
 	case EventType::TEXTENTERED: {
 		if (activetextfield != nullptr) {
 			char c = evnt.text.unicode;
-			activetextfield->AppendChar(std::move(c));
+			//grab custom predicate from textfield here
+			if(activetextfield->Predicate(c)) activetextfield->AppendChar(std::move(c));
 		}
 		break;
 	}
 	case EventType::KEYPRESSED: {
 		if (activetextfield != nullptr) {
 			if (evnt.key.code == sf::Keyboard::Key::Backspace) {
-				activetextfield->PopChar();
+				if(!activetextfield->GetText().getString().isEmpty()) activetextfield->PopChar();
 			}
 			if (evnt.key.code == sf::Keyboard::Key::Enter) {
 				activetextfield->OnEnter();
@@ -268,8 +258,16 @@ void Manager_GUI::Draw() {
 		interface.second->Render();
 	}
 }
+
+void Manager_GUI::SetActiveInterfacesEnable(const GUIInterface* exceptthis, const bool& enabled){
+	if (exceptthis == nullptr) return;
+	auto& activeinterfaces = GetActiveInterfaces();
+	for (auto& interface : activeinterfaces) {
+		if(interface.second.get() == exceptthis) continue;
+		interface.second->SetEnabled(enabled);
+	}
+}
+
 void Manager_GUI::AddGUIEvent(const std::pair<EventData::EventType,GUIEventInfo>& evnt){
 	guieventqueue.InsertEvent(evnt);
 }
-
-
