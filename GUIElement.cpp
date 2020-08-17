@@ -9,23 +9,68 @@
 GUIElement::GUIElement(GUIInterface* p, const GUIType& t, const GUIStateStyles& stylemap, KeyProcessing::Keys& attributes) :type(t), parent(p), controlelement(false) {
 	statestyles = stylemap;
 	ReadIn(attributes);
-	SetStyle(activestate);
+	QueueStyle();
 }
-
+void GUIElement::Draw(sf::RenderTexture& texture) {
+	auto& currentstyle = statestyles[activestate];
+	texture.draw(visual.sbg);
+	texture.draw(visual.tbg);
+	if (!currentstyle.text.texthidden) texture.draw(visual.text);
+}
+void GUIElement::Update(const float& dT) {
+	if (pendingchange) {
+		if (pendingsizeapply) {
+			ApplySize();
+			pendingsizeapply = false;
+		}
+		if (pendingpositionapply) {
+			ApplyLocalPosition();
+			pendingpositionapply = false;
+		}
+		if (pendingstyleapply) {
+			ApplyCurrentStyle();
+			pendingstyleapply = false;
+		}
+		CalibratePosition();
+		pendingchange = false;
+	}
+}
 void GUIElement::OnNeutral(){
 	SetState(GUIState::NEUTRAL);
 	EventData::GUIEventInfo evntinfo;
 	evntinfo.interfacehierarchy = GetHierarchyString();
 	GetGUIManager()->AddGUIEvent(std::make_pair(EventData::EventType::GUI_CLICK, std::move(evntinfo)));
 }
-void GUIElement::ApplyLocalPosition(){
-	visual.SetPosition(localposition); 
+void GUIElement::OnHover() {
+
+}
+void GUIElement::OnClick(const sf::Vector2f& mousepos) {
+	SetState(GUIState::CLICKED);
+	EventData::GUIEventInfo evntinfo;
+	evntinfo.interfacehierarchy = GetHierarchyString();
+	GetGUIManager()->AddGUIEvent(std::make_pair(EventData::EventType::GUI_CLICK, std::move(evntinfo)));
+}
+void GUIElement::CalibratePosition() {
+	if (parent == nullptr) return; //if in mid initialisation
+	auto overhangs = parent->EltOverhangs(this); //check if this entire elt still lies in interface after pos change
+	if (overhangs.first == false) return; //elt still lies within the interface.
+	QueueLocalPosition(overhangs.second);
+	ApplyLocalPosition();
+}
+void GUIElement::ApplyLocalPosition() {
+	visual.SetPosition(localposition);
 }
 void GUIElement::ApplySize() {
 	visual.SetSize(elementsize);
-
 }
-void GUIElement::ReleaseStyleResources(){
+bool GUIElement::SetState(const GUIState& state) {
+	if (state == activestate) return false; //no visual change.
+	activestate = state;
+	ReleaseStyleResources();
+	QueueStyle();
+	return true;
+}
+void GUIElement::ReleaseStyleResources() {
 	auto& activestyle = GetActiveStyle();
 	if (!activestyle.background.tbg_name.empty()) {
 		visual.tbg_texture.reset();
@@ -36,6 +81,30 @@ void GUIElement::ReleaseStyleResources(){
 		GetGUIManager()->GetContext()->fontmgr->RequestResourceDealloc(activestyle.text.fontname);
 	}
 }
+void GUIElement::ApplyCurrentStyle() {
+	if (type == GUIType::CHECKBOX) {
+		int y = 4;
+	}
+	auto& currentstyle = statestyles[activestate];
+	//apply dynamically allocated resources to visuals
+	if (RequestVisualResource<sf::Texture>()) { //request the required resources for the font and tbg.
+		visual.tbg.setTexture(visual.tbg_texture.get());
+		sf::Color tmp(255, 255, 255, 255);
+		visual.tbg.setFillColor(std::move(tmp));
+	}
+	else {//if unsucessful texture request, we don't want the default sfml error texture to show.
+		sf::Color tmp(255, 255, 255, 0);
+		visual.tbg.setFillColor(std::move(tmp));
+	}
+	if (RequestVisualResource<sf::Font>()) {
+		visual.text.setFont(*visual.font);
+	}
+	sf::FloatRect rect = GetLocalBoundingBox();
+	if (type == GUIType::WINDOW) { rect.left = 0; rect.top = 0; }
+	visual.ApplyStyle(currentstyle, rect, currentstyle.text.localpositionproportion, currentstyle.text.localpositionproportion, currentstyle.text.charactersize);
+	MarkBackgroundRedraw(true); //now the interface knows to redraw the layer.
+}
+
 void GUIElement::ReadIn(KeyProcessing::Keys& keys) {
 	//TO DEFAULT THE KEYS TO ERROR OR TO SEARCH FOR EACH INDIVIDUAL KEY?
 	name = keys.find("ELEMENTNAME")->second;
@@ -127,111 +196,30 @@ void GUIElement::ReadIn(KeyProcessing::Keys& keys) {
 				keys.insert(std::make_pair("TEXTURE_HAS_BEEN_OVERRIDEN", std::to_string(Utility::ConvertToUnderlyingType(states[i])))); 
 			}
 		}
-	SetElementSize(std::move(size));
-	SetLocalPosition(std::move(position));
-	MarkRedraw(true);
+	QueueEltSize(std::move(size));
+	QueueLocalPosition(std::move(position));
+	MarkBackgroundRedraw(true);
 }
-Manager_GUI* GUIElement::GetGUIManager() {
-	if (GetType() == GUIType::WINDOW) return static_cast<GUIInterface*>(this)->guimgr; //GUITYPE::Window := GUIInterface
-	return parent->guimgr;
-}
-void GUIElement::OnHover(){
-	
-}
-void GUIElement::OnClick(const sf::Vector2f& mousepos){
-	SetState(GUIState::CLICKED);
-	EventData::GUIEventInfo evntinfo;
-	evntinfo.interfacehierarchy = GetHierarchyString();
-	GetGUIManager()->AddGUIEvent(std::make_pair(EventData::EventType::GUI_CLICK,std::move(evntinfo)));
-}
-bool GUIElement::SetState(const GUIState& state){
-	if (state == activestate) return false; //no visual change.
-	activestate = state;
-	ReleaseStyleResources();
-	SetStyle(state);
-	return true;
-}
-void GUIElement::ApplyCurrentStyle(){
-	if (type == GUIType::CHECKBOX) {
-		int y = 4;
-	}
-	auto& currentstyle = statestyles[activestate];
-	//apply dynamically allocated resources to visuals
-	if (RequestVisualResource<sf::Texture>()) { //request the required resources for the font and tbg.
-		visual.tbg.setTexture(visual.tbg_texture.get());
-		sf::Color tmp(255, 255, 255, 255);
-		visual.tbg.setFillColor(std::move(tmp));
-	}
-	else {//if unsucessful texture request, we don't want the default sfml error texture to show.
-		sf::Color tmp(255, 255, 255, 0);
-		visual.tbg.setFillColor(std::move(tmp));
-	}
-	if (RequestVisualResource<sf::Font>()) {
-		visual.text.setFont(*visual.font);
-	}
-	sf::FloatRect rect = GetLocalBoundingBox();
-	if (type == GUIType::WINDOW) { rect.left = 0; rect.top = 0; }
-	visual.ApplyStyle(currentstyle, rect, currentstyle.text.localpositionproportion, currentstyle.text.localpositionproportion, currentstyle.text.charactersize);
-	MarkRedraw(true); //now the interface knows to redraw the layer.
-}
-void GUIElement::SetText(const std::string& str){
-	visual.text.setString(str);
-	MarkRedraw(true);
-}
-void GUIElement::Draw(sf::RenderTexture& texture) {
-	auto& currentstyle = statestyles[activestate];
-	texture.draw(visual.sbg);
-	texture.draw(visual.tbg);
-	if(!currentstyle.text.texthidden) texture.draw(visual.text);	
-}
-void GUIElement::Update(const float& dT){
-	if (pendingchange) {
-		if (pendingsizeapply) {
-			ApplySize();
-			pendingsizeapply = false;
-		}
-		if (pendingpositionapply) {
-			ApplyLocalPosition();
-			pendingpositionapply = false;
-		}		
-		if (pendingstyleapply) {
-			ApplyCurrentStyle();
-			pendingstyleapply = false;
-		}
-		CalibratePosition();
-		pendingchange = false;
-	}
-}
-sf::FloatRect GUIElement::GetLocalBoundingBox() const {
-	return sf::FloatRect{ localposition, GetSize() };
-}
-bool GUIElement::Contains(const sf::Vector2f& mouseglobal) const noexcept{
-	auto globalpos = GetGlobalPosition();
-	auto rect = sf::FloatRect{ globalpos, elementsize };
-	return rect.contains(mouseglobal);
-}
-void GUIElement::CalibratePosition() {
-	if (parent == nullptr) return; //if in mid initialisation
-	auto overhangs = parent->EltOverhangs(this); //check if this entire elt still lies in interface after pos change
-	if (overhangs.first == false) return; //elt still lies within the interface.
-	SetLocalPosition(overhangs.second);
-	ApplyLocalPosition();
-}
-void GUIElement::SetLocalPosition(const sf::Vector2f& pos){
+
+void GUIElement::QueueLocalPosition(const sf::Vector2f& pos){
 	localposition = pos;
 	pendingchange = true;
 	pendingpositionapply = true;
 }
-void GUIElement::SetElementSize(const sf::Vector2f& s) {
+void GUIElement::QueueEltSize(const sf::Vector2f& s) {
 	elementsize = s;
 	pendingchange = true;
 	pendingsizeapply = true;
 }
-void GUIElement::SetStyle(const GUIState& state) {//queues a pending style application
+
+void GUIElement::QueueText(const std::string& str) {
+	visual.text.setString(str);
+	MarkBackgroundRedraw(true);
+}
+void GUIElement::QueueStyle() {//queues a pending style application
 	pendingchange = true;
 	pendingstyleapply = true;
 }
-
 std::string GUIElement::GetHierarchyString() const{
 	if (parent == nullptr) return name;
 	std::string str(name);
@@ -243,11 +231,17 @@ std::string GUIElement::GetHierarchyString() const{
 	return str;
 }
 
+Manager_GUI* GUIElement::GetGUIManager(){return (GetType() == GUIType::WINDOW) ? static_cast<GUIInterface*>(this)->guimgr : parent->guimgr;}
+
 sf::Vector2f GUIElement::GetGlobalPosition() const{
 	if (parent == nullptr) return localposition;
 	return localposition + GetParent()->GetGlobalPosition(); 
 }
-
+bool GUIElement::Contains(const sf::Vector2f& mouseglobal) const noexcept {
+	auto globalpos = GetGlobalPosition();
+	auto rect = sf::FloatRect{ globalpos, elementsize };
+	return rect.contains(mouseglobal);
+}
 GUIElement::~GUIElement() {
 	ReleaseStyleResources();
 }

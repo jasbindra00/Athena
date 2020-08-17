@@ -5,7 +5,7 @@
 
 
 
-GUITextfield::GUITextfield(GUIInterface* parent, const GUIStateStyles& styles, KeyProcessing::Keys& attributes):GUIElement(parent, GUIType::TEXTFIELD, styles, attributes), predicatebitset(4026531840) {
+GUITextfield::GUITextfield(GUIInterface* parent, const GUIStateStyles& styles, KeyProcessing::Keys& attributes):GUIElement(parent, GUIType::TEXTFIELD, styles, attributes), predicatebitset(4026531840), maxchars(INT_MAX) {
 	controlelement = false;
 	//override the character size here.
 	statestyles[GUIState::FOCUSED].text.charactersize = GUIFormatting::maxcharactersize;
@@ -14,9 +14,17 @@ GUITextfield::GUITextfield(GUIInterface* parent, const GUIStateStyles& styles, K
 	using namespace PredicateData;
 	SetPredicates(0);
 	//read user predicate keys.
-	auto textfieldpredicatekeys = attributes.equal_range("TEXTFIELD_PREDICATE");
-	for (auto it = textfieldpredicatekeys.first; it != textfieldpredicatekeys.second; ++it) {
-		AddPredicate(PredicateData::predicateconverter(it->second));
+	{
+		auto textfieldpredicatekeys = attributes.equal_range("TEXTFIELD_PREDICATE");
+		for (auto it = textfieldpredicatekeys.first; it != textfieldpredicatekeys.second; ++it) {
+			AddPredicate(PredicateData::predicateconverter(it->second));
+		}
+	}
+	auto maxtextfieldcharskey = attributes.find("MAX_TEXTFIELD_CHARS");
+	if (maxtextfieldcharskey != attributes.end()) {
+		try { SetMaxChars(std::stoi(maxtextfieldcharskey->second)); }
+		catch (const std::exception& exception) {
+		}
 	}
 }
 sf::Text& GUITextfield::GetText() {
@@ -46,10 +54,11 @@ void GUITextfield::Draw(sf::RenderTexture& texture){
 	texture.draw(visual.text);
 }
 void GUITextfield::AppendChar(const char& c){
+	if (GetStrLen() + 1 > maxchars) return;
 	textfieldstr += c;
 	GetText().setString(textfieldstr);
 	requirestextcalibration = true;
-	MarkRedraw(true);
+	MarkBackgroundRedraw(true);
 }
 void GUITextfield::PopChar() {
 	if (!textfieldstr.empty() && textfieldstr.back() == '\b') textfieldstr.pop_back();
@@ -57,5 +66,5 @@ void GUITextfield::PopChar() {
 	if (!textfieldstr.empty() && textfieldstr.back() == '\b') textfieldstr.pop_back();
 	GetText().setString(textfieldstr);
 	requirestextcalibration = true;
-	MarkRedraw(true); //mark redraw too powerful for element.
+	MarkBackgroundRedraw(true); //mark redraw too powerful for element.
 }

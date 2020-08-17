@@ -16,7 +16,8 @@ public:
 	Component_Sprite() : Component_Drawable(ComponentType::SPRITE) {
 		attributerequirement = 5;
 	}
-	void SetTextureMgr(Manager_Texture* mgr) { texturemgr = mgr; }
+	void 
+ureMgr(Manager_Texture* mgr) { texturemgr = mgr; }
 	bool SetAtlasMap(const std::string& atlasmapname) {
 		if (texturemgr == nullptr) {
 			LOG::Log(LOCATION::COMPONENT_SPRITE, LOGTYPE::ERROR, __FUNCTION__, "Unable to request resource of name " + atlasmapname + " - texture manager pointer is not initialised.");

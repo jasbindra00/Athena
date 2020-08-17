@@ -27,7 +27,7 @@ void Manager_Entity::CreateComponent(const EntityID& entityid, const ComponentTy
 	auto component = componentfactory[t]();
 	//CONFIGURE DEFAULT INITIALISATIONS HERE.
 	if (t == ComponentType::SPRITE) {
-		dynamic_cast<Component_Sprite*>(component.get())->SetTextureMgr(texturemgr);
+		//dynamic_cast<Component_Sprite*>(component.get())->SetTextureMgr(texturemgr);
 	}
 	if (!attributes.empty()) { std::stringstream{ attributes } >> *component; } //initialising component with attributes
 	entitycomponents[entityid].second.emplace(t, std::move(component));

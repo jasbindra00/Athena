@@ -32,6 +32,7 @@ using GUIElementProducer = std::function<GUIElementPtr(GUIInterface*, GUIStateSt
 using GUIElementFactory = std::unordered_map<GUIType, GUIElementProducer>;
 
 class Manager_GUI{
+	friend class State_LevelEditor;
 private:
 	GameStateInterfaces stateinterfaces;
 	EventQueue<std::pair<EventData::EventType,GUIEventInfo>> guieventqueue;
@@ -45,12 +46,30 @@ private:
 		elementfactory[type] = [type](GUIInterface* parent, const GUIStateStyles& style, KeyProcessing::Keys& keys) {return std::make_unique<T>(parent, style, keys); };
 	}
 	GUIStateStyles CreateStyleFromFile(const std::string& stylefile);
-	Interfaces& GetActiveInterfaces() { return stateinterfaces.at(activestate); }
 	GUIElementPtr CreateElement(GUIInterface* parent, Keys& keys);
 	GUIInterfacePtr CreateInterfaceFromFile(const std::string& interfacefile);
 	std::pair<bool,Interfaces::iterator> FindInterface(const GameStateType& state, const std::string& interfacename) noexcept;
+protected:
+	Interfaces& GetActiveInterfaces() { return stateinterfaces.at(activestate); }
 public:
 	Manager_GUI(SharedContext* context);
+	
+	template<typename T>
+	T* GetElement(const GameStateType& state, const std::string hierarchy) {
+		Attributes hierarchystream(hierarchy);
+		GUIElement* elt = GetInterface(hierarchystream.GetWord());
+		while (hierarchystream.NextWord()) {
+			if (!elt) return nullptr;
+			if (dynamic_cast<GUIInterface*>(elt)) {
+				elt = static_cast<GUIInterface*>(elt)->GetElement(hierarchystream.GetWord());
+			}
+			else break; //we have reached an element.
+		}
+		//at this point, we are either at the end of the stream with no words left (elt not found)
+		if (hierarchystream.eof()) return nullptr;
+		if (hierarchystream.GetWord() == elt->GetName()) return dynamic_cast<T*>(elt);
+	}
+
 	GUIInterface* CreateStateInterface(const GameStateType& state, const std::string& name, const std::string& interfacefile);
 	bool RemoveStateInterface(const GameStateType& state, const std::string& name);
 
@@ -65,10 +84,12 @@ public:
 	void HandleEvent(const sf::Event& evnt, sf::RenderWindow* winptr);
 	SharedContext* GetContext() const { return context; }
 	GUIInterface* GetInterface(const GameStateType& state, const std::string& interfacename);
+	
 	sf::Vector2f GetGlobalMousePosition() const { return globalmouseposition; }
 	void SetActiveTextfield(GUITextfield* ptr) {
 		activetextfield = ptr;
 	}
+	
 
 };
 

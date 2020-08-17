@@ -71,8 +71,7 @@ class GUITextfield : public GUIElement {
 protected:
 	Bitmask predicatebitset;
 	std::string textfieldstr;
-public:
-	GUITextfield(GUIInterface* parent, const GUIStateStyles& styles, KeyProcessing::Keys& attributes);
+	int maxchars;
 
 	void OnNeutral() override;
 	void OnHover() override;
@@ -80,9 +79,14 @@ public:
 	virtual void OnLeave() override;
 	virtual void OnRelease() override;
 	void Draw(sf::RenderTexture& texture) override;
+	void Update(const float& dT) override;
+public:
+	GUITextfield(GUIInterface* parent, const GUIStateStyles& styles, KeyProcessing::Keys& attributes);
+
 	void AppendChar(const char& c);
 	void PopChar();
 	void SetPredicates(const Bitmask& mask) { predicatebitset = mask; }
+	void SetMaxChars(const int& inp) { maxchars = (inp < 0) ? INT_MAX : inp; }
 	void AddPredicate(const PredicateData::PredicateType& t) {predicatebitset.TurnOnBits(Utility::ConvertToUnderlyingType(t));}
 	bool Predicate(const char& c) {
 		using namespace PredicateData;
@@ -96,10 +100,9 @@ public:
 		}
 		return characcepted;
 	}
-	void Update(const float& dT) override;
 	void OnEnter() {
-
 	}
+	int GetStrLen() const { return textfieldstr.length(); }
 	sf::Text& GetText();
 };
 

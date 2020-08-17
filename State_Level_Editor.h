@@ -6,7 +6,7 @@
 class Manager_State;
 class State_LevelEditor : public State_Base {
 private:
-	
+	std::vector<std::pair<std::string, GUIInterface*>>* interfaces;
 public:
 	State_LevelEditor(Manager_State* statemgr, Manager_GUI* guimgr);
 	void draw(sf::RenderTarget& target, sf::RenderStates state) const override;

@@ -22,18 +22,25 @@ using GUIStateStyles = std::unordered_map<GUIState, GUIStyle>;
 class GUIElement { //abstract base class for specialised GUIElements.
 	friend class GUIInterface;
 protected:
+	mutable GUIState activestate;
 	GUIStateStyles statestyles; //each GUI state has its own style.
-	GUIVisual visual;
+	GUIVisual visual; //the active style is applied to the visual
+
 	std::string name;
-	GUIInterface* parent{ nullptr };
+	mutable GUIInterface* parent{ nullptr };
 
 	GUIType type;
 	GUIState currentstate;
+
+	sf::Vector2f localposition; //position relative to its parent. this will be the position of its background textures.
+	sf::Vector2f elementsize; 
+
 	mutable bool controlelement; //used by the interface in determining which layer to redraw
-	mutable GUIState activestate;
+
+	mutable bool hidden; //an inactive element is not drawn 
+	mutable bool enabled; //a disabled element will not respond to any input.
+
 	mutable bool backgroundredraw; //if it's changed, then the layer to which it forms within the interface must be redrawn.
-	mutable bool hidden; //an inactive element is hidden from the GUI.
-	mutable bool enabled;
 
 	mutable bool pendingpositionapply;
 	mutable bool pendingsizeapply;
@@ -41,9 +48,13 @@ protected:
 	mutable bool pendingchange;
 	mutable bool requirestextcalibration;
 
-	sf::Vector2f localposition; //position relative to its parent. this will be the position of its background textures.
-	sf::Vector2f elementsize;
+	virtual void OnNeutral();
+	virtual void OnHover();
+	virtual void OnClick(const sf::Vector2f& mousepos);
+	virtual void OnLeave() = 0;
+	virtual void OnRelease() = 0;
 
+	void ReleaseStyleResources();
 	template<typename T, typename = typename ManagedResourceData::ENABLE_IF_MANAGED_RESOURCE<T>>
 	bool RequestVisualResource() {
 		auto& activestyle = GetActiveStyle();
@@ -59,60 +70,56 @@ protected:
 		visual.GetResource<T>() = std::move(newres);
 		return true;
 	}
-	void ReleaseStyleResources();
+	
 	virtual void ApplyLocalPosition();
 	virtual void ApplySize();
 	void CalibratePosition();
+
 	bool SetState(const GUIState& state);
+
 	virtual void Draw(sf::RenderTexture& texture);
 	virtual void Update(const float& dT);
+
 	void ApplyCurrentStyle();
+	void QueueStyle();
+	void QueueText(const std::string& str);
+	void QueueEltSize(const sf::Vector2f& s);
+	void QueueLocalPosition(const sf::Vector2f& pos);
+
+	inline void SetParent(GUIInterface* p) const { parent = p; }
 public:
 	GUIElement(GUIInterface* parent, const GUIType& type, const GUIStateStyles& styles,KeyProcessing::Keys& attributes);
 
-	virtual void OnNeutral();
-	virtual void OnHover();
-	virtual void OnClick(const sf::Vector2f& mousepos);
-	virtual void OnLeave() = 0;
-	virtual void OnRelease() = 0;
+	//FIND WORKAROUND FOR CTOR INIT
+	virtual void ReadIn(KeyProcessing::Keys& keys);
 
+	void MarkBackgroundRedraw(const bool& inp) const { backgroundredraw = inp; }
+	virtual void SetEnabled(const bool& inp) const { enabled = inp; }
+	void SetHidden(const bool& inp) const { hidden = inp; }
 	
+	const bool& RequiresBackgroundRedraw() const { return backgroundredraw; }
+	inline const bool& IsControl() const { return controlelement; }
+	inline const bool& IsHidden() const { return hidden; }
+	inline const bool& IsEnabled() const { return enabled; }
+
+	inline const std::string& GetName() const { return name; }
+	inline const GUIType& GetType() const { return type; }
+	inline GUIInterface* GetParent() const { return parent; }
+	inline const GUIState& GetActiveState() const { return activestate; }
+
+	inline const sf::Vector2f& GetSize() const { return elementsize; }
+	inline GUIStyle& GetActiveStyle() { return statestyles[activestate]; }
+
+	inline const sf::Vector2f& GetLocalPosition() const { return localposition; }
+	sf::Vector2f GetGlobalPosition() const;
+
+	sf::FloatRect GetLocalBoundingBox() const { return sf::FloatRect{ localposition, GetSize() }; }
+	std::string GetHierarchyString() const;
+
+	Manager_GUI* GetGUIManager();;
 
 	bool Contains(const sf::Vector2f& mousepos) const noexcept;
 
-
-	
-	virtual void SetEnabled(const bool& inp) const { enabled = inp; }
-	void SetStyle(const GUIState& state);
-	void SetText(const std::string& str);
-	void SetElementSize(const sf::Vector2f& s);
-	void SetLocalPosition(const sf::Vector2f& pos);
-	void SetParent(GUIInterface* p) { parent = p; }
-
-	void SetHidden(const bool& inp) const { hidden = inp; }
-	void MarkRedraw(const bool& inp) const { backgroundredraw = inp; }
-	
-	bool RequiresRedraw() const { return backgroundredraw; }
-	inline const bool& IsControl() const { return controlelement; }
-	inline const bool& IsHidden() const { return hidden; }
-
-
-	inline const bool& IsEnabled() const { return enabled; }
-	inline const GUIState& GetActiveState() const { return activestate; }
-	inline const sf::Vector2f& GetSize() const { return elementsize; }
-	inline const GUIType& GetType() const { return type; }
-	inline const std::string& GetName() const { return name; }
-	inline GUIStyle& GetActiveStyle() { return statestyles[activestate]; }
-	inline GUIInterface* GetParent() const { return parent; }
-	inline const sf::Vector2f& GetLocalPosition() const { return localposition; }
-	std::string GetHierarchyString() const;
-
-	
-	sf::Vector2f GetGlobalPosition() const;
-	sf::FloatRect GetLocalBoundingBox() const;
-	
-	virtual void ReadIn(KeyProcessing::Keys& keys);
-	Manager_GUI* GetGUIManager();
 	virtual ~GUIElement();
 };
 

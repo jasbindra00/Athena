@@ -11,30 +11,79 @@ GUIInterface::GUIInterface(GUIInterface* p, Manager_GUI* mgr, const GUIStateStyl
 	MarkContentRedraw(true);
 	MarkControlRedraw(true);
 }
-bool GUIInterface::AddElement(const std::string& eltname, std::unique_ptr<GUIElement>& elt){
-	auto eltexists = std::find_if(elements.begin(), elements.end(), [eltname](const auto& p) {
-		return p.first == eltname;
-		});
-	if (eltexists != elements.end()) return false;
-//	(eltexists->second->IsControl()) ? MarkControlRedraw(true) : MarkContentRedraw(true);
+bool GUIInterface::AddElement(const std::string& eltname, std::unique_ptr<GUIElement>& elt) {
+	std::pair<bool, GUIElementIterator> found = GetElement(eltname);
+	if (found.first) return false;
+	(elt->IsControl()) ? MarkControlRedraw(true) : MarkContentRedraw(true);
 	elements.emplace_back(std::make_pair(eltname, std::move(elt)));
-	
 	return true;
-}
-void GUIInterface::ReadIn(KeyProcessing::Keys& keys) {
-	GUIElement::ReadIn(keys);
 }
 bool GUIInterface::RemoveElement(const std::string& eltname) {
-	return true;
+	std::pair<bool, GUIElementIterator> found = GetElement(eltname);
+	if (found.first) {
+		(found.second->second->GetType() == GUIType::WINDOW || !found.second->second->IsControl()) ? MarkContentRedraw(true) : MarkControlRedraw(true);
+		elements.erase(found.second);
+		return true;
+	}
+	return false;
+}
+void GUIInterface::Draw(sf::RenderTexture& texture) { //part of another interface
+	texture.draw(*layers->GetBackgroundSprite());
+	texture.draw(*layers->GetContentSprite());
+	texture.draw(*layers->GetControlSprite());
+}
+void GUIInterface::Render() {
+	/*
+	-if this gui interface has a parent, then we don't want to render directly to the window.
+	-we need to render this directly to its texture.
+	*/
+	if (parent != nullptr) return; //we have already drawn our sprites onto parent layers.
+	auto winptr = guimgr->GetContext()->window->GetRenderWindow();
+	winptr->draw(*layers->GetBackgroundSprite());
+	winptr->draw(*layers->GetContentSprite());
+	winptr->draw(*layers->GetControlSprite());
+}
+void GUIInterface::Update(const float& dT) {
+	auto mouseposition = static_cast<sf::Vector2f>(sf::Mouse::getPosition(*guimgr->GetContext()->window->GetRenderWindow()));
+	GUIElement::Update(dT); //apply any pending movement / size changes
+	for (auto& element : elements) {
+		if (element.second->IsHidden()) continue;
+		if (element.second->Contains(mouseposition)) {
+			if (element.second->GetActiveState() == GUIState::NEUTRAL) {
+				element.second->OnHover();
+			}
+		}
+		else if (element.second->GetActiveState() == GUIState::FOCUSED) element.second->OnLeave();
+		element.second->Update(dT);
+		if (element.second->GetType() == GUIType::WINDOW) {
+			if (static_cast<GUIInterface*>(element.second.get())->RequiresParentRedraw()) { //check if its own layers have been redrawn (so that we can redraw this control layer)
+				MarkControlRedraw(true); //its layers have been redrawn, so we need to redraw our control. child interface forms the control layer.
+				static_cast<GUIInterface*>(element.second.get())->MarkRedrawToParent(false); //reset
+			}
+		}
+		else if (element.second->RequiresBackgroundRedraw()) { //element has been changed
+			if (element.second->IsControl()) MarkControlRedraw(true); //if it was a control elt, need to redraw control layer
+			else MarkContentRedraw(true);
+			element.second->MarkBackgroundRedraw(false);
+		}
+	}
+	if (RequiresBackgroundRedraw()) RedrawBackgroundLayer();
+	if (RequiresContentRedraw()) RedrawContentLayer();
+	if (RequiresControlRedraw()) RedrawControlLayer();
 }
 void GUIInterface::ApplyLocalPosition(){
 	layers->GetBackgroundSprite()->setPosition(localposition);
 	layers->GetContentSprite()->setPosition(localposition);
 	layers->GetControlSprite()->setPosition(localposition);
 }
-void GUIInterface::ApplySize() {
-	GUIElement::ApplySize();
+
+std::pair<bool, GUIElements::iterator> GUIInterface::GetElement(const std::string& elementname){
+	auto it = std::find_if(elements.begin(), elements.end(), [&elementname](const auto& p) {
+		return p.first == elementname;
+		});
+	return(it == elements.end()) ? std::make_pair(false, it) : std::make_pair(true, it);
 }
+
 void GUIInterface::RedrawContentLayer() {
 	auto contentlayer = layers->GetContentLayer();
 	contentlayer->clear(sf::Color::Color(255,255,255,0));
@@ -42,7 +91,7 @@ void GUIInterface::RedrawContentLayer() {
 		if (element.second->IsHidden()) continue;
 		if (!element.second->IsControl()) { //then it must be a content elt
 			element.second->Draw(*contentlayer);
-			element.second->MarkRedraw(false);
+			element.second->MarkBackgroundRedraw(false);
 			if (element.second->GetType() == GUIType::TEXTFIELD) {
 				auto ptr = static_cast<GUITextfield*>(element.second.get());
 				if (ptr->requirestextcalibration) {
@@ -83,60 +132,9 @@ void GUIInterface::RedrawBackgroundLayer() {
 	MarkBackgroundRedraw(false);
 	MarkRedrawToParent(true); //if nested interface, this change in interface needs to be reflected in the layer of its parent
 }
-void GUIInterface::Draw(sf::RenderTexture& texture) { //part of another interface
-	texture.draw(*layers->GetBackgroundSprite());
-	texture.draw(*layers->GetContentSprite());
-	texture.draw(*layers->GetControlSprite());
-}
-void GUIInterface::Render(){
-	/*
-	-if this gui interface has a parent, then we don't want to render directly to the window.
-	-we need to render this directly to its texture.
-	*/
-	if (parent != nullptr) return; //we have already drawn our sprites onto parent layers.
-	auto winptr = guimgr->GetContext()->window->GetRenderWindow();
-	winptr->draw(*layers->GetBackgroundSprite());
-	winptr->draw(*layers->GetContentSprite());
-	winptr->draw(*layers->GetControlSprite());
-}
-void GUIInterface::Update(const float& dT){
-	auto mouseposition = static_cast<sf::Vector2f>(sf::Mouse::getPosition(*guimgr->GetContext()->window->GetRenderWindow()));
-	GUIElement::Update(dT); //apply any pending movement / size changes
-	for (auto& element : elements) {
-		if (element.second->IsHidden()) continue;
-		if (element.second->Contains(mouseposition)) {
-// 			auto pos = static_cast<sf::Vector2f>(sf::Mouse::getPosition(*GetGUIManager()->GetContext()->window->GetRenderWindow()));
-// 			pos -= element.second->GetLocalPosition();
-// 			std::cout << "{" << pos.x << "," << pos.y << "}" << std::endl;
-			if (element.second->GetActiveState() == GUIState::NEUTRAL) {
-				element.second->OnHover();
-			}
-		}
-		else if (element.second->GetActiveState() == GUIState::FOCUSED) element.second->OnLeave();
-		element.second->Update(dT);
-		if (element.second->GetType() == GUIType::WINDOW){
-			if (static_cast<GUIInterface*>(element.second.get())->RequiresParentRedraw()) { //check if its own layers have been redrawn (so that we can redraw this control layer)
-				MarkControlRedraw(true); //its layers have been redrawn, so we need to redraw our control. child interface forms the control layer.
-				static_cast<GUIInterface*>(element.second.get())->MarkRedrawToParent(false); //reset
-			}
-		}
-		else if (element.second->RequiresRedraw()) { //element has been changed
-			if (element.second->IsControl()) MarkControlRedraw(true); //if it was a control elt, need to redraw control layer
-			else MarkContentRedraw(true);
-			element.second->MarkRedraw(false);
-		}
-	}
-	if (RequiresBackgroundRedraw()) RedrawBackgroundLayer(); 
-	if (RequiresContentRedraw()) RedrawContentLayer();
-	if (RequiresControlRedraw()) RedrawControlLayer();
-}
-void GUIInterface::OnHover(){
-	GUIElement::OnHover();
-}
 
-void GUIInterface::OnNeutral(){
 
-}
+
 void GUIInterface::OnClick(const sf::Vector2f& pos){
 	GUIElement::OnClick(pos); //dispatches event.
 	for (auto& element : elements) {
@@ -166,8 +164,7 @@ void GUIInterface::OnRelease(){
 	GetGUIManager()->AddGUIEvent(std::make_pair(EventData::EventType::GUI_RELEASE,std::move(evntinfo)));
 }
 
-void GUIInterface::SetEnabled(const bool& inp) const
-{
+void GUIInterface::SetEnabled(const bool& inp) const{
 	//apply change to all elements.
 	GUIElement::SetEnabled(inp);
 	for (auto& elt : elements) {
@@ -175,8 +172,7 @@ void GUIInterface::SetEnabled(const bool& inp) const
 	}
 }
 
-void GUIInterface::DefocusTextfields()
-{
+void GUIInterface::DefocusTextfields(){
 	for (auto& elt : elements) {
 		if (elt.second->IsHidden()) continue;
 		if (elt.second->GetType() == GUIType::TEXTFIELD) {
