@@ -101,11 +101,14 @@ GUIInterfacePtr Manager_GUI::CreateInterfaceFromFile(const std::string& interfac
 
 	while (file.NextLine().GetFileStream()) {
 		Keys linekeys = KeyProcessing::ExtractValidKeys(file.ReturnLine());
-
+		
 		//fill the standard keys for base guielement.
 		KeyProcessing::FillMissingKeys(std::vector<KeyPair>{ {"ELEMENTTYPE", "FATALERROR"}, { "STYLEFILE", "FATALERROR" }, { "ELEMENTNAME", "FATALERROR" }, { "ELEMENT_HIDDEN", "FALSE" },
 			{ "POSITIONX","ERROR" }, { "POSITIONY","ERROR" }, { "POSITIONX%", "ERROR" }, { "POSITIONY%", "ERROR" }, { "SIZEX", "ERROR" }, { "SIZEY","ERROR" },
 			{ "SIZEX%", "ERROR" }, { "SIZEY%", "ERROR" }, { "ORIGINX%","ERROR" }, { "ORIGINY%","ERROR" }, { "CUSTOMTEXT", "ERROR" }, { "ENABLED","TRUE" }, { "WINX", std::to_string(this->context->window->GetRenderWindow()->getSize().x) }, { "WINY",std::to_string(this->context->window->GetRenderWindow()->getSize().y) }}, linekeys);
+		if (linekeys.find("ELEMENTNAME")->second == "POP_UP_PANEL") {
+			int g = 3;
+		}
 		std::string elttype = linekeys.find("ELEMENTTYPE")->second;
 		//fill keys for derived guielements.
 		GUIElementPtr element;
@@ -267,7 +270,6 @@ void Manager_GUI::SetActiveInterfacesEnable(const GUIInterface* exceptthis, cons
 		interface.second->SetEnabled(enabled);
 	}
 }
-
 void Manager_GUI::AddGUIEvent(const std::pair<EventData::EventType,GUIEventInfo>& evnt){
 	guieventqueue.InsertEvent(evnt);
 }

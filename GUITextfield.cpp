@@ -2,6 +2,7 @@
 #include "GUIInterface.h"
 #include "Manager_GUI.h"
 #include <iostream>
+#include <regex>
 
 
 
@@ -11,6 +12,7 @@ GUITextfield::GUITextfield(GUIInterface* parent, const GUIStateStyles& styles, K
 	statestyles[GUIState::FOCUSED].text.charactersize = GUIFormatting::maxcharactersize;
 	statestyles[GUIState::NEUTRAL].text.charactersize = GUIFormatting::maxcharactersize;
 	statestyles[GUIState::CLICKED].text.charactersize = GUIFormatting::maxcharactersize;
+	statestyles[GUIState::FOCUSED].text.customtext.clear();
 	using namespace PredicateData;
 	SetPredicates(0);
 	//read user predicate keys.
@@ -26,14 +28,22 @@ GUITextfield::GUITextfield(GUIInterface* parent, const GUIStateStyles& styles, K
 		catch (const std::exception& exception) {
 		}
 	}
+	
+	//configure custom text keys.
 }
+
+void GUITextfield::ApplyFieldString(const std::string& str){
+	visual.SetTextStr(str);
+	requirestextcalibration = true;
+	MarkBackgroundRedraw(true);
+}
+
 sf::Text& GUITextfield::GetText() {
 	return visual.text;
 }
 void GUITextfield::OnNeutral(){
 	SetState(GUIState::NEUTRAL);
-	if (textfieldstr.empty() || textfieldstr.back() == '\b') GetText().setString(statestyles[activestate].text.customtext);
-	requirestextcalibration = true;
+	if (GetTextfieldStr().empty()) ApplyFieldString(statestyles[activestate].text.customtext);
 }
 void GUITextfield::Update(const float& dT){
 	GUIElement::Update(dT);
@@ -42,7 +52,8 @@ void GUITextfield::OnHover(){
 }
 void GUITextfield::OnClick(const sf::Vector2f& mousepos) {
 	SetState(GUIState::FOCUSED);
-	requirestextcalibration = true;
+	//if our currenttext is our default text, then clear.
+	if (GetTextfieldStr() == statestyles[GUIState::NEUTRAL].text.customtext) ApplyFieldString(std::string{""});
 }
 void GUITextfield::OnLeave(){
 }
@@ -50,21 +61,16 @@ void GUITextfield::OnRelease(){
 }
 void GUITextfield::Draw(sf::RenderTexture& texture){
 	GUIElement::Draw(texture);
-	texture.draw(visual.sbg);
-	texture.draw(visual.text);
 }
 void GUITextfield::AppendChar(const char& c){
-	if (GetStrLen() + 1 > maxchars) return;
-	textfieldstr += c;
-	GetText().setString(textfieldstr);
-	requirestextcalibration = true;
-	MarkBackgroundRedraw(true);
+	std::string str = GetTextfieldStr();
+	if (str.size() + 1 > maxchars) return;
+	ApplyFieldString(std::move(str += c));
 }
-void GUITextfield::PopChar() {
-	if (!textfieldstr.empty() && textfieldstr.back() == '\b') textfieldstr.pop_back();
-	textfieldstr = textfieldstr.substr(0, textfieldstr.length() - 1);
-	if (!textfieldstr.empty() && textfieldstr.back() == '\b') textfieldstr.pop_back();
-	GetText().setString(textfieldstr);
-	requirestextcalibration = true;
-	MarkBackgroundRedraw(true); //mark redraw too powerful for element.
+void GUITextfield::PopChar() {	std::string str = GetTextfieldStr();
+	if(str.size() == 0) {
+		return;
+	}
+	str.pop_back();
+	ApplyFieldString(std::move(str));
 }

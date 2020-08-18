@@ -155,7 +155,7 @@ void GUIElement::ReadIn(KeyProcessing::Keys& keys) {
 	if (position.y < 0) position.y = 0;
 	if (position.x + size.x >= parentdimensions.x) size.x = parentdimensions.x - position.x;
 	if (position.y + size.y >= parentdimensions.y) size.y = parentdimensions.y - position.y;
-	visual.text.setString(name);
+	visual.SetTextStr(name);
 
 	//OVERRIDING THE STYLEFILE ATTRIBUTES AFTER IT HAS BEEN APPLIED
 	//VISUAL KEYS
@@ -164,6 +164,9 @@ void GUIElement::ReadIn(KeyProcessing::Keys& keys) {
 
 	//REFACTOR THIS INTO OVERRIDE KEY FUNCTION
 	{
+		if (name == "POP_UP_PANEL") {
+			int y = 3;
+		}
 		std::array<std::pair<bool, KeyProcessing::Keys::iterator>, 3> customtextoverrides;
 		customtextoverrides[0] = KeyProcessing::GetKey("CUSTOM_TEXT_NEUTRAL", keys);
 		customtextoverrides[1] = KeyProcessing::GetKey("CUSTOM_TEXT_CLICKED", keys);
@@ -176,7 +179,8 @@ void GUIElement::ReadIn(KeyProcessing::Keys& keys) {
 			}
 		}
 		//create getstring fcn to remove spaces.
-		visual.text.setString(statestyles[activestate].text.customtext);
+
+		visual.SetTextStr(statestyles[activestate].text.customtext);
 		requirestextcalibration = true;
 	}
 
@@ -213,25 +217,25 @@ void GUIElement::QueueEltSize(const sf::Vector2f& s) {
 }
 
 void GUIElement::QueueText(const std::string& str) {
-	visual.text.setString(str);
+	visual.SetTextStr(str);
 	MarkBackgroundRedraw(true);
 }
 void GUIElement::QueueStyle() {//queues a pending style application
 	pendingchange = true;
 	pendingstyleapply = true;
 }
-std::string GUIElement::GetHierarchyString() const{
+std::string GUIElement::GetHierarchyString(){
 	if (parent == nullptr) return name;
-	std::string str(name);
 	GUIInterface* mparent = parent;
+	std::vector<std::string> hierarchy{ name };
 	while (mparent != nullptr) {
-		str += mparent->GetName();
+		hierarchy.emplace_back(parent->GetName());
 		mparent = mparent->GetParent();
 	}	
-	return str;
+	return Utility::ConstructGUIHierarchyString(std::move(hierarchy));
 }
 
-Manager_GUI* GUIElement::GetGUIManager(){return (GetType() == GUIType::WINDOW) ? static_cast<GUIInterface*>(this)->guimgr : parent->guimgr;}
+Manager_GUI* GUIElement::GetGUIManager() {return (GetType() == GUIType::WINDOW) ? static_cast<GUIInterface*>(this)->guimgr : parent->guimgr;}
 
 sf::Vector2f GUIElement::GetGlobalPosition() const{
 	if (parent == nullptr) return localposition;

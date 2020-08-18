@@ -29,7 +29,7 @@ GUICheckbox::GUICheckbox(GUIInterface* parent, const GUIStateStyles& styles, Key
 		statestyles[GUIState::NEUTRAL].AdjustForSystemTexture();
 	}
 	elementsize = sf::Vector2f{ 20,20 }; //max checkbox size.
-	visual.text.setString("");
+	visual.SetTextStr("");
 }
 void GUICheckbox::ToggleChecked() {
 	if (checked == true) {

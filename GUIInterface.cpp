@@ -90,8 +90,6 @@ void GUIInterface::RedrawContentLayer() {
 	for (auto& element : elements) {
 		if (element.second->IsHidden()) continue;
 		if (!element.second->IsControl()) { //then it must be a content elt
-			element.second->Draw(*contentlayer);
-			element.second->MarkBackgroundRedraw(false);
 			if (element.second->GetType() == GUIType::TEXTFIELD) {
 				auto ptr = static_cast<GUITextfield*>(element.second.get());
 				if (ptr->requirestextcalibration) {
@@ -100,6 +98,9 @@ void GUIInterface::RedrawContentLayer() {
 					ptr->requirestextcalibration = false;
 				}
 			}
+			element.second->Draw(*contentlayer);
+			element.second->MarkBackgroundRedraw(false);
+
 		}
 	}
 	contentlayer->display();

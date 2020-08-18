@@ -70,7 +70,6 @@ class GUITextfield : public GUIElement {
 	friend class GUIInterface;
 protected:
 	Bitmask predicatebitset;
-	std::string textfieldstr;
 	int maxchars;
 
 	void OnNeutral() override;
@@ -83,6 +82,7 @@ protected:
 public:
 	GUITextfield(GUIInterface* parent, const GUIStateStyles& styles, KeyProcessing::Keys& attributes);
 
+	std::string GetTextfieldStr() const { return visual.GetTextStr(); }
 	void AppendChar(const char& c);
 	void PopChar();
 	void SetPredicates(const Bitmask& mask) { predicatebitset = mask; }
@@ -95,14 +95,14 @@ public:
 		bool characcepted = false;
 		for (unsigned int i = 0; i < 6; ++i) {
 			if (predicatebitset.GetBit(i) == true) {
-			if (predicatemap[conv[i]](c) == true) return true;
+				if (predicatemap[conv[i]](c) == true) return true;
 			}
 		}
 		return characcepted;
 	}
 	void OnEnter() {
 	}
-	int GetStrLen() const { return textfieldstr.length(); }
+	void ApplyFieldString(const std::string& str);
 	sf::Text& GetText();
 };
 

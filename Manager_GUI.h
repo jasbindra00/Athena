@@ -55,19 +55,19 @@ public:
 	Manager_GUI(SharedContext* context);
 	
 	template<typename T>
-	T* GetElement(const GameStateType& state, const std::string hierarchy) {
-		Attributes hierarchystream(hierarchy);
-		GUIElement* elt = GetInterface(hierarchystream.GetWord());
-		while (hierarchystream.NextWord()) {
-			if (!elt) return nullptr;
-			if (dynamic_cast<GUIInterface*>(elt)) {
-				elt = static_cast<GUIInterface*>(elt)->GetElement(hierarchystream.GetWord());
+	T* GetElement(const GameStateType& state, const std::vector<std::string> hierarchy) {
+		if (hierarchy.empty()) return nullptr;
+		GUIElement* element = GetInterface(state, hierarchy.back());
+		if (hierarchy.size() == 1) return dynamic_cast<T*>(element);
+		int i = hierarchy.size() - 2;
+		while (i >= 0 && element != nullptr) {
+			if (dynamic_cast<GUIInterface*>(element)) {
+				auto found = static_cast<GUIInterface*>(element)->GetElement(hierarchy.at(i));
+				element = (found.first) ? found.second->second.get() : nullptr;
 			}
-			else break; //we have reached an element.
+			--i;
 		}
-		//at this point, we are either at the end of the stream with no words left (elt not found)
-		if (hierarchystream.eof()) return nullptr;
-		if (hierarchystream.GetWord() == elt->GetName()) return dynamic_cast<T*>(elt);
+		return dynamic_cast<T*>(element);
 	}
 
 	GUIInterface* CreateStateInterface(const GameStateType& state, const std::string& name, const std::string& interfacefile);
@@ -89,8 +89,6 @@ public:
 	void SetActiveTextfield(GUITextfield* ptr) {
 		activetextfield = ptr;
 	}
-	
-
 };
 
 

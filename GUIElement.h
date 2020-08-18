@@ -85,6 +85,8 @@ protected:
 	void QueueText(const std::string& str);
 	void QueueEltSize(const sf::Vector2f& s);
 	void QueueLocalPosition(const sf::Vector2f& pos);
+	
+	void MarkBackgroundRedraw(const bool& inp) const { backgroundredraw = inp; }
 
 	inline void SetParent(GUIInterface* p) const { parent = p; }
 public:
@@ -93,15 +95,15 @@ public:
 	//FIND WORKAROUND FOR CTOR INIT
 	virtual void ReadIn(KeyProcessing::Keys& keys);
 
-	void MarkBackgroundRedraw(const bool& inp) const { backgroundredraw = inp; }
 	virtual void SetEnabled(const bool& inp) const { enabled = inp; }
 	void SetHidden(const bool& inp) const { hidden = inp; }
 	
-	const bool& RequiresBackgroundRedraw() const { return backgroundredraw; }
+
 	inline const bool& IsControl() const { return controlelement; }
 	inline const bool& IsHidden() const { return hidden; }
 	inline const bool& IsEnabled() const { return enabled; }
 
+	inline const bool& RequiresBackgroundRedraw() const { return backgroundredraw; }
 	inline const std::string& GetName() const { return name; }
 	inline const GUIType& GetType() const { return type; }
 	inline GUIInterface* GetParent() const { return parent; }
@@ -114,9 +116,9 @@ public:
 	sf::Vector2f GetGlobalPosition() const;
 
 	sf::FloatRect GetLocalBoundingBox() const { return sf::FloatRect{ localposition, GetSize() }; }
-	std::string GetHierarchyString() const;
+	std::string GetHierarchyString();
 
-	Manager_GUI* GetGUIManager();;
+	Manager_GUI* GetGUIManager();
 
 	bool Contains(const sf::Vector2f& mousepos) const noexcept;
 

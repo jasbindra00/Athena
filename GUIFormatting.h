@@ -134,6 +134,9 @@ namespace GUIFormatting {
 		}
 	};
 	struct GUIStyle {
+		GUIStyle() {
+
+		}
 		Text text;
 		Background background;
 		//reading one line at a time. a single line has multiple keys.
@@ -181,6 +184,7 @@ namespace GUIFormatting {
 			if constexpr (std::is_same_v<typename std::decay_t<T>, sf::Font>) return font;
 			else if constexpr (std::is_same_v<typename std::decay_t<T>, sf::Texture>) return tbg_texture;
 		}
+
 		inline void CalibrateText(const sf::FloatRect& eltlocalboundingbox, const sf::Vector2f& positionproportion, const sf::Vector2f& originproportion, const unsigned int& charactersize) {
 			sf::Vector2f textsize;
 			sf::Vector2f localorigin;
@@ -203,18 +207,39 @@ namespace GUIFormatting {
 				if (texttopleft.y + textsize.y > eltlocalboundingbox.top + eltlocalboundingbox.height) return false;
 				return true;
 			};
+
+			//REFACO
 			CalculateAndApply(text, charactersize);
 			if (!TextFits()) {
 				//must find the maximum charactersize, while maintaining this position, which allows us to fit in our element.
-				unsigned int newcharsize = maxcharactersize;
+				unsigned int newcharsize = charactersize;
 				while (newcharsize > 1) {
 					CalculateAndApply(text, newcharsize);
-					if (TextFits()) break; //text fits snugly in our element
+					if (TextFits()) break;
+
+					//text fits snugly in our element
+
 					--newcharsize;
 				}
-				if (newcharsize != 1) CalculateAndApply(text, newcharsize - 1); //go 1px below max.
+				//if (newcharsize != 1) CalculateAndApply(text, newcharsize - 1); //go 1px below max.
 			}
 		}
+		inline void SetTextStr(std::string str) {
+			//check if there have been double back slashes from key read in.
+			str.erase(std::remove(str.begin(), str.end(), '\b'), str.end());
+			//remove any \\n so that sf::text formats \n properly.
+			for (auto it = str.begin(); it != str.end(); ++it) {
+				if (*it == '\\') {
+					if (it + 1 != str.end()) {
+						if (*(it + 1) != 'n') continue;
+						*it = '\n';
+						str.erase(it + 1);
+					}
+				}
+			}
+			text.setString(str);
+		}
+		inline std::string GetTextStr() const { return text.getString(); };
 	public:
 		GUIVisual() {
 			tbg.setFillColor(sf::Color::Transparent);
@@ -235,7 +260,7 @@ namespace GUIFormatting {
 			sbg.setOutlineColor(style.background.outlinecolor);
 			sbg.setOutlineThickness(style.background.outlinethickness);
 			text.setFillColor(style.text.textcolor);
-			
+
 			CalibrateText(eltrect, textpositionproportion, textoriginproportion, charactersize);
 		}
 		

@@ -45,6 +45,11 @@ protected:
 public:
 	GUIInterface(GUIInterface* parent, Manager_GUI* guimgr, const GUIStateStyles& styles, KeyProcessing::Keys& keys);
 
+	GUIStyle& GetStyle(const GUIState& state) { return statestyles[state]; }
+	void SetStyle(const GUIState& state, const GUIStyle& style) { statestyles[state] = style; }
+	GUIVisual& GetVisual()  { return visual; }
+	void SetVisual(const GUIVisual& vis) { visual = vis; }
+
 	virtual void OnClick(const sf::Vector2f& pos) override;
 	virtual void OnRelease();
 	virtual void OnLeave() override {

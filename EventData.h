@@ -7,7 +7,7 @@
 #include <variant>
 #include "StreamAttributes.h"
 #include "KeyProcessing.h"
-#include "Log.h"
+#include "Utility.h"
 #include "GUIData.h"
 #include "EnumConverter.h"
 #include "CustomException.h"
@@ -133,17 +133,11 @@ namespace EventData {
 				keys.erase(it);
 			}
 			//configure the hierarchy string
-
-			std::string tmphierarchy;
-			//construct the hierarchy string using the remaining keys.
-			for (const auto& key : keys) {
-				if (key.first == "HIERARCHY") tmphierarchy += key.second;
-				//tmphierarchy += ' ';
-				else LOG::Log(LOCATION::MANAGER_EVENT, LOGTYPE::ERROR, __FUNCTION__, "Unable to identify condition for GUIBinding of name " + bindingname);
-			}
+			std::string hierarchystr = Utility::ConstructGUIHierarchyString(keys);
+			if (hierarchystr.empty()) return;//LOG ERROR HERE****************
 			GUIEventInfo evntinfo;
 			evntinfo.elementstate = std::move(guistate);
-			evntinfo.interfacehierarchy = std::move(tmphierarchy);
+			evntinfo.interfacehierarchy = std::move(hierarchystr);
 			AddCondition(std::move(guieventtype), std::move(evntinfo));
 		}
 
