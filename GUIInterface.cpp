@@ -6,15 +6,15 @@
 
 
 GUIInterface::GUIInterface(GUIInterface* p, Manager_GUI* mgr, const GUIStateStyles& styles, KeyProcessing::Keys& keys) 
-	:guimgr(mgr),GUIElement(p, GUIType::WINDOW, styles, keys){ //DANGEROUS. TEXTURE INIT REQUIRES GUI MGR. INITIALISATION MAY NOT BE IN ORDER FOR GUIMGR REQUEST.
-	layers = std::make_unique<GUIInterfaceLayers>(GetSize());
-	MarkContentRedraw(true);
-	MarkControlRedraw(true);
+	:guimgr(mgr),GUIElement(p, GUIType::WINDOW, GUILayerType::CONTENT, styles, keys), GUIInterfaceLayers(){ //DANGEROUS. TEXTURE INIT REQUIRES GUI MGR. INITIALISATION MAY NOT BE IN ORDER FOR GUIMGR REQUEST.
+	InitLayers(GetSize());
+	QueueLayerRedraw<GUILayerType::CONTROL>();
+	QueueLayerRedraw<GUILayerType::CONTENT>();
+	//BG?
 }
 bool GUIInterface::AddElement(const std::string& eltname, std::unique_ptr<GUIElement>& elt) {
 	std::pair<bool, GUIElementIterator> found = GetElement(eltname);
-	if (found.first) return false;
-	(elt->IsControl()) ? MarkControlRedraw(true) : MarkContentRedraw(true);
+	if (found.first) return false;	
 	elements.emplace_back(std::make_pair(eltname, std::move(elt)));
 	return true;
 }
@@ -26,22 +26,6 @@ bool GUIInterface::RemoveElement(const std::string& eltname) {
 		return true;
 	}
 	return false;
-}
-void GUIInterface::Draw(sf::RenderTexture& texture) { //part of another interface
-	texture.draw(*layers->GetBackgroundSprite());
-	texture.draw(*layers->GetContentSprite());
-	texture.draw(*layers->GetControlSprite());
-}
-void GUIInterface::Render() {
-	/*
-	-if this gui interface has a parent, then we don't want to render directly to the window.
-	-we need to render this directly to its texture.
-	*/
-	if (parent != nullptr) return; //we have already drawn our sprites onto parent layers.
-	auto winptr = guimgr->GetContext()->window->GetRenderWindow();
-	winptr->draw(*layers->GetBackgroundSprite());
-	winptr->draw(*layers->GetContentSprite());
-	winptr->draw(*layers->GetControlSprite());
 }
 void GUIInterface::Update(const float& dT) {
 	auto mouseposition = static_cast<sf::Vector2f>(sf::Mouse::getPosition(*guimgr->GetContext()->window->GetRenderWindow()));
@@ -57,83 +41,34 @@ void GUIInterface::Update(const float& dT) {
 		element.second->Update(dT);
 		if (element.second->GetType() == GUIType::WINDOW) {
 			if (static_cast<GUIInterface*>(element.second.get())->RequiresParentRedraw()) { //check if its own layers have been redrawn (so that we can redraw this control layer)
-				MarkControlRedraw(true); //its layers have been redrawn, so we need to redraw our control. child interface forms the control layer.
-				static_cast<GUIInterface*>(element.second.get())->MarkRedrawToParent(false); //reset
+				layers.QueueLayerRedraw<GUIData::GUILayerType::CONTENT>();
+				 //its layers have been redrawn, so we need to redraw our content. child interface forms the content layer.
+				static_cast<GUIInterface*>(element.second.get())->ResetParentRedraw(); //reset
 			}
 		}
-		else if (element.second->RequiresBackgroundRedraw()) { //element has been changed
-			if (element.second->IsControl()) MarkControlRedraw(true); //if it was a control elt, need to redraw control layer
-			else MarkContentRedraw(true);
-			element.second->MarkBackgroundRedraw(false);
+		else if (element.second->QueuedRedraw()) { //element has been changed
+			
+		
+			layers.QueueLayerRedraw<element.second->GetLayerType()>();
+			QueueLayerRedraw<element.second->GetLayerType()>();
+			element.second->ResetRedraw();
 		}
 	}
-	if (RequiresBackgroundRedraw()) RedrawBackgroundLayer();
+	if (QueuedRedraw()) RedrawBackgroundLayer();
 	if (RequiresContentRedraw()) RedrawContentLayer();
 	if (RequiresControlRedraw()) RedrawControlLayer();
 }
-void GUIInterface::ApplyLocalPosition(){
-	layers->GetBackgroundSprite()->setPosition(localposition);
-	layers->GetContentSprite()->setPosition(localposition);
-	layers->GetControlSprite()->setPosition(localposition);
+void GUIInterface::ApplyLocalPosition() {
+	layers->GetBackgroundSprite()->setPosition(GetLocalPosition());
+	layers->GetContentSprite()->setPosition(GetLocalPosition());
+	layers->GetControlSprite()->setPosition(GetLocalPosition());
 }
-
 std::pair<bool, GUIElements::iterator> GUIInterface::GetElement(const std::string& elementname){
 	auto it = std::find_if(elements.begin(), elements.end(), [&elementname](const auto& p) {
 		return p.first == elementname;
 		});
 	return(it == elements.end()) ? std::make_pair(false, it) : std::make_pair(true, it);
 }
-
-void GUIInterface::RedrawContentLayer() {
-	auto contentlayer = layers->GetContentLayer();
-	contentlayer->clear(sf::Color::Color(255,255,255,0));
-	for (auto& element : elements) {
-		if (element.second->IsHidden()) continue;
-		if (!element.second->IsControl()) { //then it must be a content elt
-			if (element.second->GetType() == GUIType::TEXTFIELD) {
-				auto ptr = static_cast<GUITextfield*>(element.second.get());
-				if (ptr->requirestextcalibration) {
-					auto& style = ptr->GetActiveStyle();
-					ptr->visual.CalibrateText(ptr->GetLocalBoundingBox(), style.text.localpositionproportion, style.text.originproportion, style.text.charactersize);
-					ptr->requirestextcalibration = false;
-				}
-			}
-			element.second->Draw(*contentlayer);
-			element.second->MarkBackgroundRedraw(false);
-
-		}
-	}
-	contentlayer->display();
-	layers->GetContentSprite()->setTexture(layers->GetContentLayer()->getTexture());
-	MarkContentRedraw(false);
-	MarkRedrawToParent(true);
-}
-void GUIInterface::RedrawControlLayer() {
-	auto controllayer = layers->GetControlLayer();
-	controllayer->clear(sf::Color::Color(255, 0, 0, 0));
-	for (auto& element : elements) {
-		if (element.second->IsHidden()) continue;
-		if (element.second->IsControl() || dynamic_cast<GUIInterface*>(element.second.get())) { //draw nested interfaces onto the control layer.
-			element.second->Draw(*controllayer);
-		}
-	}
-	controllayer->display();
-	layers->GetControlSprite()->setTexture(layers->GetControlLayer()->getTexture());
-	MarkControlRedraw(false);	
-	MarkRedrawToParent(true);
-}
-void GUIInterface::RedrawBackgroundLayer() {
-	auto backgroundlayer = layers->GetBackgroundLayer();
-	backgroundlayer->clear(sf::Color::Color(255,0,0,255));
-	backgroundlayer->draw(visual.sbg);
-	backgroundlayer->draw(visual.tbg);
-	if(!statestyles[activestate].text.texthidden) backgroundlayer->draw(visual.text);
-	backgroundlayer->display();
-	layers->GetBackgroundSprite()->setTexture(backgroundlayer->getTexture());
-	MarkBackgroundRedraw(false);
-	MarkRedrawToParent(true); //if nested interface, this change in interface needs to be reflected in the layer of its parent
-}
-
 
 
 void GUIInterface::OnClick(const sf::Vector2f& pos){

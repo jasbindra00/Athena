@@ -187,6 +187,7 @@
     <ClInclude Include="EventQueue.h" />
     <ClInclude Include="FileReader.h" />
     <ClInclude Include="EventData.h" />
+    <ClInclude Include="FriendProtectedOnly.h" />
     <ClInclude Include="GUICheckbox.h" />
     <ClInclude Include="GUIElement.h" />
     <ClInclude Include="GUIFormatting.h" />

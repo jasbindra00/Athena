@@ -35,7 +35,7 @@ GUITextfield::GUITextfield(GUIInterface* parent, const GUIStateStyles& styles, K
 void GUITextfield::ApplyFieldString(const std::string& str){
 	visual.SetTextStr(str);
 	requirestextcalibration = true;
-	MarkBackgroundRedraw(true);
+	QueueBackgroundRedraw(true);
 }
 
 sf::Text& GUITextfield::GetText() {
@@ -52,7 +52,6 @@ void GUITextfield::OnHover(){
 }
 void GUITextfield::OnClick(const sf::Vector2f& mousepos) {
 	SetState(GUIState::FOCUSED);
-	//if our currenttext is our default text, then clear.
 	if (GetTextfieldStr() == statestyles[GUIState::NEUTRAL].text.customtext) ApplyFieldString(std::string{""});
 }
 void GUITextfield::OnLeave(){
@@ -68,9 +67,7 @@ void GUITextfield::AppendChar(const char& c){
 	ApplyFieldString(std::move(str += c));
 }
 void GUITextfield::PopChar() {	std::string str = GetTextfieldStr();
-	if(str.size() == 0) {
-		return;
-	}
+	if(str.size() == 0) return;
 	str.pop_back();
 	ApplyFieldString(std::move(str));
 }

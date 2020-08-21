@@ -11,20 +11,127 @@
 #include "GUIData.h"
 #include "KeyProcessing.h"
 #include "CustomException.h"
+#include "Manager_Texture.h"
 #include "ManagedResources.h"
+#include "Manager_Font.h"
+#include "GUIElement.h"
+#include "EventQueue.h"
+#include <array>
+
+
 class GUIElement;
 class GUIInterface;
 class GUILabel;
 class GUITextfield;
 class GUICheckbox;
+
 namespace GUIFormatting {
+	using GUIData::GUIStateData::GUIState;
+	namespace BackgroundRectData
+	{
+
+		static enum class Background_Attributes {
+			FILL_COLOR, OUTLINE_COLOR, OUTLINE_THICKNESS
+		};
+		template<Background_Attributes T>
+		using DEDUCE_BACKGROUND_ARG_TYPE = std::conditional_t<std::is_same_v<typename std::decay_t<T>, Background_Attributes::FILL_COLOR> || std::is_same_v<typename std::decay_t<T>, Background_Attributes::OUTLINE_COLOR>, sf::Color, unsigned int>;
+		static enum class Texture_Attributes {
+			TEXTURE_NAME, TEXTURE_RECT
+		};
+		template<Texture_Attributes T>
+		using DEDUCE_TEXTURE_ARG_TYPE = std::conditional_t < std::is_same_v<typename std::decay_t<T>, Texture_Attributes::TEXTURE_NAME>, std::string, sf::IntRect>;
+		EnumConverter<Background_Attributes> bgattributeconverter([](const std::string& str)->Background_Attributes {
+			if (str == "FILL_COLOR") return Background_Attributes::FILL_COLOR;
+			else if (str == "OUTLINE_COLOR") return Background_Attributes::OUTLINE_COLOR;
+			else if (str == "OUTLINE_THICKNESS") return Background_Attributes::OUTLINE_THICKNESS;
+			});
+		EnumConverter<Texture_Attributes> textureattributeconverter([](const std::string& str)->Texture_Attributes {
+			if (str == "TEXTURE_NAME") return Texture_Attributes::TEXTURE_NAME;
+			else if (str == "TEXTURE_RECT") return Texture_Attributes::TEXTURE_NAME;
+			});
+		using namespace BackgroundRectData;
+
+		template<typename DERIVED, typename ATTRTYPE>
+		struct BackgroundRectProperties {
+		public:
+			template<ATTRTYPE TYPE, typename T>
+			void SetAttribute(const T& arg) {
+				static_cast<DERIVED&>(*this).GetAttribute<TYPE>() = arg;
+			}
+		private:
+			std::array<std::pair<Background_Attributes, bool>, 3> background_queue;
+			sf::Color outline_color;
+			sf::Color fill_color;
+			unsigned int outline_thickness;
+			template<Background_Attributes ATTRTYPE>
+			auto& GetAttribute() {
+				return static_cast<DERIVED*>(&this).GetAttribute<ATTRTYPE>();
+			}
+		};
+		struct SBGProperties :public BackgroundRectProperties<SBGProperties, Background_Attributes> {
+			template<Background_Attributes ATTRTYPE>
+			auto& GetAttribute() {
+				switch (ATTRTYPE) {
+				case Background_Attributes::FILL_COLOR: {return fill_color; }
+				case Background_Attributes::OUTLINE_COLOR: {return outline_color; }
+				case Background_Attributes::OUTLINE_THICKNESS: {return outline_thickness; }
+				}
+			}
+		};
+		struct TBGProperties :public BackgroundRectProperties<TBGProperties, Texture_Attributes> {
+			template<Texture_Attributes ATTRTYPE>
+			void SetTextureAttribute(const DEDUCE_TEXTURE_ARG_TYPE<ATTRTYPE>& arg) {
+				GetAttribute<ATTRTYPE>() = arg;
+			}
+			template<Texture_Attributes ATTRTYPE>
+			auto& GetAttribute() {
+				switch (ATTRTYPE) {
+				case Texture_Attributes::TEXTURE_NAME: {return texture_name; }
+				case Texture_Attributes::TEXTURE_RECT: {return texture_rect; }
+				}
+			}
+			std::array<std::pair<Texture_Attributes, bool>, 2> texture_queue;
+			std::string texture_name;
+			sf::IntRect texture_rect;
+
+		};
+	}
+
+	using namespace BackgroundRectData;
 	static const unsigned int maxcharactersize = 30;
 	struct Background {
-		sf::Color sbg_color{ sf::Color::Color(255,255,255,255 )};
-		std::string tbg_name{ "" };
-		sf::Color outlinecolor{ sf::Color::Red };
-		unsigned int outlinethickness{ 2 };
-		sf::IntRect tbgtexturerect;
+	private:
+		SBGProperties sbgproperties;
+		TBGProperties tbgproperties;
+		template<typename T>
+		T& GetBGproperty() {
+			if constexpr (std::is_same_v<typename std::decay_t<T>, SBGProperties>) return sbgproperties;
+			else if (constexpr std::is_same_v<typename std::decay_t<T>, TBGProperties>) return tbgproperties;
+		}
+	public:
+		
+		template<typename PROPERTY_TYPE, typename = typename std::enable_if_t<std::is_same_v<typename std::decay_t<PROPERTY_TYPE>, SBGProperties> || std::is_same_v<typename std::decay_t<PROPERTY_TYPE>, TBGProperties>>, typename ATTRTYPE, typename = typename std::enable_if_t < std::is_same_v<typename std::decay_t<ATTRTYPE>, Background_Attributes> || std::is_same_v<typename std::decay_t<ATTRTYPE>, Texture_Attributes>>>
+		void SetBGPropertyAttribute() {
+			auto& bgproperty = GetBGproperty<PROPERTY_TYPE>();
+			
+			
+
+		}
+
+
+
+
+		void ReadIn(const BACKGROUND_ATTRIBUTE& attributetype, KeyProcessing::Keys& keys) {
+			switch (attributetype) {
+			case BACKGROUND_ATTRIBUTE::SBG_FILL_COLOR: {
+
+			}
+			}
+		}
+
+
+
+
 		void ReadIn(KeyProcessing::Keys& keys, const std::string& attributetype) {
 			using KeyProcessing::KeyPair;
 			auto attributekey = keys.find(attributetype);
@@ -65,17 +172,22 @@ namespace GUIFormatting {
 				catch (const std::exception& exception) { throw CustomException("Invalid argument for {OUTLINE_THICKNESS,val} KEY - defaulted to 2 "); }
 			}
 			else if (attributetype == "TEXTURE_NAME") tbg_name = attributekey->second;
+			pendingbackground = true;
 		}
 	};
 	struct Text {
+		friend class GUIVisual;
+	private:
 		sf::Vector2f localpositionproportion;
 		sf::Vector2f originproportion{ 0,0 };
 		sf::Color textcolor{ sf::Color::Color(255,255,255,255 )};
 		std::string fontname{ "arial.ttf" };
 		std::string customtext;
 		bool texthidden = false;
+		bool pendingtext = false;
 		unsigned int charactersize{ maxcharactersize };
-			void ReadIn(KeyProcessing::Keys& keys, const std::string& attributetype) {
+	public:
+		void ReadIn(KeyProcessing::Keys& keys, const std::string& attributetype) {
 			using KeyProcessing::KeyPair;
 			//REFACTOR THIS
 			if (attributetype == "COLOR_SOLID") {
@@ -127,19 +239,19 @@ namespace GUIFormatting {
 					customtext = key->second;
 					std::replace(customtext.begin(), customtext.end(), '+', ' ');
 				}
-				
-
 			}
-			
+			pendingtext = true;
 		}
 	};
+	template<typename T>
+	using IS_TEXT = std::is_same<typename std::decay_t<T>, Text>;
+	template<typename T>
+	using IS_BACKGROUND = std::is_same<typename std::decay_t<T>, Background>;
 	struct GUIStyle {
 		GUIStyle() {
-
 		}
 		Text text;
 		Background background;
-		//reading one line at a time. a single line has multiple keys.
 		friend void operator>>(KeyProcessing::Keys& keys, GUIStyle& style) {
 			using KeyProcessing::Keys;
 			using KeyProcessing::KeyPair;
@@ -167,65 +279,111 @@ namespace GUIFormatting {
 			background.sbg_color = sf::Color::Color(255, 255, 255, 0);
 		}
 	};
+	using GUIStateStyles = std::unordered_map<GUIState, GUIStyle>;
 	class GUIVisual {
-		friend class GUIElement;
-		friend class GUIInterface;
-		friend class GUILabel;
-		friend class GUITextfield;
-		friend class GUICheckbox;
-	protected:
+	private:
+		GUIStateStyles statestyles;
+		sf::Vector2f elementsize;
+		sf::Vector2f position;
 		sf::RectangleShape sbg;
 		sf::RectangleShape tbg;
 		sf::Text text;
 		std::shared_ptr<sf::Font> font{ nullptr };
 		std::shared_ptr<sf::Texture> tbg_texture{ nullptr };
-		template<typename T, typename  = typename ManagedResourceData::ENABLE_IF_MANAGED_RESOURCE<T>>
+		GUIState previousstate;
+		GUIState activestate;
+
+		mutable bool pendingstyle;
+		mutable bool pendingredraw; //set to false after it has been rendered to its parent.
+		mutable bool pendingposition;
+		mutable bool pendingsize;
+
+		template<typename T, typename = typename ManagedResourceData::ENABLE_IF_MANAGED_RESOURCE<T>>
 		std::shared_ptr<T>& GetResource() {
 			if constexpr (std::is_same_v<typename std::decay_t<T>, sf::Font>) return font;
 			else if constexpr (std::is_same_v<typename std::decay_t<T>, sf::Texture>) return tbg_texture;
 		}
 
-		inline void CalibrateText(const sf::FloatRect& eltlocalboundingbox, const sf::Vector2f& positionproportion, const sf::Vector2f& originproportion, const unsigned int& charactersize) {
-			sf::Vector2f textsize;
-			sf::Vector2f localorigin;
-			sf::Vector2f textposition;
-			auto CalculateAndApply = [&textsize, &localorigin, &textposition, &originproportion, &positionproportion, &eltlocalboundingbox](sf::Text& text, const unsigned int& charactersize) {
-				text.setCharacterSize(charactersize);
-				textsize = sf::Vector2f{ text.getLocalBounds().width, text.getLocalBounds().height }; //size of the bounding box.
-				localorigin = { originproportion.x * textsize.x, originproportion.y * textsize.y }; //local origin as a proportion of the size.
-				textposition = sf::Vector2f{ eltlocalboundingbox.left, eltlocalboundingbox.top };//plus the top left position of the element its being drawn relative to
-				textposition += sf::Vector2f{ positionproportion.x * eltlocalboundingbox.width, positionproportion.y * eltlocalboundingbox.height };//plus the position of the actual text itself as a proportion of the parent element size
-				textposition -= sf::Vector2f{ text.getLocalBounds().left, text.getLocalBounds().top };//minus the default padding that sfml inserts with sf::Text::getLocalBounds()
-				text.setOrigin(localorigin);
-				text.setPosition(textposition);
-			};
-			auto TextFits = [&eltlocalboundingbox, &textposition, &localorigin, &textsize, &originproportion, &positionproportion]()->bool {
-				sf::Vector2f texttopleft{ textposition - localorigin };
-				if (texttopleft.x < eltlocalboundingbox.left) return false;
-				if (texttopleft.x + textsize.x > eltlocalboundingbox.left + eltlocalboundingbox.width) return false;
-				if (texttopleft.y < eltlocalboundingbox.top) return false;
-				if (texttopleft.y + textsize.y > eltlocalboundingbox.top + eltlocalboundingbox.height) return false;
-				return true;
-			};
-
-			//REFACO
-			CalculateAndApply(text, charactersize);
-			if (!TextFits()) {
-				//must find the maximum charactersize, while maintaining this position, which allows us to fit in our element.
-				unsigned int newcharsize = charactersize;
-				while (newcharsize > 1) {
-					CalculateAndApply(text, newcharsize);
-					if (TextFits()) break;
-
-					//text fits snugly in our element
-
-					--newcharsize;
-				}
-				//if (newcharsize != 1) CalculateAndApply(text, newcharsize - 1); //go 1px below max.
+		template<typename T, typename = typename ManagedResourceData::ENABLE_IF_MANAGED_RESOURCE<T>>
+		bool RequestVisualResource() {
+			auto& activestyle = GetActiveStyle();
+			std::string* resname;
+			if constexpr (std::is_same_v<typename std::decay_t<T>, sf::Texture>) resname = &activestyle.background.tbg_name;
+			else if constexpr (std::is_same_v<typename std::decay_t<T>, sf::Font>) resname = &activestyle.text.fontname;
+			if (resname->empty()) return false;
+			auto newres = GetGUIManager()->GetContext()->GetResourceManager<T>()->RequestResource(*resname);
+			if (newres == nullptr) {
+				resname->clear();
+				return false;
+			}
+			GetResource<T>() = std::move(newres);
+			return true;
+		}
+		void ReleasePrevStyleResources() {
+			auto& style = statestyles[previousstate];
+			if (!style.background.tbg_name.empty()) {
+				tbg_texture.reset();
+				if (texturemgr) texturemgr->RequestResourceDealloc(style.background.tbg_name);
+			}
+			if (!style.text.fontname.empty()) {
+				font.reset();
+				if (fontmgr) fontmgr->RequestResourceDealloc(style.text.fontname);
 			}
 		}
-		inline void SetTextStr(std::string str) {
-			//check if there have been double back slashes from key read in.
+		Manager_Texture* texturemgr;
+		Manager_Font* fontmgr;
+	protected:
+		void QueuePosition(const sf::Vector2f& pos) {
+			position = pos;
+			pendingposition = true;
+			QueueRedraw();
+		}
+		void QueueEltSize(const sf::Vector2f& s) {
+			elementsize = s;
+			pendingsize = true;
+			QueueRedraw();
+		}
+		void QueueText(std::string str) {
+			statestyles[activestate].text.customtext = str;
+			pendingtext = true;
+		}
+		void QueueRedraw() const { pendingredraw = true; }
+		void ResetRedraw() const { pendingredraw = false; }
+		void QueueStyle() {//queues a pending style application
+			pendingstyle = true;
+			QueueRedraw();
+		}
+		inline void ApplyStyle(const sf::FloatRect& eltrect) {
+			ReleasePrevStyleResources();
+			//apply dynamically allocated resources to visuals
+			if (RequestVisualResource<sf::Texture>()) { //request the required resources for the font and tbg.
+				tbg.setTexture(tbg_texture.get());
+				sf::Color tmp(255, 255, 255, 255);
+				tbg.setFillColor(std::move(tmp));
+			}
+			else {//if unsucessful texture request, we don't want the default sfml error texture to show.
+				sf::Color tmp(255, 255, 255, 0);
+				tbg.setFillColor(std::move(tmp));
+			}
+			if (RequestVisualResource<sf::Font>()) text.setFont(*font);
+			auto& style = statestyles[activestate];
+			sbg.setFillColor(style.background.sbg_color);
+			sbg.setOutlineColor(style.background.outlinecolor);
+			sbg.setOutlineThickness(style.background.outlinethickness);
+			style.background.pendingbackground = false;
+			text.setFillColor(style.text.textcolor);
+			if(!style.text.texthidden) style.text.pendingtext = false;
+			
+			text.style.text.textcolor
+			style.text
+			pendingstyle = false;
+			
+			pendingtext = true;
+			//ApplyText(eltrect);
+		}
+		inline void ApplyText(const sf::FloatRect& eltlocalboundingbox) {
+			auto& activestyletext = statestyles[activestate].text;
+			auto str = activestyletext.customtext;
 			str.erase(std::remove(str.begin(), str.end(), '\b'), str.end());
 			//remove any \\n so that sf::text formats \n properly.
 			for (auto it = str.begin(); it != str.end(); ++it) {
@@ -238,35 +396,142 @@ namespace GUIFormatting {
 				}
 			}
 			text.setString(str);
+
+			sf::Vector2f textsize;
+			sf::Vector2f localorigin;
+			sf::Vector2f textposition;
+			auto CalculateAndApply = [&textsize, &localorigin, &textposition, &eltlocalboundingbox, &activestyletext](sf::Text& text, const unsigned int& charactersize) {
+				text.setCharacterSize(activestyletext.charactersize);
+				textsize = sf::Vector2f{ text.getLocalBounds().width, text.getLocalBounds().height }; //size of the bounding box.
+				localorigin = { activestyletext.originproportion.x * textsize.x, activestyletext.originproportion.y * textsize.y }; //local origin as a proportion of the size.
+				textposition = sf::Vector2f{ eltlocalboundingbox.left, eltlocalboundingbox.top };//plus the top left position of the element its being drawn relative to
+				textposition += sf::Vector2f{ activestyletext.localpositionproportion.x * eltlocalboundingbox.width, activestyletext.localpositionproportion.y * eltlocalboundingbox.height };//plus the position of the actual text itself as a proportion of the parent element size
+				textposition -= sf::Vector2f{ text.getLocalBounds().left, text.getLocalBounds().top };//minus the default padding that sfml inserts with sf::Text::getLocalBounds()
+				text.setOrigin(localorigin);
+				text.setPosition(textposition);
+			};
+			auto TextFits = [&eltlocalboundingbox, &textposition, &localorigin, &textsize]()->bool {
+				sf::Vector2f texttopleft{ textposition - localorigin };
+				if (texttopleft.x < eltlocalboundingbox.left) return false;
+				if (texttopleft.x + textsize.x > eltlocalboundingbox.left + eltlocalboundingbox.width) return false;
+				if (texttopleft.y < eltlocalboundingbox.top) return false;
+				if (texttopleft.y + textsize.y > eltlocalboundingbox.top + eltlocalboundingbox.height) return false;
+				return true;
+			};
+			CalculateAndApply(text, activestyletext.charactersize);
+			if (!TextFits()) {
+				//must find the maximum charactersize, while maintaining this position, which allows us to fit in our element.
+				unsigned int newcharsize = activestyletext.charactersize;
+				while (newcharsize > 1) {
+					CalculateAndApply(text, newcharsize);
+					if (TextFits()) break;
+					--newcharsize;
+				}
+			}
+			pendingtext = false;
+			QueueRedraw();
 		}
-		inline std::string GetTextStr() const { return text.getString(); };
+		inline void ApplyBackground() {
+			auto& background = statestyles.at(activestate).background;
+			BACKGROUND_ATTRIBUTE attribute;
+			while (background.pendingchanges.PollEvent(attribute)) {
+
+			}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+			while(background.pendingchanges.PollEvent())
+			sbg.setFillColor(background.sbg_color);
+			sbg.setOutlineColor(background.outlinecolor);
+			if (RequestVisualResource<sf::Texture>()) { //request the required resources for the tbg.
+				tbg.setTexture(tbg_texture.get());
+				sf::Color tmp(255, 255, 255, 255);
+				tbg.setFillColor(std::move(tmp));
+			}
+			background.
+			background.
+			sbg.set
+			activestyle.background.
+		}
+		inline void ApplySize() {
+			sbg.setSize(elementsize);
+			tbg.setSize(elementsize);
+			pendingsize = false;
+		}
+		inline void ApplyPosition() { //move entire elt visual.
+			sbg.setPosition(position);
+			tbg.setPosition(position);
+			text.setPosition(position); //origin maintained.
+			pendingposition = false;
+		}
 	public:
-		GUIVisual() {
+		GUIVisual(const GUIState& activestate) :activestate(activestate) {
+			statestyles[GUIState::NEUTRAL] = GUIStyle{};
+			statestyles[GUIState::CLICKED] = GUIStyle{};
+			statestyles[GUIState::FOCUSED] = GUIStyle{};
+		}
+		virtual void Draw(sf::RenderTarget& target) const {
+			target.draw(sbg);
+			target.draw(tbg);
+			if (!statestyles.at(activestate).text.texthidden) target.draw(text);
+		}
+		void OnVisualCreate(Manager_Texture* tmgr, Manager_Font* fmgr) {
+			texturemgr = tmgr;
+			fontmgr = fmgr;
 			tbg.setFillColor(sf::Color::Transparent);
 			text.setFillColor(sf::Color::Transparent);
 			text.setPosition(sf::Vector2f{ 0,0 });
 		}
-		inline void SetPosition(const sf::Vector2f& pos) { //move entire elt visual.
-			sbg.setPosition(pos);
-			tbg.setPosition(pos);
-			text.setPosition(pos); //origin maintained.
+		void ChangeStyle(const GUIStyle& style, const GUIState& state) {
+			statestyles[state] = style;
+			if (state == activestate) QueueStyle();
 		}
-		inline void SetSize(const sf::Vector2f& size) {
-			sbg.setSize(size);
-			tbg.setSize(size);
+		template<typename State, typename Property>
+		void QueueState(const GUIState& state) {
+			previousstate = activestate;
+			activestate = state;
+			QueueStyle();
 		}
-		inline void ApplyStyle(const GUIStyle& style, sf::FloatRect& eltrect, const sf::Vector2f& textpositionproportion, const sf::Vector2f& textoriginproportion, const unsigned int& charactersize) {
-			sbg.setFillColor(style.background.sbg_color);
-			sbg.setOutlineColor(style.background.outlinecolor);
-			sbg.setOutlineThickness(style.background.outlinethickness);
-			text.setFillColor(style.text.textcolor);
 
-			CalibrateText(eltrect, textpositionproportion, textoriginproportion, charactersize);
+		template<typename T, typename  = typename std::enable_if_t<IS_BACKGROUND<T>::value || IS_TEXT<T>::value>>
+		T& GetStateStyleProperty() const {
+			auto& activestate = statestyles.at(activestate);
+			if constexpr (IS_BACKGROUND<T>) return activestate.background;
+			else if constexpr (IS_TEXT<T>) return activestate.text;
 		}
-		
+	void ApplyChanges(const sf::FloatRect& eltboundingbox) {
+		if (pendingsize) ApplySize();
+		if (pendingposition) ApplyPosition();
+		if (pendingstyle) ApplyStyle(eltboundingbox);
+		if(statestyles.at(activestate).background.pendingbackground) ApplyBackground();
+		if (statestyles.at(activestate).text.pendingtext) ApplyText(eltboundingbox);
+	}
+		const GUIStyle& GetStyle(const GUIState& state) const { return statestyles.at(state); }
+		const sf::Vector2f& GetElementSize() const { return elementsize; }
+		const sf::Vector2f& GetLocalPosition() const { return position; }
+		inline std::string GetTextStr() const { return text.getString(); }
+		virtual ~GUIVisual() {
+			ReleaseStyleResources();
+		}
 	};
-	
 }
-
-
 #endif

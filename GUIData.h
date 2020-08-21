@@ -1,8 +1,14 @@
 #ifndef GUIINFO_H
 #define GUIINFO_H
 #include "EnumConverter.h"
+#include <type_traits>
 
 namespace GUIData {
+
+	enum class GUILayerType {
+		BACKGROUND, CONTENT, CONTROL
+	};
+	
 	namespace GUIStateData {
 		static enum class GUIState {//BEWARE WHEN CHANGING, CONVERTER INTEGRALS DEPENDANT 
 			NEUTRAL, FOCUSED, CLICKED, NULLSTATE

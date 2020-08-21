@@ -9,6 +9,7 @@
 #include <vector>
 #include "StreamAttributes.h"
 #include "KeyProcessing.h"
+
 namespace Utility {
 	static LOG log;
 	template<typename T, typename = typename std::is_enum<T>>
@@ -46,5 +47,27 @@ namespace Utility {
 		if (!hierarchystr.empty() && hierarchystr.back() == ' ') hierarchystr.pop_back();
 		return hierarchystr;
 		}
+	namespace EnumChecker {
+		template<typename EnumType, EnumType... Values>
+		class EnumCheck;
+		template<typename EnumType> class EnumCheck<EnumType>
+		{
+		public:
+			template<typename IntType>
+			static bool constexpr Is_Value(IntType) { return false; }
+		};
+		template<typename EnumType, EnumType V, EnumType... Next>
+		class EnumCheck<EnumType, V, Next...> : private EnumCheck<EnumType, Next...>
+		{
+			using super = EnumCheck<EnumType, Next...>;
+
+		public:
+			template<typename IntType>
+			static bool constexpr is_value(IntType v)
+			{
+				return v == static_cast<IntType>(V) || super::Is_Value(v);
+			}
+		};
+	}
 }
 #endif							

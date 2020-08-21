@@ -6,34 +6,18 @@
 #include <array>
 
 
-GUIElement::GUIElement(GUIInterface* p, const GUIType& t, const GUIStateStyles& stylemap, KeyProcessing::Keys& attributes) :type(t), parent(p), controlelement(false) {
-	statestyles = stylemap;
+GUIElement::GUIElement(GUIInterface* p, const GUIType& t, const GUILayerType& layer,const GUIStateStyles& stylemap, KeyProcessing::Keys& attributes) :type(t),layertype(layer), parent(p), controlelement(false), visual(activestate) {
+	visual.OnVisualCreate(GetGUIManager()->GetContext()->texturemgr, GetGUIManager()->GetContext()->fontmgr);
 	ReadIn(attributes);
-	QueueStyle();
+	SetState(GUIState::NEUTRAL);
+	
 }
-void GUIElement::Draw(sf::RenderTexture& texture) {
-	auto& currentstyle = statestyles[activestate];
-	texture.draw(visual.sbg);
-	texture.draw(visual.tbg);
-	if (!currentstyle.text.texthidden) texture.draw(visual.text);
+void GUIElement::Draw(sf::RenderTarget& target) const{
+	visual.Draw(target);
 }
 void GUIElement::Update(const float& dT) {
-	if (pendingchange) {
-		if (pendingsizeapply) {
-			ApplySize();
-			pendingsizeapply = false;
-		}
-		if (pendingpositionapply) {
-			ApplyLocalPosition();
-			pendingpositionapply = false;
-		}
-		if (pendingstyleapply) {
-			ApplyCurrentStyle();
-			pendingstyleapply = false;
-		}
-		CalibratePosition();
-		pendingchange = false;
-	}
+	AdjustPositionToParent();
+	visual.ApplyChanges(GetLocalBoundingBox());
 }
 void GUIElement::OnNeutral(){
 	SetState(GUIState::NEUTRAL);
@@ -50,67 +34,25 @@ void GUIElement::OnClick(const sf::Vector2f& mousepos) {
 	evntinfo.interfacehierarchy = GetHierarchyString();
 	GetGUIManager()->AddGUIEvent(std::make_pair(EventData::EventType::GUI_CLICK, std::move(evntinfo)));
 }
-void GUIElement::CalibratePosition() {
+void GUIElement::AdjustPositionToParent() {
 	if (parent == nullptr) return; //if in mid initialisation
 	auto overhangs = parent->EltOverhangs(this); //check if this entire elt still lies in interface after pos change
 	if (overhangs.first == false) return; //elt still lies within the interface.
-	QueueLocalPosition(overhangs.second);
-	ApplyLocalPosition();
+	visual.QueuePosition(overhangs.second);
 }
-void GUIElement::ApplyLocalPosition() {
-	visual.SetPosition(localposition);
-}
-void GUIElement::ApplySize() {
-	visual.SetSize(elementsize);
-}
-bool GUIElement::SetState(const GUIState& state) {
+
+void GUIElement::SetState(const GUIState& state) {
+
+	visual.QueueResRelease(activestate);
 	if (state == activestate) return false; //no visual change.
-	activestate = state;
-	ReleaseStyleResources();
 	QueueStyle();
 	return true;
 }
-void GUIElement::ReleaseStyleResources() {
-	auto& activestyle = GetActiveStyle();
-	if (!activestyle.background.tbg_name.empty()) {
-		visual.tbg_texture.reset();
-		GetGUIManager()->GetContext()->texturemgr->RequestResourceDealloc(activestyle.background.tbg_name);
-	}
-	if (!activestyle.text.fontname.empty()) {
-		visual.font.reset();
-		GetGUIManager()->GetContext()->fontmgr->RequestResourceDealloc(activestyle.text.fontname);
-	}
-}
-void GUIElement::ApplyCurrentStyle() {
-	if (type == GUIType::CHECKBOX) {
-		int y = 4;
-	}
-	auto& currentstyle = statestyles[activestate];
-	//apply dynamically allocated resources to visuals
-	if (RequestVisualResource<sf::Texture>()) { //request the required resources for the font and tbg.
-		visual.tbg.setTexture(visual.tbg_texture.get());
-		sf::Color tmp(255, 255, 255, 255);
-		visual.tbg.setFillColor(std::move(tmp));
-	}
-	else {//if unsucessful texture request, we don't want the default sfml error texture to show.
-		sf::Color tmp(255, 255, 255, 0);
-		visual.tbg.setFillColor(std::move(tmp));
-	}
-	if (RequestVisualResource<sf::Font>()) {
-		visual.text.setFont(*visual.font);
-	}
-	sf::FloatRect rect = GetLocalBoundingBox();
-	if (type == GUIType::WINDOW) { rect.left = 0; rect.top = 0; }
-	visual.ApplyStyle(currentstyle, rect, currentstyle.text.localpositionproportion, currentstyle.text.localpositionproportion, currentstyle.text.charactersize);
-	MarkBackgroundRedraw(true); //now the interface knows to redraw the layer.
-}
-
 void GUIElement::ReadIn(KeyProcessing::Keys& keys) {
 	//TO DEFAULT THE KEYS TO ERROR OR TO SEARCH FOR EACH INDIVIDUAL KEY?
 	name = keys.find("ELEMENTNAME")->second;
 	(keys.find("ELEMENT_HIDDEN")->second == "FALSE") ? hidden = false : hidden = true;
 	(keys.find("ENABLED")->second == "FALSE") ? enabled = false : enabled = true;
-
 	std::string errorstr{ " for GUIElement of name " + name };
 	std::string unabletoidentify{ "Unable to identify " };
 	const sf::Vector2f parentdimensions = (parent == nullptr) ? sf::Vector2f{ std::stof(keys.find("WINX")->second), std::stof(keys.find("WINY")->second) } : parent->GetSize();
@@ -155,75 +97,15 @@ void GUIElement::ReadIn(KeyProcessing::Keys& keys) {
 	if (position.y < 0) position.y = 0;
 	if (position.x + size.x >= parentdimensions.x) size.x = parentdimensions.x - position.x;
 	if (position.y + size.y >= parentdimensions.y) size.y = parentdimensions.y - position.y;
-	visual.SetTextStr(name);
-
-	//OVERRIDING THE STYLEFILE ATTRIBUTES AFTER IT HAS BEEN APPLIED
-	//VISUAL KEYS
-	std::array<GUIState, 3> states = { GUIState::NEUTRAL, GUIState::CLICKED, GUIState::FOCUSED };
-	//::CUSTOM_TEXT OVERRIDE KEY
-
-	//REFACTOR THIS INTO OVERRIDE KEY FUNCTION
-	{
-		if (name == "POP_UP_PANEL") {
-			int y = 3;
-		}
-		std::array<std::pair<bool, KeyProcessing::Keys::iterator>, 3> customtextoverrides;
-		customtextoverrides[0] = KeyProcessing::GetKey("CUSTOM_TEXT_NEUTRAL", keys);
-		customtextoverrides[1] = KeyProcessing::GetKey("CUSTOM_TEXT_CLICKED", keys);
-		customtextoverrides[2] = KeyProcessing::GetKey("CUSTOM_TEXT_FOCUSED", keys);
-		for (int i = 0; i < 3; ++i) {
-			if (customtextoverrides[i].first) {
-				std::string& str = customtextoverrides[i].second->second;
-				std::replace(str.begin(), str.end(), '+', ' ');
-				statestyles[states[i]].text.customtext = str;
-			}
-		}
-		//create getstring fcn to remove spaces.
-
-		visual.SetTextStr(statestyles[activestate].text.customtext);
-		requirestextcalibration = true;
-	}
-
-	//::TEXTURE OVERRIDE KEYS
-	
-		KeyProcessing::EraseKeyOccurrences("TEXTURE_HAS_BEEN_OVERRIDEN", keys, true); //user may have defined this key. we need it for logging purposes.
-		std::array<std::pair<bool, KeyProcessing::Keys::iterator>, 3> textureoverrides;
-		textureoverrides[0] = KeyProcessing::GetKey("TEXTURE_NEUTRAL", keys);
-		textureoverrides[1] = KeyProcessing::GetKey("TEXTURE_CLICKED", keys);
-		textureoverrides[2] = KeyProcessing::GetKey("TEXTURE_FOCUSED", keys);
-		// alert functions with access to these keys (element ctor) which may subsequently change the texture, that the texture should not be changed any further
-		for (int i = 0; i < 3; ++i) {
-			auto itpair = textureoverrides[i];
-			if (itpair.first) {
-				GUIState state = states[i];
-				statestyles[state].background.tbg_name = itpair.second->second;
-				keys.insert(std::make_pair("TEXTURE_HAS_BEEN_OVERRIDEN", std::to_string(Utility::ConvertToUnderlyingType(states[i])))); 
-			}
-		}
+	QueueText(name);
 	QueueEltSize(std::move(size));
-	QueueLocalPosition(std::move(position));
-	MarkBackgroundRedraw(true);
+	QueuePosition(std::move(position));
 }
+/*
+-TURN THE QUEUE INTO AN ACTUAL 
+ */
 
-void GUIElement::QueueLocalPosition(const sf::Vector2f& pos){
-	localposition = pos;
-	pendingchange = true;
-	pendingpositionapply = true;
-}
-void GUIElement::QueueEltSize(const sf::Vector2f& s) {
-	elementsize = s;
-	pendingchange = true;
-	pendingsizeapply = true;
-}
-
-void GUIElement::QueueText(const std::string& str) {
-	visual.SetTextStr(str);
-	MarkBackgroundRedraw(true);
-}
-void GUIElement::QueueStyle() {//queues a pending style application
-	pendingchange = true;
-	pendingstyleapply = true;
-}
+const bool& GUIElement::QueuedRedraw() const { return visual. }
 std::string GUIElement::GetHierarchyString(){
 	if (parent == nullptr) return name;
 	GUIInterface* mparent = parent;
@@ -234,19 +116,17 @@ std::string GUIElement::GetHierarchyString(){
 	}	
 	return Utility::ConstructGUIHierarchyString(std::move(hierarchy));
 }
-
 Manager_GUI* GUIElement::GetGUIManager() {return (GetType() == GUIType::WINDOW) ? static_cast<GUIInterface*>(this)->guimgr : parent->guimgr;}
-
 sf::Vector2f GUIElement::GetGlobalPosition() const{
-	if (parent == nullptr) return localposition;
-	return localposition + GetParent()->GetGlobalPosition(); 
+	if (parent == nullptr) return GetLocalPosition();
+	return GetLocalPosition() + GetParent()->GetGlobalPosition(); 
 }
 bool GUIElement::Contains(const sf::Vector2f& mouseglobal) const noexcept {
 	auto globalpos = GetGlobalPosition();
-	auto rect = sf::FloatRect{ globalpos, elementsize };
+	auto rect = sf::FloatRect{ globalpos, GetSize() };
 	return rect.contains(mouseglobal);
 }
 GUIElement::~GUIElement() {
-	ReleaseStyleResources();
+
 }
 

@@ -10,24 +10,28 @@ GUICheckbox::GUICheckbox(GUIInterface* parent, const GUIStateStyles& styles, Key
 	for (int i = 0; i < checkboxstr.size(); ++i) {
 		checkboxtype[i] = checkboxstr[i];
 	}
-	//override the texture which may have been supplied by the user in the style configuration
-	auto overrideniterators = keys.equal_range("TEXTURE_HAS_BEEN_OVERRIDEN");
-	//::check which state textures have been overridden.
-	std::unordered_multimap<GUIState, bool> textureoverrides = { {GUIState::NEUTRAL, false}, {GUIState::CLICKED, false}, {GUIState::FOCUSED, false} };
-	for (auto it = overrideniterators.first; it != overrideniterators.second; ++it) {
-		textureoverrides.find(GUIData::GUIStateData::converter(it->second))->second = true;
-	}
 	//default to system textures if not overriden
 	std::string checkedtexture{ "GUICheckbox_Checked_" + checkboxstr + ".png" };
 	std::string uncheckedtexture{ "GUICheckbox_Unchecked_" + checkboxstr + ".png" };
-	if (!textureoverrides.find(GUIState::FOCUSED)->second) {
-		statestyles[GUIState::FOCUSED].background.tbg_name = std::move(checkedtexture);
-		statestyles[GUIState::FOCUSED].AdjustForSystemTexture();
+
+	//every time we change the tbg, we need to toggle style apply.
+	//otherwise, the user may forget to do so.
+
+	{
+		auto focusedstyle = visual.GetStyle(GUIState::FOCUSED);
+		focusedstyle.background.tbg_name = std::move(checkedtexture);
+		focusedstyle.AdjustForSystemTexture();
+		visual.ChangeStyle(GUIState::FOCUSED, std::move(focusedstyle));
 	}
-	if (!textureoverrides.find(GUIState::NEUTRAL)->second) {
-		statestyles[GUIState::NEUTRAL].background.tbg_name = std::move(uncheckedtexture);
-		statestyles[GUIState::NEUTRAL].AdjustForSystemTexture();
+	{
+		auto 
 	}
+	visual.GetStyle(activestate).background.tbg_name = std::move(checkedtexture);
+	statestyles[GUIState::FOCUSED].AdjustForSystemTexture();
+
+	statestyles[GUIState::NEUTRAL].background.tbg_name = std::move(uncheckedtexture);
+	statestyles[GUIState::NEUTRAL].AdjustForSystemTexture();
+	
 	elementsize = sf::Vector2f{ 20,20 }; //max checkbox size.
 	visual.SetTextStr("");
 }

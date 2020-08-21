@@ -1,59 +1,42 @@
 #ifndef GUIINTERFACE_H
 #define GUIINTERFACE_H
 #include "GUIElement.h"
+#include "GUIInterfaceLayers.h"
 #include <iostream>
 
 
+using namespace GUILayerData;
 //forward declarations
 class Manager_GUI;
-class GUIInterface;
-class GUIInterfaceLayers;
-
 using GUIElementPtr = std::unique_ptr<GUIElement>;
 using GUIElements = std::vector <std::pair<std::string, GUIElementPtr>>;
 using GUIElementIterator = GUIElements::iterator;
-class GUIInterface : public GUIElement {
+
+class GUIInterface : public GUIElement{
+private:
+	GUIInterfaceLayers layers;
 	friend class GUIElement;
 	friend class Manager_GUI;
 protected:
-	
-	GUIElements elements;
-	std::unique_ptr<GUIInterfaceLayers> layers; //PImpl
-	mutable bool contentredraw;
-	mutable bool controlredraw;
 	mutable bool parentredraw;
-	
-	void RedrawBackgroundLayer();
-	void RedrawContentLayer();
-	void RedrawControlLayer();
+	GUIElements elements;
 
 	Manager_GUI* guimgr{ nullptr };
 
-	void Draw(sf::RenderTexture& texture) override; //draw to another interface.
-	void Render();
+	void Draw(sf::RenderTarget& texture) override; //draw to another interface.
 	void Update(const float& dT) override;
+	virtual void ApplyLocalPosition();
+	std::pair<bool, GUIElementIterator> GetElement(const std::string& elementname);	
+	void ResetParentRedraw() {
 
-	void MarkContentRedraw(const bool& inp) const { contentredraw = inp; }
-	void MarkControlRedraw(const bool& inp) const { controlredraw = inp; }
-	void MarkRedrawToParent(const bool& inp) const { parentredraw = inp; }
-
-	virtual void ApplyLocalPosition() override;
-	
-	std::pair<bool, GUIElementIterator> GetElement(const std::string& elementname);
-	
-	
+	}
 public:
 	GUIInterface(GUIInterface* parent, Manager_GUI* guimgr, const GUIStateStyles& styles, KeyProcessing::Keys& keys);
 
-	GUIStyle& GetStyle(const GUIState& state) { return statestyles[state]; }
-	void SetStyle(const GUIState& state, const GUIStyle& style) { statestyles[state] = style; }
-	GUIVisual& GetVisual()  { return visual; }
-	void SetVisual(const GUIVisual& vis) { visual = vis; }
-
+	
 	virtual void OnClick(const sf::Vector2f& pos) override;
 	virtual void OnRelease();
 	virtual void OnLeave() override {
-
 	}
 	virtual void SetEnabled(const bool& inp) const override;
 	void DefocusTextfields();

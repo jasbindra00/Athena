@@ -1,0 +1,5 @@
+#ifndef FRIEND_PROTECTED_ONLY
+#define FRIEND_PROTECTED_ONLY
+
+
+#endif

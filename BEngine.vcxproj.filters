@@ -335,5 +335,8 @@
     <ClInclude Include="ManagedResources.h">
       <Filter>Header Files\Managers</Filter>
     </ClInclude>
+    <ClInclude Include="FriendProtectedOnly.h">
+      <Filter>Header Files\Utility</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
