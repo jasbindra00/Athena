@@ -6,18 +6,15 @@
 #include <array>
 
 
-GUIElement::GUIElement(GUIInterface* p, const GUIType& t, const GUILayerType& layer,const GUIStateStyles& stylemap, KeyProcessing::Keys& attributes) :type(t),layertype(layer), parent(p), controlelement(false), visual(activestate) {
-	visual.OnVisualCreate(GetGUIManager()->GetContext()->texturemgr, GetGUIManager()->GetContext()->fontmgr);
-	ReadIn(attributes);
-	SetState(GUIState::NEUTRAL);
-	
+GUIElement::GUIElement(GUIInterface* p, Manager_GUI* guimgr, GUIType& t, const GUILayerType& layer,const GUIStateStyles& stylemap) :type(t),layertype(layer), parent(p) {
+
 }
-void GUIElement::Draw(sf::RenderTarget& target) const{
-	visual.Draw(target);
+void GUIElement::Render(sf::RenderTarget& target, const bool& toparent){
+	visual->Render(target,toparent);
 }
 void GUIElement::Update(const float& dT) {
 	AdjustPositionToParent();
-	visual.ApplyChanges(GetLocalBoundingBox());
+	visual->Update(GetLocalBoundingBox());
 }
 void GUIElement::OnNeutral(){
 	SetState(GUIState::NEUTRAL);
@@ -38,15 +35,13 @@ void GUIElement::AdjustPositionToParent() {
 	if (parent == nullptr) return; //if in mid initialisation
 	auto overhangs = parent->EltOverhangs(this); //check if this entire elt still lies in interface after pos change
 	if (overhangs.first == false) return; //elt still lies within the interface.
-	visual.QueuePosition(overhangs.second);
+	visual->QueuePosition(overhangs.second);
 }
 
 void GUIElement::SetState(const GUIState& state) {
-
-	visual.QueueResRelease(activestate);
-	if (state == activestate) return false; //no visual change.
-	QueueStyle();
-	return true;
+	if (state == activestate) return;
+	activestate = state;
+	visual->QueueState(state);
 }
 void GUIElement::ReadIn(KeyProcessing::Keys& keys) {
 	//TO DEFAULT THE KEYS TO ERROR OR TO SEARCH FOR EACH INDIVIDUAL KEY?
@@ -97,15 +92,20 @@ void GUIElement::ReadIn(KeyProcessing::Keys& keys) {
 	if (position.y < 0) position.y = 0;
 	if (position.x + size.x >= parentdimensions.x) size.x = parentdimensions.x - position.x;
 	if (position.y + size.y >= parentdimensions.y) size.y = parentdimensions.y - position.y;
-	QueueText(name);
-	QueueEltSize(std::move(size));
-	QueuePosition(std::move(position));
-}
-/*
--TURN THE QUEUE INTO AN ACTUAL 
- */
 
-const bool& GUIElement::QueuedRedraw() const { return visual. }
+	visual->ReadIn<GUIFormattingData::Text>(activestate, KeyProcessing::Keys{ {"STRING", std::move(name)} });
+	visual->QueuePosition(std::move(position));
+	visual->QueueSize(std::move(size));
+}
+
+void GUIElement::SetPosition(const sf::Vector2f& position){
+	visual->QueuePosition(position);
+}
+
+void GUIElement::SetSize(const sf::Vector2f& size){
+	visual->QueueSize(size);
+}
+
 std::string GUIElement::GetHierarchyString(){
 	if (parent == nullptr) return name;
 	GUIInterface* mparent = parent;

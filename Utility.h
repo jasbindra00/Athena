@@ -9,6 +9,8 @@
 #include <vector>
 #include "StreamAttributes.h"
 #include "KeyProcessing.h"
+#include "EnumConverter.h"
+#include "Bitmask.h"
 
 namespace Utility {
 	static LOG log;
@@ -47,6 +49,70 @@ namespace Utility {
 		if (!hierarchystr.empty() && hierarchystr.back() == ' ') hierarchystr.pop_back();
 		return hierarchystr;
 		}
+	namespace CharacterCheck {
+		static enum class STRING_PREDICATE : long long {
+			LOWER_CASE_ALPHABET = 2147483648,
+			UPPER_CASE_ALPHABET = 1073741824,
+			NUMBER = 536870912,
+			SPACE = 268435456,
+			SENTENCE_PUNCTUATION = 134217728,
+			FILE_NAME = 67108864,
+			NULLTYPE = 0
+		};
+		static EnumConverter<STRING_PREDICATE> StringPredicateConv([](const std::string& str)->STRING_PREDICATE {
+			if (str == "LOWER_CASE_ALPHABET") return STRING_PREDICATE::LOWER_CASE_ALPHABET;
+			else if (str == "UPPER_CASE_ALPHABET") return STRING_PREDICATE::UPPER_CASE_ALPHABET;
+			else if (str == "NUMBER") return STRING_PREDICATE::NUMBER;
+			else if (str == "SPACE") return STRING_PREDICATE::SPACE;
+			else if (str == "SENTENCE_PUNCTUATION") return STRING_PREDICATE::SENTENCE_PUNCTUATION;
+			else if (str == "FILE_NAME") return STRING_PREDICATE::FILE_NAME;
+			return STRING_PREDICATE::NULLTYPE;
+			});
+		static bool CharacterChecker(const STRING_PREDICATE& pred, const char& c) {
+			switch (pred) {
+			case STRING_PREDICATE::LOWER_CASE_ALPHABET: { return (c >= 97 && c <= 122); }
+			case STRING_PREDICATE::UPPER_CASE_ALPHABET: {return (c >= 65 && c <= 90); }
+			case STRING_PREDICATE::NUMBER: {return (c >= 48 && c <= 57); }
+			case STRING_PREDICATE::SPACE: {return (c == ' '); }
+			case STRING_PREDICATE::SENTENCE_PUNCTUATION: {
+				switch (c)
+				{
+				case ('!'): { return true; }
+				case ('"'): { return true; }
+				case ('('): { return true; }
+				case (')'): { return true; }
+				case ('`'): { return true; }
+				case ('.'): { return true; }
+				case ('?'): { return true; }
+				case (39): { return true; }
+				case (','): { return true; }
+				default: {return false; }
+				}
+
+			}
+			case STRING_PREDICATE::FILE_NAME: {
+				if (c >= 58 && c <= 60) return false;
+				switch (c) {
+				case ('>'): {return false; }
+				case ('?'): {return false; }
+				case('|'): {return false; }
+				case('/'): {return false; }
+				case (92): {return false; }
+				case('*'): {return false; }
+				case (' '): {return false; }
+				default: {return true; }
+				}
+			}
+			}
+			return false;
+			}
+
+		static bool Predicate(const Bitmask& b, const char& c) {
+			return true;
+		}
+		}
+
+
 	namespace EnumChecker {
 		template<typename EnumType, EnumType... Values>
 		class EnumCheck;

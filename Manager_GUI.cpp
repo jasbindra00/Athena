@@ -20,6 +20,7 @@
 #include <array>
 using GameStateData::GameStateType;
 using GUIData::GUITypeData::GUIType;
+using GUIData::GUIStateData::GUIState;
 using namespace EventData;
 using namespace GUIData;
 
@@ -29,7 +30,7 @@ Manager_GUI::Manager_GUI(SharedContext* cntxt) :context(cntxt) {
 	RegisterElementProducer<GUIScrollbar>(GUIType::SCROLLBAR);
 	RegisterElementProducer<GUICheckbox>(GUIType::CHECKBOX);
 	stateinterfaces[GameStateType::GAME] = Interfaces{};
-	stateinterfaces[GameStateType::LEVELEDITOR] = Interfaces{  };
+	stateinterfaces[GameStateType::LEVELEDITOR] = Interfaces{};
 }
 
 GUIStateStyles Manager_GUI::CreateStyleFromFile(const std::string& stylefile){
@@ -39,30 +40,25 @@ GUIStateStyles Manager_GUI::CreateStyleFromFile(const std::string& stylefile){
 		return GUIStateStyles{};
 	}
 	GUIStateStyles styles;
-	styles[(GUIState::NEUTRAL)] = GUIStyle{};
-	styles[(GUIState::FOCUSED)] = GUIStyle{};
-	styles[(GUIState::CLICKED)] = GUIStyle{};
+	
+
 
 	while (file.NextLine().GetFileStream()) {
 		Keys linekeys = KeyProcessing::ExtractValidKeys(file.ReturnLine());
+		if (linekeys.empty()) continue;
 		GUIState currentstate;
-		try {
-			auto foundstatekey = linekeys.find("GUISTATE");
-			if (foundstatekey == linekeys.end()) throw CustomException("Unable to identify the {GUISTATE,STATE} key ");
-			currentstate = GUIData::GUIStateData::converter(foundstatekey->second);
-			if (currentstate == GUIState::NULLSTATE) throw CustomException("Unable to identify the GUISTATE argument ");
-		}
-		catch (const CustomException& exception) {
-			LOG::Log(LOCATION::MANAGER_GUI, LOGTYPE::ERROR, __FUNCTION__, std::string{ exception.what() } + " on line " + file.GetLineNumberString() + " in style file of name " + stylefile + ".DID NOT READ ATTRIBUTE...");
-			continue;
-		}
-		try { linekeys >> styles.at(currentstate); }
+		auto statekey = KeyProcessing::GetKey("GUISTATE", linekeys);
+		if (!statekey.first) continue;
+		currentstate = GUIData::GUIStateData::converter(statekey.second->second);
+		if (currentstate == GUIState::NULLSTATE) continue;
+		try { styles.at(static_cast<int>(currentstate)).ReadIn<GUIFormattingData::BackgroundData::BG>(linekeys); }
 		catch (const CustomException& exception) {
 
 		}
 	}
 	return styles;
 }
+//TEMPLATISE THIS
 GUIElementPtr Manager_GUI::CreateElement(GUIInterface* parent, Keys& keys) {
 	using KeyProcessing::KeyPair;
 	std::string elttype = keys.find("ELEMENTTYPE")->second;
@@ -236,7 +232,7 @@ void Manager_GUI::HandleEvent(const sf::Event& evnt, sf::RenderWindow* winptr) {
 	case EventType::KEYPRESSED: {
 		if (activetextfield != nullptr) {
 			if (evnt.key.code == sf::Keyboard::Key::Backspace) {
-				if(!activetextfield->GetText().getString().isEmpty()) activetextfield->PopChar();
+				if (!activetextfield->GetTextfieldString().empty()) activetextfield->PopChar();
 			}
 			if (evnt.key.code == sf::Keyboard::Key::Enter) {
 				activetextfield->OnEnter();
@@ -258,7 +254,7 @@ void Manager_GUI::Draw() {
 	auto& stategui = stateinterfaces.at(activestate);
 	for (auto& interface : stategui) {
 		if (interface.second->IsHidden()) continue;
-		interface.second->Render();
+		interface.second->Render(*context->window->GetRenderWindow(), true);
 	}
 }
 

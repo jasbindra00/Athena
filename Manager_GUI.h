@@ -6,7 +6,7 @@
 #include <functional>
 #include <memory>
 #include "EventQueue.h"
-#include "GUIFormatting.h"
+#include "GUIFormattingData.h"
 #include "GUIInterface.h"
 #include "SharedContext.h"
 #include "EventData.h"
@@ -43,9 +43,10 @@ private:
 	mutable GUITextfield* activetextfield{ nullptr };
 	template<typename T>
 	void RegisterElementProducer(const GUIType& type) { //factory pattern
-		elementfactory[type] = [type](GUIInterface* parent, const GUIStateStyles& style, KeyProcessing::Keys& keys) {return std::make_unique<T>(parent, style, keys); };
+		elementfactory[type] = [&type,this](GUIInterface* parent, const GUIStateStyles& style, KeyProcessing::Keys& keys) {return std::make_unique<T>(parent,this, style, keys); };
 	}
 	GUIStateStyles CreateStyleFromFile(const std::string& stylefile);
+	//REFACTOR THIS.
 	GUIElementPtr CreateElement(GUIInterface* parent, Keys& keys);
 	GUIInterfacePtr CreateInterfaceFromFile(const std::string& interfacefile);
 	std::pair<bool,Interfaces::iterator> FindInterface(const GameStateType& state, const std::string& interfacename) noexcept;

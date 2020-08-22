@@ -1,17 +1,18 @@
 #include "GUIInterface.h"
-#include "GUIInterfaceLayers.h"
+#include "GUILayerData.h"
 #include "Manager_GUI.h"
 #include "Window.h"
 
 
 
-GUIInterface::GUIInterface(GUIInterface* p, Manager_GUI* mgr, const GUIStateStyles& styles, KeyProcessing::Keys& keys) 
-	:guimgr(mgr),GUIElement(p, GUIType::WINDOW, GUILayerType::CONTENT, styles, keys), GUIInterfaceLayers(){ //DANGEROUS. TEXTURE INIT REQUIRES GUI MGR. INITIALISATION MAY NOT BE IN ORDER FOR GUIMGR REQUEST.
-	InitLayers(GetSize());
-	QueueLayerRedraw<GUILayerType::CONTROL>();
-	QueueLayerRedraw<GUILayerType::CONTENT>();
-	//BG?
+
+GUIInterface::GUIInterface(GUIInterface* p, Manager_GUI* mgr, const GUIStateStyles& styles, KeyProcessing::Keys& keys)
+	:guimgr(mgr), GUIElement(p, GUIType::WINDOW, GUILayerType::CONTENT, styles, keys) {
+	layers = std::make_unique<GUILayerData::GUILayers>((GetVisual().GetElementSize()));
 }
+void GUIInterface::SetPosition(const sf::Vector2f& pos) { layers->QueuePosition(pos); }
+void GUIInterface::SetSize(const sf::Vector2f& size) { layers->QueueSize(size); }
+
 bool GUIInterface::AddElement(const std::string& eltname, std::unique_ptr<GUIElement>& elt) {
 	std::pair<bool, GUIElementIterator> found = GetElement(eltname);
 	if (found.first) return false;	
@@ -21,47 +22,47 @@ bool GUIInterface::AddElement(const std::string& eltname, std::unique_ptr<GUIEle
 bool GUIInterface::RemoveElement(const std::string& eltname) {
 	std::pair<bool, GUIElementIterator> found = GetElement(eltname);
 	if (found.first) {
-		(found.second->second->GetType() == GUIType::WINDOW || !found.second->second->IsControl()) ? MarkContentRedraw(true) : MarkControlRedraw(true);
+		switch (found.second->second->GetLayerType()) {
+		case GUILayerType::BACKGROUND: {
+			
+		}
+		case GUILayerType::CONTENT: {
+
+		}
+		case GUILayerType::CONTROL: {
+
+		}
+		}
+		
+		layers->QueueLayerRedraw(found.second->second->GetLayerType());
 		elements.erase(found.second);
 		return true;
 	}
 	return false;
 }
+
+const bool& GUIInterface::PendingInterfaceRedraw() const{ return layers->PendingParentRedraw().at(static_cast<int>(activestate));}
+
+void GUIInterface::DrawToLayer(const GUILayerType& layer, const sf::Drawable& drawable){
+	layers->DrawToLayer(layer,drawable);
+}
+
+void GUIInterface::Render(sf::RenderTarget& target, const bool& toparent){layers->Render(target, toparent);}
+
 void GUIInterface::Update(const float& dT) {
 	auto mouseposition = static_cast<sf::Vector2f>(sf::Mouse::getPosition(*guimgr->GetContext()->window->GetRenderWindow()));
 	GUIElement::Update(dT); //apply any pending movement / size changes
 	for (auto& element : elements) {
 		if (element.second->IsHidden()) continue;
-		if (element.second->Contains(mouseposition)) {
-			if (element.second->GetActiveState() == GUIState::NEUTRAL) {
-				element.second->OnHover();
-			}
-		}
+		if (element.second->Contains(mouseposition) && element.second->GetActiveState() == GUIState::NEUTRAL) element.second->OnHover();
 		else if (element.second->GetActiveState() == GUIState::FOCUSED) element.second->OnLeave();
 		element.second->Update(dT);
-		if (element.second->GetType() == GUIType::WINDOW) {
-			if (static_cast<GUIInterface*>(element.second.get())->RequiresParentRedraw()) { //check if its own layers have been redrawn (so that we can redraw this control layer)
-				layers.QueueLayerRedraw<GUIData::GUILayerType::CONTENT>();
-				 //its layers have been redrawn, so we need to redraw our content. child interface forms the content layer.
-				static_cast<GUIInterface*>(element.second.get())->ResetParentRedraw(); //reset
-			}
+		if (dynamic_cast<GUIInterface*>(element.second.get())) {//draw interfaces only to the content layer
+			if (static_cast<GUIInterface*>(element.second.get())->PendingInterfaceRedraw()) layers->QueueLayerRedraw(GUILayerType::CONTENT);
 		}
-		else if (element.second->QueuedRedraw()) { //element has been changed
-			
-		
-			layers.QueueLayerRedraw<element.second->GetLayerType()>();
-			QueueLayerRedraw<element.second->GetLayerType()>();
-			element.second->ResetRedraw();
+		else if (element.second->PendingElementRedraw()) layers->QueueLayerRedraw(element.second->GetLayerType());
 		}
-	}
-	if (QueuedRedraw()) RedrawBackgroundLayer();
-	if (RequiresContentRedraw()) RedrawContentLayer();
-	if (RequiresControlRedraw()) RedrawControlLayer();
-}
-void GUIInterface::ApplyLocalPosition() {
-	layers->GetBackgroundSprite()->setPosition(GetLocalPosition());
-	layers->GetContentSprite()->setPosition(GetLocalPosition());
-	layers->GetControlSprite()->setPosition(GetLocalPosition());
+	layers->Update(*visual, elements); //applies redraws.
 }
 std::pair<bool, GUIElements::iterator> GUIInterface::GetElement(const std::string& elementname){
 	auto it = std::find_if(elements.begin(), elements.end(), [&elementname](const auto& p) {

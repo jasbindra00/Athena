@@ -1,26 +1,18 @@
 #include "GUITextfield.h"
 #include "GUIInterface.h"
 #include "Manager_GUI.h"
-#include <iostream>
-#include <regex>
+#include "Utility.h"
 
 
-
-GUITextfield::GUITextfield(GUIInterface* parent, const GUIStateStyles& styles, KeyProcessing::Keys& attributes):GUIElement(parent, GUIType::TEXTFIELD, styles, attributes), predicatebitset(4026531840), maxchars(INT_MAX) {
-	controlelement = false;
-	//override the character size here.
-	statestyles[GUIState::FOCUSED].text.charactersize = GUIFormatting::maxcharactersize;
-	statestyles[GUIState::NEUTRAL].text.charactersize = GUIFormatting::maxcharactersize;
-	statestyles[GUIState::CLICKED].text.charactersize = GUIFormatting::maxcharactersize;
-	statestyles[GUIState::FOCUSED].text.customtext.clear();
-	using namespace PredicateData;
+GUITextfield::GUITextfield(GUIInterface* parent, Manager_GUI* mgr, const GUIStateStyles& styles, KeyProcessing::Keys& attributes):GUIElement(parent, mgr,GUIType::TEXTFIELD,GUILayerType::CONTENT, styles, attributes), predicatebitset(4026531840), maxchars(INT_MAX) {
 	SetPredicates(0);
+	
 	//read user predicate keys.
-	{
-		auto textfieldpredicatekeys = attributes.equal_range("TEXTFIELD_PREDICATE");
-		for (auto it = textfieldpredicatekeys.first; it != textfieldpredicatekeys.second; ++it) {
-			AddPredicate(PredicateData::predicateconverter(it->second));
-		}
+	
+	auto textfieldpredicatekeys = attributes.equal_range("TEXTFIELD_PREDICATE");
+	for (auto it = textfieldpredicatekeys.first; it != textfieldpredicatekeys.second; ++it) {
+		Utility::CharacterCheck::STRING_PREDICATE predicatetype = Utility::CharacterCheck::StringPredicateConv(it->second);
+		if (predicatetype != Utility::CharacterCheck::STRING_PREDICATE::NULLTYPE) AddPredicate(std::move(predicatetype));
 	}
 	auto maxtextfieldcharskey = attributes.find("MAX_TEXTFIELD_CHARS");
 	if (maxtextfieldcharskey != attributes.end()) {
@@ -28,46 +20,39 @@ GUITextfield::GUITextfield(GUIInterface* parent, const GUIStateStyles& styles, K
 		catch (const std::exception& exception) {
 		}
 	}
+}
+
+std::string GUITextfield::GetTextfieldString() {
+	return GetVisual().GetTEXTAttribute<GUIFormattingData::TEXTAttribute::STRING>();
 	
-	//configure custom text keys.
 }
 
-void GUITextfield::ApplyFieldString(const std::string& str){
-	visual.SetTextStr(str);
-	requirestextcalibration = true;
-	QueueBackgroundRedraw(true);
-}
-
-sf::Text& GUITextfield::GetText() {
-	return visual.text;
-}
 void GUITextfield::OnNeutral(){
 	SetState(GUIState::NEUTRAL);
-	if (GetTextfieldStr().empty()) ApplyFieldString(statestyles[activestate].text.customtext);
+	if (GetTextfieldString().empty()) SetCurrentStateString(defaulttextstrings.at(static_cast<int>(activestate)));
 }
-void GUITextfield::Update(const float& dT){
-	GUIElement::Update(dT);
-}
+
 void GUITextfield::OnHover(){
 }
 void GUITextfield::OnClick(const sf::Vector2f& mousepos) {
 	SetState(GUIState::FOCUSED);
-	if (GetTextfieldStr() == statestyles[GUIState::NEUTRAL].text.customtext) ApplyFieldString(std::string{""});
+	if (GetTextfieldString() == defaulttextstrings.at(static_cast<int>(activestate))) SetCurrentStateString("");
 }
 void GUITextfield::OnLeave(){
 }
 void GUITextfield::OnRelease(){
 }
-void GUITextfield::Draw(sf::RenderTexture& texture){
-	GUIElement::Draw(texture);
-}
+
+void GUITextfield::SetCurrentStateString(const std::string& str) { GetVisual().ReadIn<GUIFormattingData::Text>(activestate, KeyProcessing::Keys{ { "STRING", str } }); }
+
 void GUITextfield::AppendChar(const char& c){
-	std::string str = GetTextfieldStr();
+	std::string str = GetTextfieldString();
 	if (str.size() + 1 > maxchars) return;
-	ApplyFieldString(std::move(str += c));
+	GetVisual().ReadIn<GUIFormattingData::Text>(activestate, KeyProcessing::Keys{ {"STRING", std::move(str + c)} });
 }
-void GUITextfield::PopChar() {	std::string str = GetTextfieldStr();
+void GUITextfield::PopChar() {	
+	std::string str = GetTextfieldString();
 	if(str.size() == 0) return;
 	str.pop_back();
-	ApplyFieldString(std::move(str));
+	GetVisual().ReadIn<GUIFormattingData::Text>(activestate, KeyProcessing::Keys{ {"STRING", std::move(str)} });
 }

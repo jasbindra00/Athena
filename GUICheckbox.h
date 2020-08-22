@@ -9,7 +9,7 @@
 //all we have to do, is change the texture.
 class GUICheckbox : public GUIElement {
 public:
-	GUICheckbox(GUIInterface* parent, const GUIStateStyles& styles, KeyProcessing::Keys& keys);
+	GUICheckbox(GUIInterface* parent,Manager_GUI* mgr, const GUIStateStyles& styles, KeyProcessing::Keys& keys);
 	void OnNeutral() override;
 	void OnHover() override;
 	void OnClick(const sf::Vector2f& mousepos) override;
@@ -19,7 +19,7 @@ public:
 	void ReadIn(KeyProcessing::Keys& keys) override;
 private:
 	mutable bool checked;
-	std::array<char, 6> checkboxtype;
+	mutable bool checkboxsquare{ true}; //false means circle check
 protected:
 
 	const bool& IsChecked() const { return checked; }

@@ -187,13 +187,12 @@
     <ClInclude Include="EventQueue.h" />
     <ClInclude Include="FileReader.h" />
     <ClInclude Include="EventData.h" />
-    <ClInclude Include="FriendProtectedOnly.h" />
     <ClInclude Include="GUICheckbox.h" />
     <ClInclude Include="GUIElement.h" />
-    <ClInclude Include="GUIFormatting.h" />
+    <ClInclude Include="GUIFormattingData.h" />
     <ClInclude Include="GUIData.h" />
     <ClInclude Include="GUIInterface.h" />
-    <ClInclude Include="GUIInterfaceLayers.h" />
+    <ClInclude Include="GUILayerData.h" />
     <ClInclude Include="GUILabel.h" />
     <ClInclude Include="GUIScrollbar.h" />
     <ClInclude Include="GUITextfield.h" />

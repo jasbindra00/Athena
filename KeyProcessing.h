@@ -4,12 +4,12 @@
 #include <algorithm>
 #include "StreamAttributes.h"
 #include <vector>
-#include <map>
 #include <unordered_map>
-#include <iostream>
 namespace KeyProcessing {
 	using KeyPair = std::pair<std::string, std::string>;
 	using Keys = std::unordered_multimap<std::string, std::string>;
+	using FoundKey = std::pair<bool, Keys::const_iterator>;
+	using FoundKeys = std::vector<FoundKey>;
 	static std::string ToLowerString(const std::string& str) {
 		auto tmp = str;
 		std::for_each(tmp.begin(), tmp.end(), [](char& c) {
@@ -87,9 +87,16 @@ namespace KeyProcessing {
 		Attributes keystream(attributes);
 		return std::make_pair(true, KeyPair{ keystream.GetWord(), keystream.GetWord() });
 	}
-	static std::pair<bool, Keys::iterator> GetKey(const std::string& keyname,Keys& keys) {
+	static FoundKey GetKey(const std::string& keyname,const Keys& keys) {
 		auto foundkey = keys.find(keyname);
 		return (foundkey == keys.end()) ? std::make_pair(false, foundkey) : std::make_pair(true, foundkey);
+	}
+	static FoundKeys GetKeys(const std::vector <std::string>& keynames, const Keys& keys) {
+		FoundKeys res;
+		for (auto& key : keynames) {
+			res.push_back(GetKey(key, keys));
+		}
+		return res;
 	}
 	static Keys ExtractValidKeys(const std::string& line) {
 		Keys keys;

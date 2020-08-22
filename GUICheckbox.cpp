@@ -1,39 +1,18 @@
 #include "GUICheckbox.h"
 
-GUICheckbox::GUICheckbox(GUIInterface* parent, const GUIStateStyles& styles, KeyProcessing::Keys& keys):GUIElement(parent, GUIType::CHECKBOX, styles, keys){
+GUICheckbox::GUICheckbox(GUIInterface* parent,Manager_GUI* mgr, const GUIStateStyles& styles, KeyProcessing::Keys& keys):GUIElement(parent,mgr, GUIType::CHECKBOX,GUILayerType::CONTENT, styles, keys){
 	//specific keys for elements
 	using GUIData::GUIStateData::GUIState;
 	KeyProcessing::FillMissingKey(KeyProcessing::KeyPair{ "CHECKBOX_TYPE","ERROR" }, keys);
 	std::string checkboxstr = keys.find("CHECKBOX_TYPE")->second;
 	//default the checkboxtype if invalid
-	if (!(checkboxstr == "SQUARE" || checkboxstr == "CIRCLE")) checkboxstr = "SQUARE";
-	for (int i = 0; i < checkboxstr.size(); ++i) {
-		checkboxtype[i] = checkboxstr[i];
-	}
-	//default to system textures if not overriden
+	if (checkboxstr == "CIRCLE") checkboxsquare = false;
+	else checkboxstr = "SQUARE";
 	std::string checkedtexture{ "GUICheckbox_Checked_" + checkboxstr + ".png" };
 	std::string uncheckedtexture{ "GUICheckbox_Unchecked_" + checkboxstr + ".png" };
-
-	//every time we change the tbg, we need to toggle style apply.
-	//otherwise, the user may forget to do so.
-
-	{
-		auto focusedstyle = visual.GetStyle(GUIState::FOCUSED);
-		focusedstyle.background.tbg_name = std::move(checkedtexture);
-		focusedstyle.AdjustForSystemTexture();
-		visual.ChangeStyle(GUIState::FOCUSED, std::move(focusedstyle));
-	}
-	{
-		auto 
-	}
-	visual.GetStyle(activestate).background.tbg_name = std::move(checkedtexture);
-	statestyles[GUIState::FOCUSED].AdjustForSystemTexture();
-
-	statestyles[GUIState::NEUTRAL].background.tbg_name = std::move(uncheckedtexture);
-	statestyles[GUIState::NEUTRAL].AdjustForSystemTexture();
-	
-	elementsize = sf::Vector2f{ 20,20 }; //max checkbox size.
-	visual.SetTextStr("");
+	GetVisual().ReadIn<GUIFormattingData::BG>(GUIState::FOCUSED, KeyProcessing::Keys{ {"TEXTURE_NAME" , std::move(checkedtexture)} });
+	GetVisual().ReadIn<GUIFormattingData::Text>(GUIState::NEUTRAL, KeyProcessing::Keys{ {"TEXTURE_NAME" , std::move(uncheckedtexture)} });
+	for (int i = 0; i < 3; ++i) GetVisual().ReadIn<GUIFormattingData::Text>(static_cast<GUIState>(i), KeyProcessing::Keys{ {"STRING", ""} });
 }
 void GUICheckbox::ToggleChecked() {
 	if (checked == true) {

@@ -10,15 +10,10 @@ public:
 	void OnClick(const sf::Vector2f& mousepos) override;
 	void OnLeave() override;
 	void OnRelease() override;
-	void Draw(sf::RenderTexture& texture) override;
 	void Update(const float& dT) override;
 	void ReadIn(KeyProcessing::Keys& keys) override;
 protected:
-	void ApplyLocalPosition() override;
-
-
-	void ApplySize() override;
-
+	
 };
 
 

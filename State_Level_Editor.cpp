@@ -61,12 +61,12 @@ void State_LevelEditor::ConfirmButtonPopUp(EventData::EventDetails* details){
 	std::string errorstring;
 	std::vector<std::string> hierarchystr{ "CONFIRM", "POP_UP_PANEL" };
 	auto texturexfield = guimgr->GetElement<GUITextfield>(GameStateType::LEVELEDITOR, { "TEXTURE_X_TEXTFIELD", "POP_UP_PANEL" });
-	if (!texturexfield->GetTextfieldStr().empty()) {
-		if (std::stoi(texturexfield->GetTextfieldStr()) <= 32) {
+	if (!texturexfield->GetTextfieldString().empty()) {
+		if (std::stoi(texturexfield->GetTextfieldString()) <= 32) {
 			auto textureyfield = guimgr->GetElement<GUITextfield>(GameStateType::LEVELEDITOR, { "TEXTURE_Y_TEXTFIELD", "POP_UP_PANEL" });
-			if (!textureyfield->GetTextfieldStr().empty()) {
-				if (std::stoi(textureyfield->GetTextfieldStr()) <= 32) {
-					std::string spritesheetname = guimgr->GetElement<GUITextfield>(GameStateType::LEVELEDITOR, { "SPRITESHEETNAME", "POP_UP_PANEL" })->GetTextfieldStr();
+			if (!textureyfield->GetTextfieldString().empty()) {
+				if (std::stoi(textureyfield->GetTextfieldString()) <= 32) {
+					std::string spritesheetname = guimgr->GetElement<GUITextfield>(GameStateType::LEVELEDITOR, { "SPRITESHEETNAME", "POP_UP_PANEL" })->GetTextfieldString();
 					if (LoadSheet(spritesheetname)) {
 						DeactivatePopUp(details);
 					}

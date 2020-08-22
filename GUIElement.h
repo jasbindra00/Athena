@@ -4,7 +4,7 @@
 #include <unordered_map>
 #include <string>
 #include <vector>
-#include "GUIFormatting.h"
+#include "GUIFormattingData.h"
 #include "GUIData.h"
 #include "KeyProcessing.h"
 #include "SharedContext.h"
@@ -15,16 +15,17 @@ class Manager_Texture;
 class Manager_Font;
 class Manager_GUI;
 
+//TURN VISUAL INTO pImpl
 using namespace GUIData::GUIStateData;
 using namespace GUIData::GUITypeData;
 using GUIData::GUILayerType;
-using namespace GUIFormatting;
-
-
-class GUIElement { //abstract base class for specialised GUIElements.
+using GUIFormattingData::GUIVisual;
+using GUIFormattingData::GUIStyle;
+using GUIFormattingData::GUIStateStyles;
+class GUIElement{ //abstract base class for specialised GUIElements.
 	friend class GUIInterface;
 private:
-	GUIVisual visual;
+	std::unique_ptr<GUIVisual> visual;
 protected:
 	GUILayerType layertype;
 	mutable GUIState activestate;
@@ -32,8 +33,6 @@ protected:
 	std::string name;
 	mutable GUIInterface* parent{ nullptr };
 	GUIType type;
-
-	mutable bool controlelement; //used by the interface in determining which layer to redraw
 
 	mutable bool hidden; //an inactive element is not drawn 
 	mutable bool enabled; //a disabled element will not respond to any input.
@@ -48,36 +47,38 @@ protected:
 	void SetState(const GUIState& state);
 	virtual void Update(const float& dT);
 	inline void SetParent(GUIInterface* p) const { parent = p; }
+	void OnCreate(Manager_GUI* guimgr, KeyProcessing::Keys& attributes) {
+		visual = std::make_unique<GUIVisual>(guimgr->GetContext()->texturemgr, guimgr->GetContext()->fontmgr);
+		ReadIn(attributes);
+		SetState(GUIState::NEUTRAL);
+	}
 public:
-	GUIElement(GUIInterface* parent, const GUIType& type, const GUILayerType& layertype, const GUIStateStyles& styles,KeyProcessing::Keys& attributes);
-
-	//FIND WORKAROUND FOR CTOR INIT
-	virtual void Draw(sf::RenderTarget& target) const;
+	GUIElement(GUIInterface* parent, const GUIType& type, const GUILayerType& layertype, const GUIStateStyles& styles);
+	virtual void Render(sf::RenderTarget& target, const bool& toparent);
 	virtual void ReadIn(KeyProcessing::Keys& keys);
 
 	virtual void SetEnabled(const bool& inp) const { enabled = inp; }
 	void SetHidden(const bool& inp) const { hidden = inp; }
+	virtual void SetPosition(const sf::Vector2f& position);
+	virtual void SetSize(const sf::Vector2f& size);
 
-
-	inline const bool& IsControl() const { return controlelement; }
 	inline const bool& IsHidden() const { return hidden; }
 	inline const bool& IsEnabled() const { return enabled; }
 
-	const bool& QueuedRedraw() { return visual.pendingredraw; }
+	const bool& PendingElementRedraw() { return visual->PendingParentRedraw(); }
 	inline const std::string& GetName() const { return name; }
 	inline const GUIType& GetType() const { return type; }
 	inline GUIInterface* GetParent() const { return parent; }
 	inline const GUIState& GetActiveState() const { return activestate; }
 
-	inline const sf::Vector2f& GetSize() const { return visual.GetElementSize(); }
-	inline const GUIStyle& GetActiveStyle() const { return visual.GetStyle(activestate); }
+	inline const sf::Vector2f& GetSize() const { return visual->GetElementSize(); }
+	inline const GUIStyle& GetActiveStyle() { return visual->GetStyle(activestate); }
 
-
-
-	inline const sf::Vector2f& GetLocalPosition() const { return visual.GetLocalPosition(); }
+	inline GUIVisual& GetVisual() { return *visual; }
+	inline const sf::Vector2f& GetLocalPosition() const { return visual->GetElementPosition(); }
 	sf::Vector2f GetGlobalPosition() const;
 	constexpr GUILayerType GetLayerType() { return layertype; }
-	sf::FloatRect GetLocalBoundingBox() const { return sf::FloatRect{ visual.GetLocalPosition(), visual.GetElementSize() }; }
+	sf::FloatRect GetLocalBoundingBox() const { return sf::FloatRect{ visual->GetElementPosition(), visual->GetElementSize() }; }
 	std::string GetHierarchyString();
 
 	Manager_GUI* GetGUIManager();
