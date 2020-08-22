@@ -6,9 +6,8 @@
 
 
 
-GUIInterface::GUIInterface(GUIInterface* p, Manager_GUI* mgr, const GUIStateStyles& styles, KeyProcessing::Keys& keys)
-	:guimgr(mgr), GUIElement(p, GUIType::WINDOW, GUILayerType::CONTENT, styles, keys) {
-	layers = std::make_unique<GUILayerData::GUILayers>((GetVisual().GetElementSize()));
+GUIInterface::GUIInterface(GUIInterface* p, Manager_GUI* mgr, const GUIStateStyles& styles)
+	:guimgr(mgr), GUIElement(p, GUIType::WINDOW, GUILayerType::CONTENT, styles) {
 }
 void GUIInterface::SetPosition(const sf::Vector2f& pos) { layers->QueuePosition(pos); }
 void GUIInterface::SetSize(const sf::Vector2f& size) { layers->QueueSize(size); }
@@ -64,6 +63,16 @@ void GUIInterface::Update(const float& dT) {
 		}
 	layers->Update(*visual, elements); //applies redraws.
 }
+
+void GUIInterface::ReadIn(KeyProcessing::Keys& keys){
+	GUIElement::ReadIn(keys);
+	if (visual->PendingSizeApply()) layers->QueueSize(visual->GetElementSize());
+}
+void GUIInterface::OnElementCreate(Manager_Texture* texturemgr, Manager_Font* fontmgr, KeyProcessing::Keys& attributes){
+	GUIElement::OnElementCreate(texturemgr, fontmgr, attributes);
+	layers = std::make_unique<GUILayerData::GUILayers>((GetVisual().GetElementSize()));
+}
+
 std::pair<bool, GUIElements::iterator> GUIInterface::GetElement(const std::string& elementname){
 	auto it = std::find_if(elements.begin(), elements.end(), [&elementname](const auto& p) {
 		return p.first == elementname;

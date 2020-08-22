@@ -24,6 +24,7 @@ using GUIFormattingData::GUIStyle;
 using GUIFormattingData::GUIStateStyles;
 class GUIElement{ //abstract base class for specialised GUIElements.
 	friend class GUIInterface;
+	friend class Manager_GUI;
 private:
 	std::unique_ptr<GUIVisual> visual;
 protected:
@@ -47,11 +48,7 @@ protected:
 	void SetState(const GUIState& state);
 	virtual void Update(const float& dT);
 	inline void SetParent(GUIInterface* p) const { parent = p; }
-	void OnCreate(Manager_GUI* guimgr, KeyProcessing::Keys& attributes) {
-		visual = std::make_unique<GUIVisual>(guimgr->GetContext()->texturemgr, guimgr->GetContext()->fontmgr);
-		ReadIn(attributes);
-		SetState(GUIState::NEUTRAL);
-	}
+	virtual void OnElementCreate(Manager_Texture* texturemgr, Manager_Font* fontmgr, KeyProcessing::Keys& attributes);
 public:
 	GUIElement(GUIInterface* parent, const GUIType& type, const GUILayerType& layertype, const GUIStateStyles& styles);
 	virtual void Render(sf::RenderTarget& target, const bool& toparent);

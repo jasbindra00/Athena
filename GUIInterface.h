@@ -24,9 +24,11 @@ protected:
 	void DrawToLayer(const GUILayerType& layer,const sf::Drawable& drawable);
 	void Render(sf::RenderTarget& target, const bool& toparent);
 	void Update(const float& dT) override;
+	virtual void ReadIn(KeyProcessing::Keys& keys) override;
+	virtual void OnElementCreate(Manager_Texture* texturemgr, Manager_Font* fontmgr, KeyProcessing::Keys& attributes) override;
 	std::pair<bool, GUIElementIterator> GetElement(const std::string& elementname);	
 public:
-	GUIInterface(GUIInterface* parent, Manager_GUI* guimgr, const GUIStateStyles& styles, KeyProcessing::Keys& keys);
+	GUIInterface(GUIInterface* parent, Manager_GUI* guimgr, const GUIStateStyles& styles);
 
 	virtual void SetPosition(const sf::Vector2f& pos) override;
 	virtual void SetSize(const sf::Vector2f& size) override;

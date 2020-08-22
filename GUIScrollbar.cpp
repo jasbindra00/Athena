@@ -1,6 +1,6 @@
 #include "GUIScrollbar.h"
 
-GUIScrollbar::GUIScrollbar(GUIInterface* parent, const GUIStateStyles& styles, KeyProcessing::Keys& keys) :GUIElement(parent, GUIType::SCROLLBAR, GUILayerType::CONTROL, styles, keys)
+GUIScrollbar::GUIScrollbar(GUIInterface* parent, const GUIStateStyles& styles) :GUIElement(parent, GUIType::SCROLLBAR, GUILayerType::CONTROL, styles)
 {
 
 }

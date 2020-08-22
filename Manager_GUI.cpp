@@ -25,6 +25,7 @@ using namespace EventData;
 using namespace GUIData;
 
 Manager_GUI::Manager_GUI(SharedContext* cntxt) :context(cntxt) {
+	RegisterElementProducer<GUIInterface>(GUIType::WINDOW);
 	RegisterElementProducer<GUITextfield>(GUIType::TEXTFIELD);
 	RegisterElementProducer<GUILabel>(GUIType::LABEL);
 	RegisterElementProducer<GUIScrollbar>(GUIType::SCROLLBAR);
@@ -40,9 +41,6 @@ GUIStateStyles Manager_GUI::CreateStyleFromFile(const std::string& stylefile){
 		return GUIStateStyles{};
 	}
 	GUIStateStyles styles;
-	
-
-
 	while (file.NextLine().GetFileStream()) {
 		Keys linekeys = KeyProcessing::ExtractValidKeys(file.ReturnLine());
 		if (linekeys.empty()) continue;
@@ -58,68 +56,75 @@ GUIStateStyles Manager_GUI::CreateStyleFromFile(const std::string& stylefile){
 	}
 	return styles;
 }
-//TEMPLATISE THIS
-GUIElementPtr Manager_GUI::CreateElement(GUIInterface* parent, Keys& keys) {
+
+GUIElementPtr Manager_GUI::CreateElement(const GUIType& TYPE, GUIInterface* parent, Keys& keys){
+	if (elementfactory.find(TYPE) == elementfactory.end()) return nullptr;
+	KeyProcessing::FillMissingKeys({ { "STYLE_FILE", "", }, { "ELEMENT_HIDDEN", "FALSE" }, { "POSITION_X","ERROR" }, { "POSITION_Y","ERROR" }, { "ORIGIN_X", "ERROR" }, { "ORIGIN_Y", "ERROR" }, { "SIZE_X", "ERROR" }, { "SIZE_Y","ERROR" },
+	{ "CUSTOM_TEXT", "ERROR" }, { "ENABLED","TRUE" },
+		{ "WINX", std::to_string(this->context->window->GetRenderWindow()->getSize().x) },
+		{ "WINY",std::to_string(this->context->window->GetRenderWindow()->getSize().y) } }, keys);
 	using KeyProcessing::KeyPair;
-	std::string elttype = keys.find("ELEMENTTYPE")->second;
-	std::string stylefile = keys.find("STYLEFILE")->second;
-	if (elttype == "NEWINTERFACE" || elttype == "NESTEDINTERFACE") {
-		return std::make_unique<GUIInterface>(parent, this, CreateStyleFromFile(stylefile), keys);
-	}
-	else {
-		auto guielementtype = GUIData::GUITypeData::converter(elttype);
-		if (guielementtype == GUIType::NULLTYPE) throw CustomException("ELEMENTTYPE");
-		return elementfactory[guielementtype](parent, CreateStyleFromFile(stylefile), keys);
-	}
+	std::string stylefile = keys.find("STYLE_FILE")->second;
+	auto element = elementfactory[TYPE](parent, CreateStyleFromFile(std::move(stylefile))); //DANGEROUS, ELT MAY NOT BE REGISTERED
+	element->OnElementCreate(context->texturemgr, context->fontmgr, keys);
+	return std::move(element);
 }
+
 GUIInterfacePtr Manager_GUI::CreateInterfaceFromFile(const std::string& interfacefile) {
 	using KeyProcessing::KeyPair;
 	using KeyProcessing::Keys;
-	std::string appenderrorstr{ " in interface file of name " + interfacefile+ ". " };
 	FileReader file;
 	if (!file.LoadFile(interfacefile)) {
 		LOG::Log(LOCATION::MANAGER_GUI, LOGTYPE::ERROR, __FUNCTION__, "Unable to open the interface template file of name " + interfacefile);
 		return nullptr;
 	}
-	std::vector<std::pair<std::string,std::vector<GUIElementPtr>>> interfacehierarchy;
-	auto linestream = static_cast<Attributes*>(&file.GetLineStream());
+	std::string appenderrorstr{ " in interface file of name " + interfacefile + ". " };
 	//check if the first entry is a new interface. 
 	file.NextLine();
-		auto type = linestream->PeekWord();
-		if (type != "{ELEMENTTYPE,NEWINTERFACE}" || type == "{ELEMENTTYPE,NESTEDINTERFACE}") { //cannot begin with nested interface.
-			LOG::Log(LOCATION::MANAGER_GUI, LOGTYPE::ERROR, __FUNCTION__, "Unable to identify leading interface" + appenderrorstr + "Leading interfaces must start with INTERFACE. EXITING INTERFACE READ..");
+	{
+		KeyProcessing::Keys linekeys = KeyProcessing::ExtractValidKeys(file.ReturnLine());
+		if (KeyProcessing::FillMissingKey({ "ELEMENT_TYPE","WINDOW" }, linekeys)) {
+			LOG::Log(LOCATION::MANAGER_GUI, LOGTYPE::ERROR, __FUNCTION__, "Unable to identify leading GUIWindow " + appenderrorstr + "The first entry should always be {ELEMENT_TYPE,WINDOW} {CONFIGURATION_TYPE,NEW}. EXITING INTERFACE READ..");
 			return nullptr;
 		}
+		if (auto it = KeyProcessing::GetKey("CONFIGURATION", linekeys); it.first) {
+			if (it.second->second != "NEW") {
+				LOG::Log(LOCATION::MANAGER_GUI, LOGTYPE::ERROR, __FUNCTION__, "The leading GUIWindow entry must contain a {CONFIGURATION,NEW} key" + appenderrorstr + "EXITING INTERFACE READ..");
+				return nullptr;
+			}
+
+		}
+	}
 	file.PutBackLine();
 	GUIInterface* leadinginterface{ nullptr };
 	GUIInterface* masterinterface{ nullptr };
 	int ninterfaces{ 0 };
-
+	std::vector<std::pair<std::string, std::vector<GUIElementPtr>>> interfacehierarchy;
 	while (file.NextLine().GetFileStream()) {
 		Keys linekeys = KeyProcessing::ExtractValidKeys(file.ReturnLine());
-		
 		//fill the standard keys for base guielement.
-		KeyProcessing::FillMissingKeys(std::vector<KeyPair>{ {"ELEMENTTYPE", "FATALERROR"}, { "STYLEFILE", "FATALERROR" }, { "ELEMENTNAME", "FATALERROR" }, { "ELEMENT_HIDDEN", "FALSE" },
-			{ "POSITIONX","ERROR" }, { "POSITIONY","ERROR" }, { "POSITIONX%", "ERROR" }, { "POSITIONY%", "ERROR" }, { "SIZEX", "ERROR" }, { "SIZEY","ERROR" },
-			{ "SIZEX%", "ERROR" }, { "SIZEY%", "ERROR" }, { "ORIGINX%","ERROR" }, { "ORIGINY%","ERROR" }, { "CUSTOMTEXT", "ERROR" }, { "ENABLED","TRUE" }, { "WINX", std::to_string(this->context->window->GetRenderWindow()->getSize().x) }, { "WINY",std::to_string(this->context->window->GetRenderWindow()->getSize().y) }}, linekeys);
-		if (linekeys.find("ELEMENTNAME")->second == "POP_UP_PANEL") {
-			int g = 3;
-		}
-		std::string elttype = linekeys.find("ELEMENTTYPE")->second;
-		//fill keys for derived guielements.
-		GUIElementPtr element;
-		try { element = (elttype == "NESTEDINTERFACE" || elttype != "NEWINTERFACE") ? CreateElement(leadinginterface, linekeys) : CreateElement(masterinterface, linekeys); }
-		catch (const CustomException& exception) {
-			if (std::string{ exception.what() } == "ELEMENTTYPE") {
-				LOG::Log(LOCATION::MANAGER_GUI, LOGTYPE::ERROR, __FUNCTION__, "Unable to read the GUIElement on line " + file.GetLineNumberString() + appenderrorstr + "DID NOT READ ELEMENT..");
-			}
+		auto missingessentials = KeyProcessing::FillMissingKeys(std::vector<KeyPair>{ {"ELEMENT_TYPE", "FATALERROR"}, { "ELEMENT_NAME", "FATALERROR" }}, linekeys);
+		if (!missingessentials.empty()) {
+			std::string missing;
+			std::for_each(missingessentials.begin(), missingessentials.end(), [&missing](const KeyPair& key) {
+				missing += "{" + key.first + ",ARG} "; });
+			LOG::Log(LOCATION::MANAGER_GUI, LOGTYPE::ERROR, __FUNCTION__, "Unable to identify essential " + missing + " keys" + appenderrorstr + " on line " + file.GetLineNumberString());
 			continue;
 		}
-		if (dynamic_cast<GUIInterface*>(element.get())) {//if the element is an interface
-			if (ninterfaces == 0) masterinterface = static_cast<GUIInterface*>(element.get()); //****************CHANGE THIS
-			std::string elttype = linekeys.find("ELEMENTTYPE")->second;
+		GUIType element_type = GUIData::GUITypeData::converter(linekeys.find("ELEMENT_TYPE")->second);
+		GUIElementPtr element;
+		GUIInterface* elementparent = leadinginterface;
+		if (!KeyProcessing::FillMissingKey(KeyPair{ "CONFIGURATION", "NESTED" }, linekeys)) elementparent = (linekeys.find("CONFIGURATION")->second == "NEW") ? masterinterface : leadinginterface;
+		try { element = CreateElement(element_type, elementparent, linekeys); }
+		catch (const std::exception& exception) {
+			if (std::string{ exception.what() } == "ELEMENTTYPE") LOG::Log(LOCATION::MANAGER_GUI, LOGTYPE::ERROR, __FUNCTION__, "Unable to read the GUIElement on line " + file.GetLineNumberString() + appenderrorstr + "DID NOT READ ELEMENT..");
+			continue;
+		}
+		if (element_type == GUIType::WINDOW) {
+			if (ninterfaces == 0) masterinterface = static_cast<GUIInterface*>(element.get());
 			//create a new structure line
-			interfacehierarchy.push_back(std::make_pair(elttype,std::vector<GUIElementPtr>{}));
+			std::string configurationtype = (elementparent == leadinginterface) ? std::string{ "NESTED" } : std::string{ "NEW" };
+			interfacehierarchy.push_back({ std::move(configurationtype), std::vector<GUIElementPtr>{} });
 			//this is now the leading interface. subsequent nested interfaces will be relative to this one.
 			leadinginterface = static_cast<GUIInterface*>(element.get());
 			//add the interface as the first element within its structure
@@ -128,31 +133,33 @@ GUIInterfacePtr Manager_GUI::CreateInterfaceFromFile(const std::string& interfac
 		}
 		//if its an element, add the element to the lastmost active interface structure
 		else interfacehierarchy[ninterfaces - 1].second.emplace_back(std::move(element));
-	}
-	//link up all the individual interfaces to their elements
-	for (auto& structure : interfacehierarchy) {
-		auto currentinterface = static_cast<GUIInterface*>(structure.second[0].get());
-		for (int i = structure.second.size() - 1; i > 0; --i) { //now, loop through all of the elements (coming after the first interface entry within the structure)
-			auto& element = structure.second[i];
-			if (!currentinterface->AddElement(element->GetName(), element)) { 
-				LOG::Log(LOCATION::MANAGER_GUI, LOGTYPE::ERROR, __FUNCTION__, "Unable to add the GUIElement of name " + element->GetName() + " to interface of name " + currentinterface->GetName() + " in line " + file.GetLineNumberString() + " in interface file of name " + interfacefile);
-				element.reset();
-				continue;
+
+		//link up all the individual interfaces to their elements
+		for (auto& structure : interfacehierarchy) {
+			auto currentinterface = static_cast<GUIInterface*>(structure.second[0].get());
+			for (int i = structure.second.size() - 1; i > 0; --i) { //now, loop through all of the elements (coming after the first interface entry within the structure)
+				auto& element = structure.second[i];
+				if (!currentinterface->AddElement(element->GetName(), element)) {
+					LOG::Log(LOCATION::MANAGER_GUI, LOGTYPE::ERROR, __FUNCTION__, "Unable to add the GUIElement of name " + element->GetName() + " to interface of name " + currentinterface->GetName() + " in line " + file.GetLineNumberString() + " in interface file of name " + interfacefile);
+					element.reset();
+					continue;
+				}
 			}
 		}
-	}
-	//link up each interface to its parent 
-	for (int i = interfacehierarchy.size() - 1; i > 0; --i) {
-		auto& structure = interfacehierarchy.at(i);
-		auto& interfaceptr = structure.second.at(0);
-		//If the current element is a new interface, then the parent is the master (first) interface.
-		//Else if the current element is a nested interface, then the parent is the interface that which came immediately before it.
-		GUIInterface* parent = static_cast<GUIInterface*>((structure.first == "NEWINTERFACE") ? interfacehierarchy.at(0).second.at(0).get() : interfacehierarchy.at(i - 1).second.at(0).get());
-		if (!parent->AddElement(interfaceptr->GetName(), interfaceptr)) {
-			LOG::Log(LOCATION::MANAGER_GUI, LOGTYPE::ERROR, __FUNCTION__, "Ambiguous element name within interface file of name " + interfacefile + "DID NOT ADD ELEMENT..");
+		//link up each interface to its parent 
+		for (int i = interfacehierarchy.size() - 1; i > 0; --i) {
+			auto& structure = interfacehierarchy.at(i);
+			auto& interfaceptr = structure.second.at(0);
+			//If the current element is a new interface, then the parent is the master (first) interface.
+			//Else if the current element is a nested interface, then the parent is the interface that which came immediately before it.
+			GUIInterface* parent = static_cast<GUIInterface*>((structure.first == "NEW") ? interfacehierarchy.at(0).second.at(0).get() : interfacehierarchy.at(i - 1).second.at(0).get());
+			if (!parent->AddElement(interfaceptr->GetName(), interfaceptr)) {
+				LOG::Log(LOCATION::MANAGER_GUI, LOGTYPE::ERROR, __FUNCTION__, "Ambiguous element name within interface file of name " + interfacefile + "DID NOT ADD ELEMENT..");
+			}
 		}
+		return std::unique_ptr<GUIInterface>(static_cast<GUIInterface*>(interfacehierarchy[0].second[0].release())); //return the master interface.
+
 	}
-	return std::unique_ptr<GUIInterface>(static_cast<GUIInterface*>(interfacehierarchy[0].second[0].release())); //return the master interface.
 }
 std::pair<bool,Interfaces::iterator> Manager_GUI::FindInterface(const GameStateType& state, const std::string& interfacename) noexcept{
 	auto& interfaces = stateinterfaces.at(state);

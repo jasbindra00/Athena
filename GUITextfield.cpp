@@ -4,22 +4,10 @@
 #include "Utility.h"
 
 
-GUITextfield::GUITextfield(GUIInterface* parent, Manager_GUI* mgr, const GUIStateStyles& styles, KeyProcessing::Keys& attributes):GUIElement(parent, mgr,GUIType::TEXTFIELD,GUILayerType::CONTENT, styles, attributes), predicatebitset(4026531840), maxchars(INT_MAX) {
+GUITextfield::GUITextfield(GUIInterface* parent,const GUIStateStyles& styles):GUIElement(parent,GUIType::TEXTFIELD,GUILayerType::CONTENT, styles), predicatebitset(4026531840), maxchars(INT_MAX) {
 	SetPredicates(0);
 	
-	//read user predicate keys.
-	
-	auto textfieldpredicatekeys = attributes.equal_range("TEXTFIELD_PREDICATE");
-	for (auto it = textfieldpredicatekeys.first; it != textfieldpredicatekeys.second; ++it) {
-		Utility::CharacterCheck::STRING_PREDICATE predicatetype = Utility::CharacterCheck::StringPredicateConv(it->second);
-		if (predicatetype != Utility::CharacterCheck::STRING_PREDICATE::NULLTYPE) AddPredicate(std::move(predicatetype));
-	}
-	auto maxtextfieldcharskey = attributes.find("MAX_TEXTFIELD_CHARS");
-	if (maxtextfieldcharskey != attributes.end()) {
-		try { SetMaxChars(std::stoi(maxtextfieldcharskey->second)); }
-		catch (const std::exception& exception) {
-		}
-	}
+
 }
 
 std::string GUITextfield::GetTextfieldString() {
@@ -41,6 +29,19 @@ void GUITextfield::OnClick(const sf::Vector2f& mousepos) {
 void GUITextfield::OnLeave(){
 }
 void GUITextfield::OnRelease(){
+}
+
+void GUITextfield::ReadIn(KeyProcessing::Keys& keys){
+	GUIElement::ReadIn(keys);
+	auto textfieldpredicatekeys = keys.equal_range("TEXTFIELD_PREDICATE");
+	for (auto it = textfieldpredicatekeys.first; it != textfieldpredicatekeys.second; ++it) {
+		Utility::CharacterCheck::STRING_PREDICATE predicatetype = Utility::CharacterCheck::StringPredicateConv(it->second);
+		if (predicatetype != Utility::CharacterCheck::STRING_PREDICATE::NULLTYPE) AddPredicate(std::move(predicatetype));
+	}
+	auto maxcharkey = KeyProcessing::GetKey("MAX_TEXTFIELD_CHARS", keys);
+	if (!maxcharkey.first) return;
+	try { SetMaxChars(std::stoi(maxcharkey.second->second)); }
+	catch (const std::exception& exception) {}
 }
 
 void GUITextfield::SetCurrentStateString(const std::string& str) { GetVisual().ReadIn<GUIFormattingData::Text>(activestate, KeyProcessing::Keys{ { "STRING", str } }); }

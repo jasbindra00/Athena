@@ -190,7 +190,7 @@ namespace GUIFormattingData {
 	}
 	using namespace BackgroundData;
 	using namespace TextData;
-	class GUIStyle {
+	class GUIStyle { //HIDDEN FROM USER.
 		friend class GUIVisual;
 	private:
 		mutable bool pendingtextapply = false;
@@ -406,6 +406,19 @@ namespace GUIFormattingData {
 
 			return pendingparentredraw;
 		}
+
+		/*
+		-the readin is exposed to the user.
+		-we need to make the readin as intuitive as possible.
+		-and thus, we need to be able to accept a property_attribute type.
+
+		-property attribute can either be a template, or a argument. argument makes sense.
+		-accept a propertyattribute argument.
+		-cast it to an int, and insert into keys.
+		-this way, the readin will easily be able to switch.
+
+		-
+		*/
 		template<typename PROPERTY, typename = typename std::enable_if_t<IS_BG<PROPERTY>::value || IS_TEXT<PROPERTY>::value>, typename PROPERTY_ATTRIBUTE = typename DEDUCE_PROPERTY_ATTRIBUTE<PROPERTY>>
 		void ReadIn(const GUIData::GUIStateData::GUIState& state, const KeyProcessing::Keys& keys) {
 			statestyles[static_cast<int>(state)].ReadIn<PROPERTY>(keys);
@@ -440,11 +453,13 @@ namespace GUIFormattingData {
 		GUIStyle& GetStyle(const GUIState& state) {
 			return statestyles.at(static_cast<int>(state));
 		}
+	
 		void ChangeStyle(const GUIState& state, GUIStyle& style) {
 			GetStyle(state) = style;
 			if (activestate == state) QueueState(state);
 		}
 		const bool& PendingParentRedraw() const { return pendingparentredraw; }
+		const bool& PendingSizeApply() const { return pendingsizeapply; }
 	};
 
 }

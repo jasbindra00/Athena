@@ -8,6 +8,11 @@ struct EnumConverter {
 	Converter converter;
 public:
 	explicit EnumConverter(const Converter& c) :converter(c) {
+
+		//str = STR::x
+		/*
+		-what we need to do, is construct a reverse enum converter.
+		*/
 	}
 	T operator()(const std::string& str) {
 		auto tmp = str;

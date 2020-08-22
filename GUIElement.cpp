@@ -6,8 +6,7 @@
 #include <array>
 
 
-GUIElement::GUIElement(GUIInterface* p, Manager_GUI* guimgr, GUIType& t, const GUILayerType& layer,const GUIStateStyles& stylemap) :type(t),layertype(layer), parent(p) {
-
+GUIElement::GUIElement(GUIInterface* p,const GUIType& t, const GUILayerType& layer,const GUIStateStyles& stylemap) :type(t),layertype(layer), parent(p) {
 }
 void GUIElement::Render(sf::RenderTarget& target, const bool& toparent){
 	visual->Render(target,toparent);
@@ -16,6 +15,13 @@ void GUIElement::Update(const float& dT) {
 	AdjustPositionToParent();
 	visual->Update(GetLocalBoundingBox());
 }
+
+void GUIElement::OnElementCreate(Manager_Texture* texturemgr, Manager_Font* fontmgr, KeyProcessing::Keys& attributes){
+	visual = std::make_unique<GUIVisual>(texturemgr, fontmgr);
+	ReadIn(attributes);
+	SetState(GUIState::NEUTRAL);
+}
+
 void GUIElement::OnNeutral(){
 	SetState(GUIState::NEUTRAL);
 	EventData::GUIEventInfo evntinfo;
@@ -45,7 +51,7 @@ void GUIElement::SetState(const GUIState& state) {
 }
 void GUIElement::ReadIn(KeyProcessing::Keys& keys) {
 	//TO DEFAULT THE KEYS TO ERROR OR TO SEARCH FOR EACH INDIVIDUAL KEY?
-	name = keys.find("ELEMENTNAME")->second;
+	name = keys.find("ELEMENT_NAME")->second;
 	(keys.find("ELEMENT_HIDDEN")->second == "FALSE") ? hidden = false : hidden = true;
 	(keys.find("ENABLED")->second == "FALSE") ? enabled = false : enabled = true;
 	std::string errorstr{ " for GUIElement of name " + name };
@@ -54,13 +60,13 @@ void GUIElement::ReadIn(KeyProcessing::Keys& keys) {
 	sf::Vector2f size;
 	sf::Vector2f origin;
 	sf::Vector2f position;
-	try { position.x = (std::stof(keys.find("POSITIONX%")->second) / 100); }
+	try { position.x = (std::stof(keys.find("POSITION_Y")->second) / 100); }
 	catch (const std::exception& exc) {}// { LOG::Log(LOCATION::GUIELEMENT, LOGTYPE::ERROR, __FUNCTION__, unabletoidentify + "{POSITIONX,x} / {POSITIONX%,x%} key " + errorstr); }
-	try { position.y = (std::stof(keys.find("POSITIONY%")->second) / 100); }
+	try { position.y = (std::stof(keys.find("POSITION_Y")->second) / 100); }
 	catch (const std::exception& exc) {}// { LOG::Log(LOCATION::GUIELEMENT, LOGTYPE::ERROR, __FUNCTION__, unabletoidentify + "{POSITIONY,y} / {POSITIONY%,y%} key " + errorstr); }
-	try { origin.x = std::stof(keys.find("ORIGINX%")->second) / 100; }
+	try { origin.x = std::stof(keys.find("ORIGIN_Y")->second) / 100; }
 	catch (const std::exception& exception) {}// { //LOG::Log(LOCATION::GUIELEMENT, LOGTYPE::ERROR, __FUNCTION__, unabletoidentify + "{ORIGINX%,x%} key " + errorstr);}
-	try { origin.y = std::stof(keys.find("ORIGINY%")->second) / 100; }
+	try { origin.y = std::stof(keys.find("ORIGIN_Y")->second) / 100; }
 	catch (const std::exception& exception) {}// {LOG::Log(LOCATION::GUIELEMENT, LOGTYPE::ERROR, __FUNCTION__, unabletoidentify + "{ORIGINY%,y%} key " + errorstr); }
 	position.y *= parentdimensions.y;
 	position.x *= parentdimensions.x;
@@ -68,8 +74,8 @@ void GUIElement::ReadIn(KeyProcessing::Keys& keys) {
 	bool sizexeq = false;
 	bool sizeyeq = false;
 	{
-		auto sizexkey = keys.find("SIZEX%")->second;
-		auto sizeykey = keys.find("SIZEY%")->second;
+		auto sizexkey = keys.find("SIZE_X")->second;
+		auto sizeykey = keys.find("SIZE_Y")->second;
 		try { size.x = std::stof(sizexkey) / 100; }
 		catch (const std::exception& exc) {
 			if (sizexkey == "=") sizexeq = true;

@@ -12,6 +12,11 @@
 #include "EventData.h"
 #include "GameStateData.h"
 #include "GUITextfield.h"
+// #include "GUITextfield.h"
+// #include "GUIScrollbar.h"
+// #include "GUITextfield.h"
+// #include "GUILabel.h"
+// #include "GUICheckbox.h"
 
 using EventData::GUIEventInfo;
 using GameStateData::GameStateType;
@@ -28,7 +33,7 @@ using Interfaces = std::vector<std::pair<std::string,GUIInterfacePtr>>;
 using GameStateInterfaces = std::unordered_map<GameStateType, Interfaces>; //each game state has a number of GUI interfaces.
 
 using GUIElementPtr = std::unique_ptr<GUIElement>;
-using GUIElementProducer = std::function<GUIElementPtr(GUIInterface*, GUIStateStyles, KeyProcessing::Keys&)>;
+using GUIElementProducer = std::function<GUIElementPtr(GUIInterface*, GUIStateStyles)>;
 using GUIElementFactory = std::unordered_map<GUIType, GUIElementProducer>;
 
 class Manager_GUI{
@@ -42,12 +47,18 @@ private:
 	mutable GameStateType activestate;
 	mutable GUITextfield* activetextfield{ nullptr };
 	template<typename T>
-	void RegisterElementProducer(const GUIType& type) { //factory pattern
-		elementfactory[type] = [&type,this](GUIInterface* parent, const GUIStateStyles& style, KeyProcessing::Keys& keys) {return std::make_unique<T>(parent,this, style, keys); };
+	bool RegisterElementProducer(const GUIType& type) { //factory pattern
+		if (elementfactory.find(type) != elementfactory.end()) return false;
+		elementfactory[type] = [type, this](GUIInterface* parent, const GUIStateStyles& style)->std::unique_ptr<T> {
+			if constexpr (std::is_same_v<typename std::decay_t<T>, GUIInterface>) return std::make_unique<T>(parent, this, style);
+			//if (type == GUIType::WINDOW) return std::make_unique<T>(parent, this, style);
+			else return std::make_unique<T>(parent, style);
+		};
+		return true;
 	}
 	GUIStateStyles CreateStyleFromFile(const std::string& stylefile);
-	//REFACTOR THIS.
-	GUIElementPtr CreateElement(GUIInterface* parent, Keys& keys);
+	//TEMPLATISE THIS
+	GUIElementPtr CreateElement(const GUIType& TYPE, GUIInterface* parent, Keys& keys);
 	GUIInterfacePtr CreateInterfaceFromFile(const std::string& interfacefile);
 	std::pair<bool,Interfaces::iterator> FindInterface(const GameStateType& state, const std::string& interfacename) noexcept;
 protected:

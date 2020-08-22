@@ -20,9 +20,10 @@ protected:
 	void OnClick(const sf::Vector2f& mousepos) override;
 	virtual void OnLeave() override;
 	virtual void OnRelease() override;
+	virtual void ReadIn(KeyProcessing::Keys& keys) override;
 	void SetCurrentStateString(const std::string& str);
 public:
-	GUITextfield(GUIInterface* parent, Manager_GUI* mgr,const GUIStateStyles& styles, KeyProcessing::Keys& attributes);
+	GUITextfield(GUIInterface* parent,const GUIStateStyles& styles);
 	
 	std::string GetCurrentStateString() const { return defaulttextstrings.at(static_cast<int>(activestate)); }
 	std::string GetTextfieldString(); //MAKE CONST
