@@ -49,9 +49,15 @@ GUIStateStyles Manager_GUI::CreateStyleFromFile(const std::string& stylefile){
 		if (!statekey.first) continue;
 		currentstate = GUIData::GUIStateData::converter(statekey.second->second);
 		if (currentstate == GUIState::NULLSTATE) continue;
-		try { styles.at(static_cast<int>(currentstate)).ReadIn<GUIFormattingData::BackgroundData::BG>(linekeys); }
+		auto styleproperty = KeyProcessing::GetKey("STYLE_PROPERTY", linekeys);
+		if (!styleproperty.first) continue;
+		auto& style = styles.at(static_cast<int>(currentstate));
+		try {
+			if (styleproperty.second->second == "TEXT") style.ReadIn<GUIFormattingData::TextData::Text>(linekeys);
+			else if (styleproperty.second->second == "BG") style.ReadIn<GUIFormattingData::BackgroundData::BG>(linekeys);
+			else throw CustomException("Unable to identify {STYLE_PROPERTY,PROPERTY} key");
+		}
 		catch (const CustomException& exception) {
-
 		}
 	}
 	return styles;
@@ -65,11 +71,10 @@ GUIElementPtr Manager_GUI::CreateElement(const GUIType& TYPE, GUIInterface* pare
 		{ "WINY",std::to_string(this->context->window->GetRenderWindow()->getSize().y) } }, keys);
 	using KeyProcessing::KeyPair;
 	std::string stylefile = keys.find("STYLE_FILE")->second;
-	auto element = elementfactory[TYPE](parent, CreateStyleFromFile(std::move(stylefile))); //DANGEROUS, ELT MAY NOT BE REGISTERED
-	element->OnElementCreate(context->texturemgr, context->fontmgr, keys);
+	auto element = elementfactory[TYPE](parent); //DANGEROUS, ELT MAY NOT BE REGISTERED
+	element->OnElementCreate(context->texturemgr, context->fontmgr, keys, CreateStyleFromFile(std::move(stylefile)));
 	return std::move(element);
 }
-
 GUIInterfacePtr Manager_GUI::CreateInterfaceFromFile(const std::string& interfacefile) {
 	using KeyProcessing::KeyPair;
 	using KeyProcessing::Keys;
@@ -116,7 +121,7 @@ GUIInterfacePtr Manager_GUI::CreateInterfaceFromFile(const std::string& interfac
 		GUIInterface* elementparent = leadinginterface;
 		if (!KeyProcessing::FillMissingKey(KeyPair{ "CONFIGURATION", "NESTED" }, linekeys)) elementparent = (linekeys.find("CONFIGURATION")->second == "NEW") ? masterinterface : leadinginterface;
 		try { element = CreateElement(element_type, elementparent, linekeys); }
-		catch (const std::exception& exception) {
+		catch (const CustomException& exception) {
 			if (std::string{ exception.what() } == "ELEMENTTYPE") LOG::Log(LOCATION::MANAGER_GUI, LOGTYPE::ERROR, __FUNCTION__, "Unable to read the GUIElement on line " + file.GetLineNumberString() + appenderrorstr + "DID NOT READ ELEMENT..");
 			continue;
 		}
@@ -133,7 +138,7 @@ GUIInterfacePtr Manager_GUI::CreateInterfaceFromFile(const std::string& interfac
 		}
 		//if its an element, add the element to the lastmost active interface structure
 		else interfacehierarchy[ninterfaces - 1].second.emplace_back(std::move(element));
-
+	}
 		//link up all the individual interfaces to their elements
 		for (auto& structure : interfacehierarchy) {
 			auto currentinterface = static_cast<GUIInterface*>(structure.second[0].get());
@@ -158,9 +163,8 @@ GUIInterfacePtr Manager_GUI::CreateInterfaceFromFile(const std::string& interfac
 			}
 		}
 		return std::unique_ptr<GUIInterface>(static_cast<GUIInterface*>(interfacehierarchy[0].second[0].release())); //return the master interface.
-
 	}
-}
+
 std::pair<bool,Interfaces::iterator> Manager_GUI::FindInterface(const GameStateType& state, const std::string& interfacename) noexcept{
 	auto& interfaces = stateinterfaces.at(state);
 	auto foundinterface = std::find_if(interfaces.begin(), interfaces.end(), [interfacename](const auto& p) {
@@ -264,7 +268,6 @@ void Manager_GUI::Draw() {
 		interface.second->Render(*context->window->GetRenderWindow(), true);
 	}
 }
-
 void Manager_GUI::SetActiveInterfacesEnable(const GUIInterface* exceptthis, const bool& enabled){
 	if (exceptthis == nullptr) return;
 	auto& activeinterfaces = GetActiveInterfaces();

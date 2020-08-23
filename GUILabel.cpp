@@ -1,7 +1,7 @@
 #include "GUILabel.h"
 #include "EventData.h"
 #include "Manager_GUI.h"
-GUILabel::GUILabel(GUIInterface* parent, const GUIStateStyles& style):GUIElement(parent,GUIType::LABEL,GUILayerType::CONTENT, style){
+GUILabel::GUILabel(GUIInterface* parent):GUIElement(parent,GUIType::LABEL,GUILayerType::CONTENT){
 
 }
 

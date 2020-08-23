@@ -33,7 +33,7 @@ using Interfaces = std::vector<std::pair<std::string,GUIInterfacePtr>>;
 using GameStateInterfaces = std::unordered_map<GameStateType, Interfaces>; //each game state has a number of GUI interfaces.
 
 using GUIElementPtr = std::unique_ptr<GUIElement>;
-using GUIElementProducer = std::function<GUIElementPtr(GUIInterface*, GUIStateStyles)>;
+using GUIElementProducer = std::function<GUIElementPtr(GUIInterface*)>;
 using GUIElementFactory = std::unordered_map<GUIType, GUIElementProducer>;
 
 class Manager_GUI{
@@ -49,10 +49,10 @@ private:
 	template<typename T>
 	bool RegisterElementProducer(const GUIType& type) { //factory pattern
 		if (elementfactory.find(type) != elementfactory.end()) return false;
-		elementfactory[type] = [type, this](GUIInterface* parent, const GUIStateStyles& style)->std::unique_ptr<T> {
-			if constexpr (std::is_same_v<typename std::decay_t<T>, GUIInterface>) return std::make_unique<T>(parent, this, style);
+		elementfactory[type] = [type, this](GUIInterface* parent)->std::unique_ptr<T> {
+			if constexpr (std::is_same_v<typename std::decay_t<T>, GUIInterface>) return std::make_unique<T>(parent, this);
 			//if (type == GUIType::WINDOW) return std::make_unique<T>(parent, this, style);
-			else return std::make_unique<T>(parent, style);
+			else return std::make_unique<T>(parent);
 		};
 		return true;
 	}

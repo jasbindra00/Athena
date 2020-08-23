@@ -8,7 +8,6 @@ int main() {
 	while (mygame.GetRenderWindow()->isOpen()) {
 		
 		mygame.Update();
-
 		mygame.Draw();
 		
 		

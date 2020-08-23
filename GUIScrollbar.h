@@ -4,7 +4,7 @@
 class GUIScrollbar : public GUIElement {
 private:
 public:
-	GUIScrollbar(GUIInterface* parent, const GUIStateStyles& styles);
+	GUIScrollbar(GUIInterface* parent);
 	void OnNeutral() override;
 	void OnHover() override;
 	void OnClick(const sf::Vector2f& mousepos) override;

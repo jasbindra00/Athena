@@ -4,7 +4,7 @@
 #include "Utility.h"
 
 
-GUITextfield::GUITextfield(GUIInterface* parent,const GUIStateStyles& styles):GUIElement(parent,GUIType::TEXTFIELD,GUILayerType::CONTENT, styles), predicatebitset(4026531840), maxchars(INT_MAX) {
+GUITextfield::GUITextfield(GUIInterface* parent):GUIElement(parent,GUIType::TEXTFIELD,GUILayerType::CONTENT), predicatebitset(4026531840), maxchars(INT_MAX) {
 	SetPredicates(0);
 	
 

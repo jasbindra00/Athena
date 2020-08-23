@@ -9,7 +9,7 @@
 //all we have to do, is change the texture.
 class GUICheckbox : public GUIElement {
 public:
-	GUICheckbox(GUIInterface* parent,const GUIStateStyles& styles);
+	GUICheckbox(GUIInterface* parent);
 	void OnNeutral() override;
 	void OnHover() override;
 	void OnClick(const sf::Vector2f& mousepos) override;

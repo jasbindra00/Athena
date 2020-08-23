@@ -12,6 +12,7 @@ using GUIElementIterator = GUIElements::iterator;
 namespace GUILayerData { class GUILayers;} //pImpl
 
 class GUIInterface : public GUIElement{
+	friend class GUIElement;
 private:
 	std::unique_ptr<GUILayerData::GUILayers> layers;
 	friend class GUIElement;
@@ -21,14 +22,16 @@ protected:
 	GUIElements elements;
 
 	Manager_GUI* guimgr{ nullptr };
+	virtual void SetState(const GUIState& state) override;
 	void DrawToLayer(const GUILayerType& layer,const sf::Drawable& drawable);
-	void Render(sf::RenderTarget& target, const bool& toparent);
+	void Render(sf::RenderTarget& target, const bool& toparent) override;
+
 	void Update(const float& dT) override;
 	virtual void ReadIn(KeyProcessing::Keys& keys) override;
-	virtual void OnElementCreate(Manager_Texture* texturemgr, Manager_Font* fontmgr, KeyProcessing::Keys& attributes) override;
+	virtual void OnElementCreate(Manager_Texture* texturemgr, Manager_Font* fontmgr, KeyProcessing::Keys& attributes, const GUIStateStyles& stylemap) override;
 	std::pair<bool, GUIElementIterator> GetElement(const std::string& elementname);	
 public:
-	GUIInterface(GUIInterface* parent, Manager_GUI* guimgr, const GUIStateStyles& styles);
+	GUIInterface(GUIInterface* parent, Manager_GUI* guimgr);
 
 	virtual void SetPosition(const sf::Vector2f& pos) override;
 	virtual void SetSize(const sf::Vector2f& size) override;
@@ -42,10 +45,11 @@ public:
 	bool AddElement(const std::string& eltname, std::unique_ptr<GUIElement>& elt);
 	bool RemoveElement(const std::string& eltname);
 	
-	const bool& PendingInterfaceRedraw() const;
-	
-	std::pair<bool, sf::Vector2f> EltOverhangs(const GUIElement* const elt);
+	virtual const bool& PendingParentRedraw() const override; //may have been redrawn to its layer already, in which case the visual will deactivate parent redraw. but the layer redraw will still be activated.
 
+	std::pair<bool, sf::Vector2f> EltOverhangs(const GUIElement* const elt);
+	const virtual sf::Vector2f& GetLocalPosition() const override;
+	
 	virtual ~GUIInterface();
 	
 };

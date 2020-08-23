@@ -10,6 +10,10 @@
 #include "ManagedResources.h"
 #include "KeyProcessing.h"
 #include "CustomException.h"
+
+
+
+//IT MAKES MORE SENSE TO INHERIT FROM GUIVISUAL.
 namespace GUIFormattingData {
 	using KeyProcessing::Keys;
 	using KeyProcessing::FoundKeys;
@@ -47,7 +51,7 @@ namespace GUIFormattingData {
 			sf::IntRect texture_rect;
 			sf::Color fill_color;
 			sf::Color outline_color;
-			unsigned int outline_thickness;
+			unsigned int outline_thickness{ 1 };
 			BGAttribute ReadIn(const std::string& attributetype, const Keys& keys) {
 				BGAttribute attribute = BGAttributeConv(attributetype);
 				if (attribute == BGAttribute::NULLTYPE) return attribute;
@@ -199,20 +203,21 @@ namespace GUIFormattingData {
 		Text text;
 	public:
 		template<typename T, typename = typename std::enable_if_t<IS_TEXT<T>::value || IS_BG<T>::value>>
-		auto ReadIn(const KeyProcessing::Keys& keys) {
+		bool ReadIn(const KeyProcessing::Keys& keys) {
 			std::string propertytype;
-			try { propertytype = keys.find("PROPERTY_ATTRIBUTE")->second; }
-			catch (const std::exception& exception) { throw CustomException("Unable to find the {PROPERTY_ATTRIBUTE,TYPE} key"); }
-			if constexpr (IS_BG<T>::value) {
-				BGAttribute res = background.ReadIn(std::move(propertytype), keys);
-				if (res != BGAttribute::NULLTYPE) pendingbgapply = true;
-				return res;
-			
-			}
-			else if constexpr (IS_TEXT<T>::value) {
-				TEXTAttribute res = text.ReadIn(std::move(propertytype), keys);
-				if (res != TEXTAttribute::NULLTYPE) pendingtextapply = true;
-				return res;
+			auto property_attribute = KeyProcessing::GetKey("PROPERTY_ATTRIBUTE", keys);
+			if (property_attribute.first) {
+				propertytype = property_attribute.second->second;
+				if constexpr (IS_BG<T>::value) {
+					if (background.ReadIn(std::move(propertytype), keys) == BGAttribute::NULLTYPE) return false;
+					pendingbgapply = true;
+					return true;
+				}
+				else if constexpr (IS_TEXT<T>::value) {
+					if (text.ReadIn(std::move(propertytype), keys) == TextData::TEXTAttribute::NULLTYPE) return false;
+					pendingtextapply = true;
+					return true;
+				}
 			}
 		}
 	};
@@ -225,6 +230,10 @@ namespace GUIFormattingData {
 	using GUIData::GUIStateData::GUIState;
 	class GUIVisual {
 	private:
+		/*
+		-whenever the visual has been redrawn, we need to be able to tell its corresponding parent layer.
+		*/
+
 		GUIStateStyles statestyles;
 
 		sf::Vector2f elementsize;
@@ -237,8 +246,6 @@ namespace GUIFormattingData {
 		bool pendingstateapply;
 		bool pendingsizeapply;
 		bool pendingpositionapply;
-		bool pendingupdate;
-
 
 		sf::RectangleShape background;
 		sf::Text text;
@@ -270,8 +277,6 @@ namespace GUIFormattingData {
 			GetResource<RESOURCE>() = resmanager->RequestResource(resname);
 			return GetResource<RESOURCE>().get();
 		}
-	
-
 		template<typename RESOURCE, typename = typename ManagedResourceData::ENABLE_IF_MANAGED_RESOURCE<RESOURCE>::type>
 		void ReleasePreviousStyleResource() {
 			auto& activestyle = statestyles.at(static_cast<int>(activestate));
@@ -294,12 +299,15 @@ namespace GUIFormattingData {
 		void ApplySize() {
 			background.setSize(elementsize);
 			pendingsizeapply = false;
+			pendingparentredraw = true;
 		}
 		void ApplyState(GUIStyle& activestyle, const sf::FloatRect& eltboundingbox) {
 			ReleasePrevStyleResources();
 			ApplyBackground(activestyle);
 			ApplyText(activestyle, eltboundingbox);
 			pendingstateapply = false;
+			pendingparentredraw = true;
+
 		}
 		void ApplyText(GUIStyle& activestyle, const sf::FloatRect& eltlocalboundingbox) {
 			auto& textattr = activestyle.text;
@@ -353,29 +361,30 @@ namespace GUIFormattingData {
 				textattr.character_size = newcharsize;
 			}
 			activestyle.pendingtextapply = false;
+			pendingparentredraw = true;
 		}
 		void ApplyBackground(GUIStyle& activestyle) {
 			const auto& bg = activestyle.background;
 			background.setFillColor(bg.fill_color);
 			background.setOutlineColor(bg.outline_color);
 			background.setOutlineThickness(bg.outline_thickness);
-			background.setTexture(RequestVisualResource<sf::Texture>());
-			background.setTextureRect(bg.texture_rect);
+			//background.setTexture(RequestVisualResource<sf::Texture>());
+			//background.setTextureRect(bg.texture_rect);
 			activestyle.pendingbgapply = false;
+			pendingparentredraw = true;
 		}
 		void ApplyPosition() {
 			background.setPosition(elementlocalposition);
 			text.setPosition(elementlocalposition);
 			pendingpositionapply = false;
+			pendingparentredraw = true;
 		}
 
 	public:
-		GUIVisual(Manager_Texture* tmgr, Manager_Font* fmgr) :texturemgr(tmgr), fontmgr(fmgr) {
-			background.setFillColor(sf::Color::Transparent);
-			text.setFillColor(sf::Color::Transparent);
-			text.setPosition(sf::Vector2f{ 0,0 });
+		GUIVisual(Manager_Texture* tmgr, Manager_Font* fmgr, const GUIStateStyles& styles = GUIStateStyles{}) :texturemgr(tmgr), fontmgr(fmgr),statestyles(styles) {
+			pendingstateapply = true;
 		}
-
+	
 		template<BGAttribute arg>
 		const auto& GetBGAttribute() {
 			auto& background = statestyles.at(static_cast<int>(activestate)).background;
@@ -395,15 +404,14 @@ namespace GUIFormattingData {
 			else if constexpr (arg == TEXTAttribute::STRING) return text.text_string;
 			else if constexpr (arg == TEXTAttribute::HIDDEN) return text.text_hidden;
 		}
-		bool& Update(const sf::FloatRect& eltrect) {
+		const bool& Update(const sf::FloatRect& eltrect) {
 			auto& activestyle = GetStyle(activestate);
+			if (pendingstateapply) ApplyState(activestyle, eltrect);
 			if (pendingpositionapply) ApplyPosition();
 			if (pendingsizeapply) ApplySize();
-			if (pendingstateapply) ApplyState(activestyle, eltrect);
 			//apply individual, non state changes made by the user.
 			if (activestyle.pendingbgapply) ApplyBackground(activestyle);
 			if (activestyle.pendingtextapply) ApplyText(activestyle, eltrect);
-
 			return pendingparentredraw;
 		}
 
@@ -414,37 +422,38 @@ namespace GUIFormattingData {
 
 		-property attribute can either be a template, or a argument. argument makes sense.
 		-accept a propertyattribute argument.
-		-cast it to an int, and insert into keys.
-		-this way, the readin will easily be able to switch.
-
-		-
+		-ex
 		*/
-		template<typename PROPERTY, typename = typename std::enable_if_t<IS_BG<PROPERTY>::value || IS_TEXT<PROPERTY>::value>, typename PROPERTY_ATTRIBUTE = typename DEDUCE_PROPERTY_ATTRIBUTE<PROPERTY>>
+		template<typename PROPERTY, typename = typename std::enable_if_t<IS_BG<PROPERTY>::value || IS_TEXT<PROPERTY>::value>>
 		void ReadIn(const GUIData::GUIStateData::GUIState& state, const KeyProcessing::Keys& keys) {
-			statestyles[static_cast<int>(state)].ReadIn<PROPERTY>(keys);
+			try {
+				auto res = statestyles[static_cast<int>(state)].ReadIn<PROPERTY>(keys);
+				if (res) pendingparentredraw = true;
+			}
+			catch (...) {
+
+			}
 			/*if (state == activestate) QueueState(state);*/
 		}
 		void QueuePosition(const sf::Vector2f& position) {
 			elementlocalposition = position;
 			pendingpositionapply = true;
-			pendingparentredraw = true;
 		}
 		const sf::Vector2f& GetElementSize() const { return elementsize; }
 		const sf::Vector2f& GetElementPosition() const { return elementlocalposition; }
 		void QueueSize(const sf::Vector2f& size) {
 			elementsize = size;
 			pendingsizeapply = true;
-			pendingparentredraw = true;
 		}
 		void QueueState(const GUIState& state) {
 			previousstate = activestate;
 			activestate = state;
-			GetStyle(activestate).pendingbgapply = true;
-			GetStyle(activestate).pendingtextapply = true;
 			pendingstateapply = true;
-			pendingparentredraw = true;
 		}
 		void Render(sf::RenderTarget& target, const bool& toparent) {
+
+			//THE STYLE HAS NOT BEEN APPLIED
+			/*Update(sf::FloatRect{});*/
 			target.draw(background);
 			if (!GetStyle(activestate).text.text_hidden)target.draw(text);
 			//if this has been draw onto its parent, then it has been redrawn.

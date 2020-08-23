@@ -1,6 +1,6 @@
 #include "GUICheckbox.h"
 
-GUICheckbox::GUICheckbox(GUIInterface* parent,const GUIStateStyles& styles):GUIElement(parent, GUIType::CHECKBOX,GUILayerType::CONTENT, styles){
+GUICheckbox::GUICheckbox(GUIInterface* parent):GUIElement(parent, GUIType::CHECKBOX,GUILayerType::CONTENT){
 	//specific keys for elements
 
 }

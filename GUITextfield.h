@@ -23,7 +23,7 @@ protected:
 	virtual void ReadIn(KeyProcessing::Keys& keys) override;
 	void SetCurrentStateString(const std::string& str);
 public:
-	GUITextfield(GUIInterface* parent,const GUIStateStyles& styles);
+	GUITextfield(GUIInterface* parent);
 	
 	std::string GetCurrentStateString() const { return defaulttextstrings.at(static_cast<int>(activestate)); }
 	std::string GetTextfieldString(); //MAKE CONST

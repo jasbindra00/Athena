@@ -1,4 +1,5 @@
 #include "GUIInterface.h"
+#include "GUILayerData.h"
 #include "Manager_Texture.h"
 #include "Manager_Font.h"
 #include "Manager_GUI.h"
@@ -6,22 +7,27 @@
 #include <array>
 
 
-GUIElement::GUIElement(GUIInterface* p,const GUIType& t, const GUILayerType& layer,const GUIStateStyles& stylemap) :type(t),layertype(layer), parent(p) {
+GUIElement::GUIElement(GUIInterface* p,const GUIType& t, const GUILayerType& layer) :type(t),layertype(layer), parent(p) {
 }
 void GUIElement::Render(sf::RenderTarget& target, const bool& toparent){
 	visual->Render(target,toparent);
+}
+void GUIElement::Render() {
+	using GUILayerData::GUILayer;
+	if (!parent) return;
+	if(type == GUIType::WINDOW) static_cast<GUIInterface*>(this)->layers->Render(parent->layers->GetLayerTarget(GUILayerType::CONTENT), true);
+	else (visual->Render(parent->layers->GetLayerTarget(layertype), true));
 }
 void GUIElement::Update(const float& dT) {
 	AdjustPositionToParent();
 	visual->Update(GetLocalBoundingBox());
 }
 
-void GUIElement::OnElementCreate(Manager_Texture* texturemgr, Manager_Font* fontmgr, KeyProcessing::Keys& attributes){
-	visual = std::make_unique<GUIVisual>(texturemgr, fontmgr);
+void GUIElement::OnElementCreate(Manager_Texture* texturemgr, Manager_Font* fontmgr, KeyProcessing::Keys& attributes, const GUIStateStyles& styles){
+	visual = std::make_unique<GUIVisual>(texturemgr, fontmgr, styles);
 	ReadIn(attributes);
 	SetState(GUIState::NEUTRAL);
 }
-
 void GUIElement::OnNeutral(){
 	SetState(GUIState::NEUTRAL);
 	EventData::GUIEventInfo evntinfo;
@@ -45,7 +51,7 @@ void GUIElement::AdjustPositionToParent() {
 }
 
 void GUIElement::SetState(const GUIState& state) {
-	if (state == activestate) return;
+	/*if (state == activestate) return;*/
 	activestate = state;
 	visual->QueueState(state);
 }
@@ -59,10 +65,11 @@ void GUIElement::ReadIn(KeyProcessing::Keys& keys) {
 	const sf::Vector2f parentdimensions = (parent == nullptr) ? sf::Vector2f{ std::stof(keys.find("WINX")->second), std::stof(keys.find("WINY")->second) } : parent->GetSize();
 	sf::Vector2f size;
 	sf::Vector2f origin;
-	sf::Vector2f position;
-	try { position.x = (std::stof(keys.find("POSITION_Y")->second) / 100); }
+	sf::Vector2f position = visual->GetElementPosition();
+	bool pendingposition{ false };
+	try { position.x = (std::stof(keys.find("POSITION_X")->second) / 100);}
 	catch (const std::exception& exc) {}// { LOG::Log(LOCATION::GUIELEMENT, LOGTYPE::ERROR, __FUNCTION__, unabletoidentify + "{POSITIONX,x} / {POSITIONX%,x%} key " + errorstr); }
-	try { position.y = (std::stof(keys.find("POSITION_Y")->second) / 100); }
+	try { position.y = (std::stof(keys.find("POSITION_Y")->second) / 100);}
 	catch (const std::exception& exc) {}// { LOG::Log(LOCATION::GUIELEMENT, LOGTYPE::ERROR, __FUNCTION__, unabletoidentify + "{POSITIONY,y} / {POSITIONY%,y%} key " + errorstr); }
 	try { origin.x = std::stof(keys.find("ORIGIN_Y")->second) / 100; }
 	catch (const std::exception& exception) {}// { //LOG::Log(LOCATION::GUIELEMENT, LOGTYPE::ERROR, __FUNCTION__, unabletoidentify + "{ORIGINX%,x%} key " + errorstr);}
@@ -99,9 +106,9 @@ void GUIElement::ReadIn(KeyProcessing::Keys& keys) {
 	if (position.x + size.x >= parentdimensions.x) size.x = parentdimensions.x - position.x;
 	if (position.y + size.y >= parentdimensions.y) size.y = parentdimensions.y - position.y;
 
-	visual->ReadIn<GUIFormattingData::Text>(activestate, KeyProcessing::Keys{ {"STRING", std::move(name)} });
-	visual->QueuePosition(std::move(position));
-	visual->QueueSize(std::move(size));
+	if (size != sf::Vector2f{0, 0} && size != visual->GetElementSize()) visual->QueueSize(std::move(size));
+	SetPosition(std::move(position));
+	SetSize((size));
 }
 
 void GUIElement::SetPosition(const sf::Vector2f& position){

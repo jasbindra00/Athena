@@ -47,8 +47,8 @@ public:
 	void Update() {
 		float dT = clock.getElapsedTime().asSeconds();
 		statemanager->Update(dT);
+		window->Update(dT); //ORDER MATTERS.
 		guimgr->Update(dT);
-		window->Update(dT);
 		clock.restart();
 	}
 	void Draw() {
