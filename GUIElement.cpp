@@ -9,20 +9,18 @@
 
 GUIElement::GUIElement(GUIInterface* p,const GUIType& t, const GUILayerType& layer) :type(t),layertype(layer), parent(p) {
 }
-void GUIElement::Render(sf::RenderTarget& target, const bool& toparent){
-	visual->Render(target,toparent);
-}
-void GUIElement::Render() {
-	using GUILayerData::GUILayer;
-	if (!parent) return;
-	if(type == GUIType::WINDOW) static_cast<GUIInterface*>(this)->layers->Render(parent->layers->GetLayerTarget(GUILayerType::CONTENT), true);
-	else (visual->Render(parent->layers->GetLayerTarget(layertype), true));
-}
-void GUIElement::Update(const float& dT) {
-	AdjustPositionToParent();
-	visual->Update(GetLocalBoundingBox());
+void GUIElement::Draw(sf::RenderTarget& target, const bool& toparent){
+	visual->Draw(target,toparent);
 }
 
+void GUIElement::Update(const float& dT) {
+	AdjustPositionToParent();
+	if (name == "CONFIRM") {
+		int x = 4;
+		visual->Update(GetLocalBoundingBox(), parent->GetLocalBoundingBox());
+	}
+	else visual->Update(GetLocalBoundingBox(), sf::FloatRect{});
+}
 void GUIElement::OnElementCreate(Manager_Texture* texturemgr, Manager_Font* fontmgr, KeyProcessing::Keys& attributes, const GUIStateStyles& styles){
 	visual = std::make_unique<GUIVisual>(texturemgr, fontmgr, styles);
 	ReadIn(attributes);
@@ -65,13 +63,13 @@ void GUIElement::ReadIn(KeyProcessing::Keys& keys) {
 	const sf::Vector2f parentdimensions = (parent == nullptr) ? sf::Vector2f{ std::stof(keys.find("WINX")->second), std::stof(keys.find("WINY")->second) } : parent->GetSize();
 	sf::Vector2f size;
 	sf::Vector2f origin;
-	sf::Vector2f position = visual->GetElementPosition();
+	sf::Vector2f position = GetLocalPosition();
 	bool pendingposition{ false };
 	try { position.x = (std::stof(keys.find("POSITION_X")->second) / 100);}
 	catch (const std::exception& exc) {}// { LOG::Log(LOCATION::GUIELEMENT, LOGTYPE::ERROR, __FUNCTION__, unabletoidentify + "{POSITIONX,x} / {POSITIONX%,x%} key " + errorstr); }
 	try { position.y = (std::stof(keys.find("POSITION_Y")->second) / 100);}
 	catch (const std::exception& exc) {}// { LOG::Log(LOCATION::GUIELEMENT, LOGTYPE::ERROR, __FUNCTION__, unabletoidentify + "{POSITIONY,y} / {POSITIONY%,y%} key " + errorstr); }
-	try { origin.x = std::stof(keys.find("ORIGIN_Y")->second) / 100; }
+	try { origin.x = std::stof(keys.find("ORIGIN_X")->second) / 100; }
 	catch (const std::exception& exception) {}// { //LOG::Log(LOCATION::GUIELEMENT, LOGTYPE::ERROR, __FUNCTION__, unabletoidentify + "{ORIGINX%,x%} key " + errorstr);}
 	try { origin.y = std::stof(keys.find("ORIGIN_Y")->second) / 100; }
 	catch (const std::exception& exception) {}// {LOG::Log(LOCATION::GUIELEMENT, LOGTYPE::ERROR, __FUNCTION__, unabletoidentify + "{ORIGINY%,y%} key " + errorstr); }
@@ -106,19 +104,29 @@ void GUIElement::ReadIn(KeyProcessing::Keys& keys) {
 	if (position.x + size.x >= parentdimensions.x) size.x = parentdimensions.x - position.x;
 	if (position.y + size.y >= parentdimensions.y) size.y = parentdimensions.y - position.y;
 
-	if (size != sf::Vector2f{0, 0} && size != visual->GetElementSize()) visual->QueueSize(std::move(size));
+	std::array<KeyProcessing::FoundKey, 3> customtextoverrides;
+	customtextoverrides[0] = KeyProcessing::GetKey("CUSTOM_TEXT_NEUTRAL", keys); //REFACTOR THIS
+	customtextoverrides[1] = KeyProcessing::GetKey("CUSTOM_TEXT_CLICKED", keys);
+	customtextoverrides[2] = KeyProcessing::GetKey("CUSTOM_TEXT_FOCUSED", keys);
+	if (name == "CONFIRM") {
+		int z = 4;
+	}
+	for (int i = 0; i < 3; ++i) {
+		if (customtextoverrides[i].first) {
+			std::string str = customtextoverrides[i].second->second;
+			std::replace(str.begin(), str.end(), '+', ' ');
+			visual->ReadIn<GUIFormattingData::TextData::Text>(static_cast<GUIState>(i), KeyProcessing::Keys{ {"PROPERTY_ATTRIBUTE", "STRING"}, {"STRING", std::move(str)} });
+		}
+	}
+	if (size != sf::Vector2f{0, 0}) SetSize(std::move(size));
 	SetPosition(std::move(position));
-	SetSize((size));
 }
-
 void GUIElement::SetPosition(const sf::Vector2f& position){
 	visual->QueuePosition(position);
 }
-
 void GUIElement::SetSize(const sf::Vector2f& size){
 	visual->QueueSize(size);
 }
-
 std::string GUIElement::GetHierarchyString(){
 	if (parent == nullptr) return name;
 	GUIInterface* mparent = parent;

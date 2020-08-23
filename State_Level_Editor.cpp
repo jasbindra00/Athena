@@ -24,9 +24,9 @@ void State_LevelEditor::Deactivate(){
 }
 void State_LevelEditor::OnCreate(){
 	guimgr->CreateStateInterface(GameStateData::GameStateType::LEVELEDITOR, "Bot_Panel", "Interface_StateLevelEditor_Bot_Panel.txt");
-	//auto popup = guimgr->CreateStateInterface(GameStateData::GameStateType::LEVELEDITOR, "POP_UP_PANEL", "Interface_StateLevelEditor_PopUp_Panel.txt");
-//	guimgr->CreateStateInterface(GameStateData::GameStateType::LEVELEDITOR, "RIGHT_PANEL", "Interface_StateLevelEditor_Right_Panel.txt");
-//	guimgr->CreateStateInterface(GameStateData::GameStateType::LEVELEDITOR, "Top_Panel", "Interface_StateLevelEditor_Top_Panel.txt");
+	auto popup = guimgr->CreateStateInterface(GameStateData::GameStateType::LEVELEDITOR, "POP_UP_PANEL", "Interface_StateLevelEditor_PopUp_Panel.txt");
+	guimgr->CreateStateInterface(GameStateData::GameStateType::LEVELEDITOR, "RIGHT_PANEL", "Interface_StateLevelEditor_Right_Panel.txt");
+	guimgr->CreateStateInterface(GameStateData::GameStateType::LEVELEDITOR, "Top_Panel", "Interface_StateLevelEditor_Top_Panel.txt");
 	
 }
 void State_LevelEditor::OnDestroy(){
@@ -44,36 +44,32 @@ void State_LevelEditor::Continue()
 }
 
 void State_LevelEditor::ActivatePopUp(EventData::EventDetails* details){
-// 	GUIInterface* panel = guimgr->GetInterface(GameStateData::GameStateType::LEVELEDITOR, "POP_UP_PANEL");
-// 	panel->SetHidden(false);
-// 	guimgr->SetActiveInterfacesEnable(panel, false);
+	GUIInterface* panel = guimgr->GetInterface(GameStateData::GameStateType::LEVELEDITOR, "POP_UP_PANEL");
+	panel->SetHidden(false);
+	guimgr->SetActiveInterfacesEnable(panel, false);
 }
 
 void State_LevelEditor::DeactivatePopUp(EventData::EventDetails* details) {
-// 	GUIInterface* panel = guimgr->GetInterface(GameStateData::GameStateType::LEVELEDITOR, "POP_UP_PANEL");
-// 	panel->SetHidden(true);
-// 	guimgr->SetActiveInterfacesEnable(panel, true);
+	GUIInterface* panel = guimgr->GetInterface(GameStateData::GameStateType::LEVELEDITOR, "POP_UP_PANEL");
+	panel->SetHidden(true);
+	guimgr->SetActiveInterfacesEnable(panel, true);
 }
 
 void State_LevelEditor::ConfirmButtonPopUp(EventData::EventDetails* details){
-// 	//check if texture dimension is less than 32.
-// 	//LOG ERROR IF CONFIRM && INVALID ARGS
-// 	std::string errorstring;
-// 	std::vector<std::string> hierarchystr{ "CONFIRM", "POP_UP_PANEL" };
-// 	auto texturexfield = guimgr->GetElement<GUITextfield>(GameStateType::LEVELEDITOR, { "TEXTURE_X_TEXTFIELD", "POP_UP_PANEL" });
-// 	if (!texturexfield->GetTextfieldString().empty()) {
-// 		if (std::stoi(texturexfield->GetTextfieldString()) <= 32) {
-// 			auto textureyfield = guimgr->GetElement<GUITextfield>(GameStateType::LEVELEDITOR, { "TEXTURE_Y_TEXTFIELD", "POP_UP_PANEL" });
-// 			if (!textureyfield->GetTextfieldString().empty()) {
-// 				if (std::stoi(textureyfield->GetTextfieldString()) <= 32) {
-// 					std::string spritesheetname = guimgr->GetElement<GUITextfield>(GameStateType::LEVELEDITOR, { "SPRITESHEETNAME", "POP_UP_PANEL" })->GetTextfieldString();
-// 					if (LoadSheet(spritesheetname)) {
-// 						DeactivatePopUp(details);
-// 					}
-// 				}
-// 			}
-// 		}
-// 	}
+	auto texturexfield = guimgr->GetElement<GUITextfield>(GameStateType::LEVELEDITOR, { "TEXTURE_X_TEXTFIELD", "POP_UP_PANEL" });
+	if (!texturexfield->GetTextfieldString().empty()) {
+		if (std::stoi(texturexfield->GetTextfieldString()) <= 32) {
+			auto textureyfield = guimgr->GetElement<GUITextfield>(GameStateType::LEVELEDITOR, { "TEXTURE_Y_TEXTFIELD", "POP_UP_PANEL" });
+			if (!textureyfield->GetTextfieldString().empty()) {
+				if (std::stoi(textureyfield->GetTextfieldString()) <= 32) {
+					std::string spritesheetname = guimgr->GetElement<GUITextfield>(GameStateType::LEVELEDITOR, { "SPRITESHEETNAME", "POP_UP_PANEL" })->GetTextfieldString();
+					if (LoadSheet(spritesheetname)) {
+						DeactivatePopUp(details);
+					}
+				}
+			}
+		}
+	}
 }
 
 bool State_LevelEditor::LoadSheet(const std::string& sheetname){

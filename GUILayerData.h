@@ -25,27 +25,24 @@ namespace GUILayerData {
 			layer.create(eltsize.x, eltsize.y);
 			layersprite.setTexture(layer.getTexture());
 		}
-	
-		//render to parent
-		void Render(sf::RenderTarget& target, const bool& toparent) {
+		void Draw(sf::RenderTarget& target, const bool& toparent) {
 			target.draw(layersprite);
 		}
-		//redraw all the corresponding elements to this layer.
-		//if its a background layer, we want to draw the visual.
-		void RedrawLayer(GUIVisual& visual, const GUIElements& elements) { 
- 			layer.clear(sf::Color::Color(0, 0, 0, 0));
-			if (layertype == GUILayerType::BACKGROUND) {
-				visual.Render(layer, true);//draw visual to layer if background
-			}
-			for (auto& element : elements) {
-				if (element.second->IsHidden()) continue;
-				if (element.second->GetLayerType() == layertype) { 
-				if (element.second->GetType() == GUIType::WINDOW && layertype != GUILayerType::CONTENT) continue; //interfaces are only drawn to our content layer.
-				element.second->Render(layer,true);
+		void RefreshLayer(GUIVisual& visual, const GUIElements& elements) {
+			layer.clear(sf::Color::Color(0, 0, 0, 0));
+			if(layertype == GUILayerType::BACKGROUND) visual.Draw(layer, true);
+			for (auto& elt : elements) {
+				if (elt.second->GetLayerType() == layertype) {
+					if (elt.second->IsHidden()) continue;
+					//ensure that all of the children have been drawn onto the interface.
+					  //we need to call UpdateLayer on the interface.
+					elt.second->Draw(layer, true);
+					//draw it to the layer.
 				}
+				//if its not part of the current layer, then do we still draw in? no. the other layers will handle it since we are in the middle of a loop going through all layers.
 			}
 			layer.display();
-			pendinglayerredraw = false;
+			pendinglayerredraw = false;			
 		}
 		void SetSize(const sf::Vector2f& size) {
 			layer.create(size.x, size.y);
@@ -88,22 +85,20 @@ using GUIData::GUILayerType;
 			if (eltsize != sf::Vector2f{}) for (int i = 0; i < 3; ++i) layers[i] = std::make_unique<GUILayer>(eltsize,static_cast<GUILayerType>(i));
 			else for (int i = 0; i < 3; ++i) layers[i] = std::make_unique<GUILayer>(static_cast<GUILayerType>(i));
 		}
-		void Update(GUIVisual& visual, const GUIElements& elements) {
+		void RefreshChanges(GUIVisual& visual, const GUIElements& elements) {
 			for (int layernum = 0; layernum < layers.size(); ++layernum) {
 				auto& layer = layers[layernum];
 				if (pendingsizeapply) { layer->SetSize(interfacesize); }
 				if (pendingpositionapply) { layer->SetPosition(interfaceposition); }
-				bool pendinglayer = layer->PendingLayerRedraw();
-
-				if (pendinglayer) {
-					layer->RedrawLayer(visual, elements);
+				if (layer->PendingLayerRedraw()) { //only refresh changed layers.
+					layer->RefreshLayer(visual, elements);
 				}
-				pendingsizeapply = false;
-				pendingpositionapply = false;
 			}
+			pendingsizeapply = false;
+			pendingpositionapply = false;
 		}
-		void Render(sf::RenderTarget& target, const bool& toparent) {
-			for (auto& layer : layers) layer->Render(target, toparent);
+		void Rasterize(sf::RenderTarget& target, const bool& toparent) {
+			for (auto& layer : layers) layer->Draw(target, toparent);
 			if (toparent) pendingparentredraw = false;
 		}
 		void QueueSize(const sf::Vector2f& size) {

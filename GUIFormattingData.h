@@ -109,13 +109,13 @@ namespace GUIFormattingData {
 	}
 	namespace TextData {
 		static enum class TEXTAttribute {
-			CHARACTER_SIZE, STRING, POSITION_PERCENTAGE, ORIGIN_PERCENTAGE, FONT_NAME, HIDDEN, NULLTYPE = -1
+			CHARACTER_SIZE, STRING, POSITION, ORIGIN, FONT_NAME, HIDDEN, NULLTYPE = -1
 		};
 		static EnumConverter<TEXTAttribute> TEXTAttributeConv([](const std::string& str)->TEXTAttribute {
 			if (str == "CHARACTER_SIZE") return TEXTAttribute::CHARACTER_SIZE;
 			else if (str == "STRING") return TEXTAttribute::STRING;
-			else if (str == "POSITION_PERCENTAGE") return TEXTAttribute::POSITION_PERCENTAGE;
-			else if (str == "ORIGIN_PERCENTAGE") return TEXTAttribute::ORIGIN_PERCENTAGE;
+			else if (str == "POSITION_PERCENTAGE") return TEXTAttribute::POSITION;
+			else if (str == "ORIGIN_PERCENTAGE") return TEXTAttribute::ORIGIN;
 			else if (str == "HIDDEN") return TEXTAttribute::HIDDEN;
 			else if (str == "FONT_NAME") return TEXTAttribute::FONT_NAME;
 			return TEXTAttribute::NULLTYPE;
@@ -144,9 +144,9 @@ namespace GUIFormattingData {
 					text_string = attributekey.second->second;
 					break;
 				}
-				case TEXTAttribute::POSITION_PERCENTAGE: {
-					auto percentagex = KeyProcessing::GetKey("POSITION_PERCENTAGE_X", keys);
-					auto percentagey = KeyProcessing::GetKey("POSITION_PERCENTAGE_Y", keys);
+				case TEXTAttribute::POSITION: {
+					auto percentagex = KeyProcessing::GetKey("POSITION_X", keys);
+					auto percentagey = KeyProcessing::GetKey("POSITION_Y", keys);
 					bool valid = false;
 					if (percentagex.first) {
 						valid = true;
@@ -161,9 +161,9 @@ namespace GUIFormattingData {
 					if (!valid) return TEXTAttribute::NULLTYPE; //at least one key has to be present for the change to be registered.
 					break;
 				}
-				case TEXTAttribute::ORIGIN_PERCENTAGE: {
-					auto originpercentagex = KeyProcessing::GetKey("ORIGIN_PERCENTAGE_X", keys);
-					auto originpercentagey = KeyProcessing::GetKey("ORIGIN_PERCENTAGE_Y", keys);
+				case TEXTAttribute::ORIGIN: {
+					auto originpercentagex = KeyProcessing::GetKey("ORIGIN_X", keys);
+					auto originpercentagey = KeyProcessing::GetKey("ORIGIN_Y", keys);
 					bool valid = false;
 					if (originpercentagex.first) {
 						valid = true;
@@ -311,12 +311,14 @@ namespace GUIFormattingData {
 		}
 		void ApplyText(GUIStyle& activestyle, const sf::FloatRect& eltlocalboundingbox) {
 			auto& textattr = activestyle.text;
+			if (textattr.text_string == "CONFIRM") {
+				int x = 1;
+			}
 			text.setFillColor(textattr.fill_color);
 			text.setCharacterSize(textattr.character_size);
 			RequestVisualResource<sf::Texture>();
 			text.setFont(*RequestVisualResource<sf::Font>());
 			auto& str = textattr.text_string;
-			text.setString(str);
 			str.erase(std::remove(str.begin(), str.end(), '\b'), str.end());
 			//remove any \\n so that sf::text formats \n properly.
 			for (auto it = str.begin(); it != str.end(); ++it) {
@@ -328,6 +330,7 @@ namespace GUIFormattingData {
 					}
 				}
 			}
+			text.setString(str);
 			sf::Vector2f textsize;
 			sf::Vector2f localorigin;
 			sf::Vector2f textposition;
@@ -399,12 +402,13 @@ namespace GUIFormattingData {
 			auto& text = statestyles.at(static_cast<int>(activestate)).text;
 			if constexpr (arg == TEXTAttribute::CHARACTER_SIZE) return text.character_size;
 			else if constexpr (arg == TEXTAttribute::FONT_NAME) return text.font_name;
-			else if constexpr (arg == TEXTAttribute::ORIGIN_PERCENTAGE) return text.origin_proportion;
-			else if constexpr (arg == TEXTAttribute::POSITION_PERCENTAGE) return text.position_proportion;
+			else if constexpr (arg == TEXTAttribute::ORIGIN) return text.origin_proportion;
+			else if constexpr (arg == TEXTAttribute::POSITION) return text.position_proportion;
 			else if constexpr (arg == TEXTAttribute::STRING) return text.text_string;
 			else if constexpr (arg == TEXTAttribute::HIDDEN) return text.text_hidden;
 		}
-		const bool& Update(const sf::FloatRect& eltrect) {
+		const bool& Update(const sf::FloatRect& eltrect, const sf::FloatRect& parentrect) {
+			parentrect;
 			auto& activestyle = GetStyle(activestate);
 			if (pendingstateapply) ApplyState(activestyle, eltrect);
 			if (pendingpositionapply) ApplyPosition();
@@ -450,10 +454,7 @@ namespace GUIFormattingData {
 			activestate = state;
 			pendingstateapply = true;
 		}
-		void Render(sf::RenderTarget& target, const bool& toparent) {
-
-			//THE STYLE HAS NOT BEEN APPLIED
-			/*Update(sf::FloatRect{});*/
+		void Draw(sf::RenderTarget& target, const bool& toparent) {
 			target.draw(background);
 			if (!GetStyle(activestate).text.text_hidden)target.draw(text);
 			//if this has been draw onto its parent, then it has been redrawn.

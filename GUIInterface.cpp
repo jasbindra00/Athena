@@ -18,7 +18,6 @@ void GUIInterface::SetSize(const sf::Vector2f& size) {
 	GUIElement::SetSize(size);
 	layers->QueueSize(size); 
 }
-
 bool GUIInterface::AddElement(const std::string& eltname, std::unique_ptr<GUIElement>& elt) {
 	std::pair<bool, GUIElementIterator> found = GetElement(eltname);
 	if (found.first) return false;	
@@ -46,25 +45,22 @@ bool GUIInterface::RemoveElement(const std::string& eltname) {
 	}
 	return false;
 }
-
 const bool& GUIInterface::PendingParentRedraw() const { return layers->PendingParentRedraw(); }
-
 void GUIInterface::SetState(const GUIState& state){
 	GUIElement::SetState(state);
 	//redrawing one layer will trigger an entire redraw to its parent.
+
 	layers->QueueLayerRedraw(GUILayerType::BACKGROUND); //visual has been redrawn.
 	//the interface as an entity has changed appearance. it must be redrawn to its parent content layer.
 	if (parent) parent->layers->QueueLayerRedraw(GUILayerType::CONTENT);
 	//if it does not have a parent, then it still needs 
 }
-
 void GUIInterface::DrawToLayer(const GUILayerType& layer, const sf::Drawable& drawable){
 	layers->DrawToLayer(layer,drawable);
 }
-
-void GUIInterface::Render(sf::RenderTarget& target, const bool& toparent){
-	layers->Update(*visual, elements); //applies redraws, size..
-	(parent == nullptr) ? layers->Render(target, toparent) : layers->Render(parent->layers->GetLayerTarget(layertype), toparent);
+void GUIInterface::Draw(sf::RenderTarget& target, const bool& toparent){
+	layers->RefreshChanges(*visual, elements);
+	layers->Rasterize(target, toparent);
 }
 void GUIInterface::Update(const float& dT) {
 	auto mouseposition = static_cast<sf::Vector2f>(sf::Mouse::getPosition(*guimgr->GetContext()->window->GetRenderWindow()));
@@ -74,12 +70,11 @@ void GUIInterface::Update(const float& dT) {
 		if (element.second->Contains(mouseposition) && element.second->GetActiveState() == GUIState::NEUTRAL) element.second->OnHover();
 		else if (element.second->GetActiveState() == GUIState::FOCUSED) element.second->OnLeave();
 		element.second->Update(dT);
-		//the pending redraw status can be changed by state.
-		//can also be changed by user read in. if user read in, visual will automatically apply the pending parent change.
-		if ((element.second->GetType() != GUIType::WINDOW && element.second->PendingParentRedraw())) layers->QueueLayerRedraw(element.second->GetLayerType());
+		if ((element.second->GetType() != GUIType::WINDOW && element.second->PendingParentRedraw())) {
+			layers->QueueLayerRedraw(element.second->GetLayerType());
+		}
 	}
 }
-
 void GUIInterface::ReadIn(KeyProcessing::Keys& keys){ //called by user at arbritary point in the future.
 	GUIElement::ReadIn(keys);
 
@@ -94,8 +89,6 @@ std::pair<bool, GUIElements::iterator> GUIInterface::GetElement(const std::strin
 		});
 	return(it == elements.end()) ? std::make_pair(false, it) : std::make_pair(true, it);
 }
-
-
 void GUIInterface::OnClick(const sf::Vector2f& pos) {
 	std::cout << "INTERFACECLICK" << std::endl;
 	GUIElement::OnClick(pos); //dispatches event.

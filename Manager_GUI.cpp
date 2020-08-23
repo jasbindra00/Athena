@@ -100,11 +100,12 @@ GUIInterfacePtr Manager_GUI::CreateInterfaceFromFile(const std::string& interfac
 
 		}
 	}
+	using IsNestedInterface = bool;
 	file.PutBackLine();
 	GUIInterface* leadinginterface{ nullptr };
 	GUIInterface* masterinterface{ nullptr };
 	int ninterfaces{ 0 };
-	std::vector<std::pair<std::string, std::vector<GUIElementPtr>>> interfacehierarchy;
+	std::vector<std::pair<IsNestedInterface, std::vector<GUIElementPtr>>> interfacehierarchy;
 	while (file.NextLine().GetFileStream()) {
 		Keys linekeys = KeyProcessing::ExtractValidKeys(file.ReturnLine());
 		//fill the standard keys for base guielement.
@@ -119,17 +120,24 @@ GUIInterfacePtr Manager_GUI::CreateInterfaceFromFile(const std::string& interfac
 		GUIType element_type = GUIData::GUITypeData::converter(linekeys.find("ELEMENT_TYPE")->second);
 		GUIElementPtr element;
 		GUIInterface* elementparent = leadinginterface;
-		if (!KeyProcessing::FillMissingKey(KeyPair{ "CONFIGURATION", "NESTED" }, linekeys)) elementparent = (linekeys.find("CONFIGURATION")->second == "NEW") ? masterinterface : leadinginterface;
+		//check if there is a configuration key. otherwise, default is nested.
+		if (!KeyProcessing::FillMissingKey(KeyPair{ "CONFIGURATION", "X" }, linekeys)) {
+			if (linekeys.find("CONFIGURATION")->second == "NEW") elementparent = masterinterface;
+		}
 		try { element = CreateElement(element_type, elementparent, linekeys); }
 		catch (const CustomException& exception) {
 			if (std::string{ exception.what() } == "ELEMENTTYPE") LOG::Log(LOCATION::MANAGER_GUI, LOGTYPE::ERROR, __FUNCTION__, "Unable to read the GUIElement on line " + file.GetLineNumberString() + appenderrorstr + "DID NOT READ ELEMENT..");
 			continue;
 		}
 		if (element_type == GUIType::WINDOW) {
-			if (ninterfaces == 0) masterinterface = static_cast<GUIInterface*>(element.get());
+			bool isnested = (elementparent == leadinginterface);
+			if (ninterfaces == 0) {
+				masterinterface = static_cast<GUIInterface*>(element.get());
+				isnested = false;
+			}
 			//create a new structure line
-			std::string configurationtype = (elementparent == leadinginterface) ? std::string{ "NESTED" } : std::string{ "NEW" };
-			interfacehierarchy.push_back({ std::move(configurationtype), std::vector<GUIElementPtr>{} });
+			
+			interfacehierarchy.push_back({ std::move(isnested), std::vector<GUIElementPtr>{} });
 			//this is now the leading interface. subsequent nested interfaces will be relative to this one.
 			leadinginterface = static_cast<GUIInterface*>(element.get());
 			//add the interface as the first element within its structure
@@ -137,8 +145,13 @@ GUIInterfacePtr Manager_GUI::CreateInterfaceFromFile(const std::string& interfac
 			++ninterfaces;
 		}
 		//if its an element, add the element to the lastmost active interface structure
-		else interfacehierarchy[ninterfaces - 1].second.emplace_back(std::move(element));
+		else {
+			int hierarchypos = ninterfaces - 1;
+			if (elementparent == masterinterface) hierarchypos = 0;
+			interfacehierarchy.at(hierarchypos).second.emplace_back(std::move(element));
+		}
 	}
+
 		//link up all the individual interfaces to their elements
 		for (auto& structure : interfacehierarchy) {
 			auto currentinterface = static_cast<GUIInterface*>(structure.second[0].get());
@@ -155,15 +168,16 @@ GUIInterfacePtr Manager_GUI::CreateInterfaceFromFile(const std::string& interfac
 		for (int i = interfacehierarchy.size() - 1; i > 0; --i) {
 			auto& structure = interfacehierarchy.at(i);
 			auto& interfaceptr = structure.second.at(0);
-			//If the current element is a new interface, then the parent is the master (first) interface.
-			//Else if the current element is a nested interface, then the parent is the interface that which came immediately before it.
-			GUIInterface* parent = static_cast<GUIInterface*>((structure.first == "NEW") ? interfacehierarchy.at(0).second.at(0).get() : interfacehierarchy.at(i - 1).second.at(0).get());
+			int hierarchypos = i - 1;
+			if (structure.first == false) hierarchypos = 0; //if the current hierarchy is a new interface.
+			auto parent = static_cast<GUIInterface*>(interfacehierarchy.at(hierarchypos).second.at(0).get());
 			if (!parent->AddElement(interfaceptr->GetName(), interfaceptr)) {
 				LOG::Log(LOCATION::MANAGER_GUI, LOGTYPE::ERROR, __FUNCTION__, "Ambiguous element name within interface file of name " + interfacefile + "DID NOT ADD ELEMENT..");
 			}
 		}
 		return std::unique_ptr<GUIInterface>(static_cast<GUIInterface*>(interfacehierarchy[0].second[0].release())); //return the master interface.
 	}
+
 
 std::pair<bool,Interfaces::iterator> Manager_GUI::FindInterface(const GameStateType& state, const std::string& interfacename) noexcept{
 	auto& interfaces = stateinterfaces.at(state);
@@ -265,7 +279,7 @@ void Manager_GUI::Draw() {
 	auto& stategui = stateinterfaces.at(activestate);
 	for (auto& interface : stategui) {
 		if (interface.second->IsHidden()) continue;
-		interface.second->Render(*context->window->GetRenderWindow(), true);
+		interface.second->Draw(*context->window->GetRenderWindow(), true);
 	}
 }
 void Manager_GUI::SetActiveInterfacesEnable(const GUIInterface* exceptthis, const bool& enabled){

@@ -2,7 +2,7 @@
 #include "GUIInterface.h"
 #include "Manager_GUI.h"
 #include "Utility.h"
-
+#include <iostream>
 
 GUITextfield::GUITextfield(GUIInterface* parent):GUIElement(parent,GUIType::TEXTFIELD,GUILayerType::CONTENT), predicatebitset(4026531840), maxchars(INT_MAX) {
 	SetPredicates(0);
@@ -44,16 +44,19 @@ void GUITextfield::ReadIn(KeyProcessing::Keys& keys){
 	catch (const std::exception& exception) {}
 }
 
-void GUITextfield::SetCurrentStateString(const std::string& str) { GetVisual().ReadIn<GUIFormattingData::Text>(activestate, KeyProcessing::Keys{ { "STRING", str } }); }
+void GUITextfield::SetCurrentStateString(const std::string& str) { GetVisual().ReadIn<GUIFormattingData::Text>(activestate, KeyProcessing::Keys{ {"PROPERTY_ATTRIBUTE","STRING"}, { "STRING", str } }); }
 
 void GUITextfield::AppendChar(const char& c){
 	std::string str = GetTextfieldString();
 	if (str.size() + 1 > maxchars) return;
-	GetVisual().ReadIn<GUIFormattingData::Text>(activestate, KeyProcessing::Keys{ {"STRING", std::move(str + c)} });
+	std::cout << str + c << std::endl;
+	GetVisual().ReadIn<GUIFormattingData::Text>(activestate, KeyProcessing::Keys{ {"PROPERTY_ATTRIBUTE", "STRING"}, {"STRING", std::move(str + c)} });
+
 }
 void GUITextfield::PopChar() {	
 	std::string str = GetTextfieldString();
 	if(str.size() == 0) return;
 	str.pop_back();
-	GetVisual().ReadIn<GUIFormattingData::Text>(activestate, KeyProcessing::Keys{ {"STRING", std::move(str)} });
+	GetVisual().ReadIn<GUIFormattingData::Text>(activestate, KeyProcessing::Keys{ {"PROPERTY_ATTRIUTE","STRING"}, {"STRING", std::move(str)} });
+	std::cout << str << std::endl;
 }

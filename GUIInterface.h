@@ -24,8 +24,7 @@ protected:
 	Manager_GUI* guimgr{ nullptr };
 	virtual void SetState(const GUIState& state) override;
 	void DrawToLayer(const GUILayerType& layer,const sf::Drawable& drawable);
-	void Render(sf::RenderTarget& target, const bool& toparent) override;
-
+	void Draw(sf::RenderTarget& target, const bool& toparent) override;
 	void Update(const float& dT) override;
 	virtual void ReadIn(KeyProcessing::Keys& keys) override;
 	virtual void OnElementCreate(Manager_Texture* texturemgr, Manager_Font* fontmgr, KeyProcessing::Keys& attributes, const GUIStateStyles& stylemap) override;

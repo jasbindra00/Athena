@@ -27,9 +27,7 @@ class GUIElement{ //abstract base class for specialised GUIElements.
 	friend class Manager_GUI;
 private:
 	std::unique_ptr<GUIVisual> visual;
-	virtual void QueueRedrawToParent() {
-		
-	}
+
 protected:
 	GUILayerType layertype;
 	mutable GUIState activestate;
@@ -46,7 +44,6 @@ protected:
 	virtual void OnClick(const sf::Vector2f& mousepos);
 	virtual void OnLeave() = 0;
 	virtual void OnRelease() = 0;
-	void Render();
 	void AdjustPositionToParent();
 	virtual void SetState(const GUIState& state);
 	virtual void Update(const float& dT);
@@ -54,7 +51,7 @@ protected:
 	virtual void OnElementCreate(Manager_Texture* texturemgr, Manager_Font* fontmgr, KeyProcessing::Keys& attributes, const GUIStateStyles& stylemap);
 public:
 	GUIElement(GUIInterface* parent, const GUIType& type, const GUILayerType& layertype);
-	virtual void Render(sf::RenderTarget& target, const bool& toparent);
+	virtual void Draw(sf::RenderTarget& target, const bool& toparent);
 	virtual void ReadIn(KeyProcessing::Keys& keys);
 
 	virtual void SetEnabled(const bool& inp) const { enabled = inp; }
@@ -78,7 +75,11 @@ public:
 	const virtual sf::Vector2f& GetLocalPosition() const { return visual->GetElementPosition(); }
 	sf::Vector2f GetGlobalPosition() const;
 	constexpr GUILayerType GetLayerType() { return layertype; }
-	virtual sf::FloatRect GetLocalBoundingBox() const { return sf::FloatRect{ GetLocalPosition(), visual->GetElementSize() }; }
+	virtual sf::FloatRect GetLocalBoundingBox() const {
+		if (name == "CONFIRM") {
+			int z = 3;
+		}
+		return sf::FloatRect{ GetLocalPosition(), GetSize() }; }
 	std::string GetHierarchyString();
 
 	Manager_GUI* GetGUIManager();

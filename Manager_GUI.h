@@ -61,11 +61,10 @@ private:
 	GUIElementPtr CreateElement(const GUIType& TYPE, GUIInterface* parent, Keys& keys);
 	GUIInterfacePtr CreateInterfaceFromFile(const std::string& interfacefile);
 	std::pair<bool,Interfaces::iterator> FindInterface(const GameStateType& state, const std::string& interfacename) noexcept;
-protected:
+protected:\
 	Interfaces& GetActiveInterfaces() { return stateinterfaces.at(activestate); }
 public:
 	Manager_GUI(SharedContext* context);
-	
 	template<typename T>
 	T* GetElement(const GameStateType& state, const std::vector<std::string> hierarchy) {
 		if (hierarchy.empty()) return nullptr;
