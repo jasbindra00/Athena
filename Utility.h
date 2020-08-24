@@ -82,7 +82,7 @@ namespace Utility {
 		if (!hierarchystr.empty() && hierarchystr.back() == ' ') hierarchystr.pop_back();
 		return hierarchystr;
 		}
-	namespace CharacterCheckData {
+	namespace CharacterCheckData {//REFACTOR THIS.
 		static enum class STRING_PREDICATE : long long {
 			LOWER_CASE_ALPHABET = 2147483648,
 			UPPER_CASE_ALPHABET = 1073741824,
@@ -136,7 +136,7 @@ namespace Utility {
 		}
 		static bool PredicateCheck(const Bitmask& mask, const char& c) {
 			bool res = false;
-			for (int i = 0; i < 5; ++i) {
+			for (unsigned int i = 0; i < 6; ++i) {
 				if (mask.GetBit(i) == true) {
 					if (ValidCharacter(predmap.at(i), c)) res = true;
 				}

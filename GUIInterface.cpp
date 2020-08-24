@@ -11,6 +11,14 @@ GUIInterface::GUIInterface(GUIInterface* p, Manager_GUI* mgr)
 	:guimgr(mgr), GUIElement(p, GUIType::WINDOW, GUILayerType::CONTENT) {
 	layers = std::make_unique<GUILayerData::GUILayers>();//init the size to the user defined visual size.
 }
+
+
+
+void GUIInterface::SetHidden(const bool& inp) const{
+	GUIElement::SetHidden(inp);
+	layers->QueueParentRedraw();
+}
+
 void GUIInterface::SetPosition(const sf::Vector2f& pos) {
 	layers->QueuePosition(pos); 
 }
@@ -70,9 +78,11 @@ void GUIInterface::Update(const float& dT) {
 		if (element.second->Contains(mouseposition) && element.second->GetActiveState() == GUIState::NEUTRAL) element.second->OnHover();
 		else if (element.second->GetActiveState() == GUIState::FOCUSED) element.second->OnLeave();
 		element.second->Update(dT);
-		if ((element.second->GetType() != GUIType::WINDOW && element.second->PendingParentRedraw())) {
-			layers->QueueLayerRedraw(element.second->GetLayerType());
-		}
+		//non interfaces have no way of communicating with layers.
+		//this may be needed if the user produces an additional change to the 
+// 		if ((element.second->GetType() != GUIType::WINDOW && element.second->PendingParentRedraw())) { //RESOLVE VIA VIRTUAL 
+// 			layers->QueueLayerRedraw(element.second->GetLayerType());
+// 		}
 	}
 }
 void GUIInterface::ReadIn(KeyProcessing::Keys& keys){ //called by user at arbritary point in the future.

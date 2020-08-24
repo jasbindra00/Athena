@@ -305,12 +305,11 @@ namespace GUIFormattingData {
 			pendingparentredraw = true;
 		}
 	public:
-	
 		GUIVisual(Manager_Texture* tmgr, Manager_Font* fmgr, const GUIStateStyles& styles = GUIStateStyles{}) :texturemgr(tmgr), fontmgr(fmgr),statestyles(styles) {
 			pendingstateapply = true;
 		}
-		const bool& Update(const sf::FloatRect& eltrect, const sf::FloatRect& parentrect) {
-			parentrect;
+		const bool& Update(const sf::FloatRect& eltrect) {
+
 			auto& activestyle = GetStyle(activestate);
 			if (pendingstateapply) ApplyState(activestyle, eltrect);
 			if (pendingpositionapply) ApplyPosition();
@@ -347,7 +346,7 @@ namespace GUIFormattingData {
 		}
 		const bool& PendingParentRedraw() const { return pendingparentredraw; }
 		const bool& PendingSizeApply() const { return pendingsizeapply; }
+		void QueueParentRedraw() { pendingparentredraw = true; }//ENCAPSULATE
 	};
-
 }
 #endif

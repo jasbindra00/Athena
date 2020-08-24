@@ -90,7 +90,15 @@ using GUIData::GUILayerType;
 				auto& layer = layers[layernum];
 				if (pendingsizeapply) { layer->SetSize(interfacesize); }
 				if (pendingpositionapply) { layer->SetPosition(interfaceposition); }
-				if (layer->PendingLayerRedraw()) { //only refresh changed layers.
+				//loop through all elements, check if they are requesting a parent redraw.
+				bool child_redraw_request{ false };
+				for (auto& elt : elements) {
+					if (elt.second->PendingParentRedraw()) {
+						child_redraw_request = true;
+						break;
+					}
+				}
+				if (layer->PendingLayerRedraw() || child_redraw_request) { //only refresh changed layers.
 					layer->RefreshLayer(visual, elements);
 				}
 			}
@@ -113,6 +121,9 @@ using GUIData::GUILayerType;
 		}
 		void QueueLayerRedraw(const GUILayerType& layertype) { 
 			layers.at(static_cast<int>(layertype))->QueueLayerRedraw();
+			pendingparentredraw = true;
+		}
+		void QueueParentRedraw() {
 			pendingparentredraw = true;
 		}
 		const bool& PendingParentRedraw() const { return pendingparentredraw; }

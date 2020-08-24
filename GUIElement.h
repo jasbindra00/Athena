@@ -56,7 +56,10 @@ public:
 	virtual void ReadIn(KeyProcessing::Keys& keys);
 
 	virtual void SetEnabled(const bool& inp) const { enabled = inp; }
-	void SetHidden(const bool& inp) const { hidden = inp; }
+	virtual void SetHidden(const bool& inp) const {
+		hidden = inp; 
+		visual->QueueParentRedraw();
+	}
 	virtual void SetPosition(const sf::Vector2f& position);
 	virtual void SetSize(const sf::Vector2f& size);
 
@@ -77,9 +80,7 @@ public:
 	sf::Vector2f GetGlobalPosition() const;
 	constexpr GUILayerType GetLayerType() { return layertype; }
 	virtual sf::FloatRect GetLocalBoundingBox() const {
-		if (name == "CONFIRM") {
-			int z = 3;
-		}
+
 		return sf::FloatRect{ GetLocalPosition(), GetSize() }; }
 	std::string GetHierarchyString();
 

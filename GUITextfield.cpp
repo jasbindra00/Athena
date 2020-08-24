@@ -14,7 +14,7 @@ std::string GUITextfield::GetTextfieldString() {
 void GUITextfield::OnNeutral(){
 	auto textfieldstr = GetTextfieldString();
 	GUIElement::OnNeutral();
-	if (textfieldstr.empty()) SetCurrentStateString("ENTER_HERE");
+	if (textfieldstr.empty()) SetCurrentStateString(default_text_string);
 	else SetCurrentStateString(std::move(textfieldstr));
 }
 
@@ -23,7 +23,7 @@ void GUITextfield::OnHover(){
 void GUITextfield::OnClick(const sf::Vector2f& mousepos) {
 	auto currstr = GetTextfieldString();
 	SetState(GUIState::FOCUSED);
-	if (currstr == "ENTER_HERE") SetCurrentStateString("");
+	if (currstr == default_text_string) SetCurrentStateString("");
 }
 void GUITextfield::OnLeave(){
 }
@@ -48,12 +48,10 @@ void GUITextfield::SetCurrentStateString(const std::string& str) { GetVisual().G
 
 void GUITextfield::OnElementCreate(Manager_Texture* texturemgr, Manager_Font* fontmgr, KeyProcessing::Keys& attributes, const GUIStateStyles& stylemap){
 	GUIElement::OnElementCreate(texturemgr, fontmgr, attributes, stylemap);
-	GetVisual().GetStyle(GUIState::NEUTRAL).ReadIn(STYLE_ATTRIBUTE::TEXT_STRING, std::string{ "ENTER_HERE" });
-	GetVisual().GetStyle(GUIState::FOCUSED).ReadIn(STYLE_ATTRIBUTE::TEXT_STRING, std::string{ "" });
+	default_text_string = std::get<std::string>(GetVisual().GetStyle(GUIState::NEUTRAL).GetAttribute(STYLE_ATTRIBUTE::TEXT_STRING));
 }
 
-void GUITextfield::AppendChar(const char& c){
-	if (!Predicate(c)) return;
+void GUITextfield::AppendChar(const char& c){	
 	std::string str = GetTextfieldString();
 	if (str.size() + 1 > maxchars) return;
 	std::cout << str + c << std::endl;

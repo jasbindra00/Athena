@@ -15,11 +15,10 @@ void GUIElement::Draw(sf::RenderTarget& target, const bool& toparent){
 
 void GUIElement::Update(const float& dT) {
 	AdjustPositionToParent();
-	if (name == "CONFIRM") {
-		int x = 4;
-		visual->Update(GetLocalBoundingBox(), parent->GetLocalBoundingBox());
-	}
-	else visual->Update(GetLocalBoundingBox(), sf::FloatRect{});
+	//the user may have made changes to the visual, and this change must be communicated to the parent's layers.
+	visual->Update(GetLocalBoundingBox());
+	
+	
 }
 void GUIElement::OnElementCreate(Manager_Texture* texturemgr, Manager_Font* fontmgr, KeyProcessing::Keys& attributes, const GUIStateStyles& styles){
 	visual = std::make_unique<GUIVisual>(texturemgr, fontmgr, styles);

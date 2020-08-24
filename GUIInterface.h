@@ -32,6 +32,7 @@ protected:
 public:
 	GUIInterface(GUIInterface* parent, Manager_GUI* guimgr);
 
+	virtual void SetHidden(const bool& inp) const override;
 	virtual void SetPosition(const sf::Vector2f& pos) override;
 	virtual void SetSize(const sf::Vector2f& size) override;
 	virtual void OnClick(const sf::Vector2f& pos) override;

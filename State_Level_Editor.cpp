@@ -27,10 +27,10 @@ void State_LevelEditor::OnCreate(){
 	auto popup = guimgr->CreateStateInterface(GameStateData::GameStateType::LEVELEDITOR, "POP_UP_PANEL", "Interface_StateLevelEditor_PopUp_Panel.txt");
 	guimgr->CreateStateInterface(GameStateData::GameStateType::LEVELEDITOR, "RIGHT_PANEL", "Interface_StateLevelEditor_Right_Panel.txt");
 	guimgr->CreateStateInterface(GameStateData::GameStateType::LEVELEDITOR, "Top_Panel", "Interface_StateLevelEditor_Top_Panel.txt");
-	guimgr->GetElement<GUITextfield>(GameStateType::LEVELEDITOR, { "SPRITESHEET_NAME", "POP_UP_PANEL" })->SetPredicates(static_cast<int>(Utility::CharacterCheckData::STRING_PREDICATE::FILE_NAME));
-	guimgr->GetElement<GUITextfield>(GameStateType::LEVELEDITOR, { "TEXTURE_X_TEXTFIELD", "POP_UP_PANEL" })->SetPredicates(static_cast<int>(Utility::CharacterCheckData::STRING_PREDICATE::NUMBER));
-	guimgr->GetElement<GUITextfield>(GameStateType::LEVELEDITOR, { "TEXTURE_Y_TEXTFIELD", "POP_UP_PANEL" })->SetPredicates(static_cast<int>(Utility::CharacterCheckData::STRING_PREDICATE::NUMBER));
-
+	guimgr->GetElement<GUITextfield>(GameStateType::LEVELEDITOR, { "SPRITESHEET_NAME", "POP_UP_PANEL" })->SetPredicates(static_cast<unsigned int>(Utility::CharacterCheckData::STRING_PREDICATE::FILE_NAME));
+	guimgr->GetElement<GUITextfield>(GameStateType::LEVELEDITOR, { "TEXTURE_X_TEXTFIELD", "POP_UP_PANEL" })->SetPredicates(static_cast<unsigned int>(Utility::CharacterCheckData::STRING_PREDICATE::NUMBER));
+	guimgr->GetElement<GUITextfield>(GameStateType::LEVELEDITOR, { "TEXTURE_Y_TEXTFIELD", "POP_UP_PANEL" })->SetPredicates(static_cast<unsigned int>(Utility::CharacterCheckData::STRING_PREDICATE::NUMBER));
+	ActivatePopUp(nullptr);
 	
 	
 }
@@ -42,35 +42,41 @@ void State_LevelEditor::UpdateCamera()
 {
 
 }
-
 void State_LevelEditor::Continue()
 {
 
 }
-
 void State_LevelEditor::ActivatePopUp(EventData::EventDetails* details){
 	GUIInterface* panel = guimgr->GetInterface(GameStateData::GameStateType::LEVELEDITOR, "POP_UP_PANEL");
 	panel->SetHidden(false);
 	guimgr->SetActiveInterfacesEnable(panel, false);
 }
-
 void State_LevelEditor::DeactivatePopUp(EventData::EventDetails* details) {
 	GUIInterface* panel = guimgr->GetInterface(GameStateData::GameStateType::LEVELEDITOR, "POP_UP_PANEL");
 	panel->SetHidden(true);
 	guimgr->SetActiveInterfacesEnable(panel, true);
 }
-
 void State_LevelEditor::ConfirmButtonPopUp(EventData::EventDetails* details){
+
 	auto texturexfield = guimgr->GetElement<GUITextfield>(GameStateType::LEVELEDITOR, { "TEXTURE_X_TEXTFIELD", "POP_UP_PANEL" });
-	if (!texturexfield->GetTextfieldString().empty()) {
+	auto textureyfield = guimgr->GetElement<GUITextfield>(GameStateType::LEVELEDITOR, { "TEXTURE_Y_TEXTFIELD", "POP_UP_PANEL" });
+	guimgr->GetElement<GUITextfield>(GameStateType::LEVELEDITOR, { "SPRITESHEET_NAME", "POP_UP_PANEL" })->GetTextfieldString();
+
+	
+
+
+
+	if (auto texturexstr = texturexfield->GetTextfieldString(); !texturexstr.empty() && texturexstr != texturexfield->GetDefaultTextfieldString()){
 		if (std::stoi(texturexfield->GetTextfieldString()) <= 32) {
 			auto textureyfield = guimgr->GetElement<GUITextfield>(GameStateType::LEVELEDITOR, { "TEXTURE_Y_TEXTFIELD", "POP_UP_PANEL" });
-			if (!textureyfield->GetTextfieldString().empty()) {
+			if (auto textureystr = textureyfield->GetTextfieldString();  !textureyfield->GetTextfieldString().empty() && textureystr != textureyfield->GetDefaultTextfieldString()) {
 				if (std::stoi(textureyfield->GetTextfieldString()) <= 32) {
-					std::string spritesheetname = guimgr->GetElement<GUITextfield>(GameStateType::LEVELEDITOR, { "SPRITESHEETNAME", "POP_UP_PANEL" })->GetTextfieldString();
+					std::string spritesheetname = guimgr->GetElement<GUITextfield>(GameStateType::LEVELEDITOR, { "SPRITESHEET_NAME", "POP_UP_PANEL" })->GetTextfieldString();
 					if (LoadSheet(spritesheetname)) {
 						DeactivatePopUp(details);
+						return;
 					}
+					//sheet has been loaded.
 				}
 			}
 		}
@@ -85,5 +91,4 @@ bool State_LevelEditor::LoadSheet(const std::string& sheetname){
 		return true;
 	}
 	return false;
-
 }
