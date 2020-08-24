@@ -10,230 +10,155 @@
 #include "ManagedResources.h"
 #include "KeyProcessing.h"
 #include "CustomException.h"
+#include <type_traits>
+#include "MagicEnum.h"
+#include <variant>
+#include "Utility.h"
 
 
-
-//IT MAKES MORE SENSE TO INHERIT FROM GUIVISUAL.
+class Manager_GUI;
 namespace GUIFormattingData {
 	using KeyProcessing::Keys;
 	using KeyProcessing::FoundKeys;
-	static auto ProcessColor(const Keys& keys, sf::Color res) {
-		FoundKeys foundkeys = KeyProcessing::GetKeys({ "R", "G", "B", "A" }, keys);
-		bool successful = false;
-		std::array<unsigned int, 4> rgba{ res.r, res.g,res.b,res.a };
-		for (int i = 0; i < 4; ++i) {
-			auto& foundkey = foundkeys.at(i);
-			if (foundkey.first) {
-				try { rgba.at(i) = std::stoi(foundkey.second->second); successful = true; }
-				catch(...){ }
-			}
-		}
-		res.r = std::move(rgba.at(0));
-		res.g = std::move(rgba.at(1));
-		res.b = std::move(rgba.at(2));
-		res.a = std::move(rgba.at(3));
-		return std::make_pair( std::move(successful), std::move(res) );
-	}
-	namespace BackgroundData {
-		static enum class BGAttribute {
-			FILL_COLOR, OUTLINE_COLOR, OUTLINE_THICKNESS, TEXTURE_NAME, TEXTURE_RECT, NULLTYPE = -1
-		};
-		static EnumConverter<BGAttribute> BGAttributeConv([](const std::string& str)->BGAttribute {
-			if (str == "FILL_COLOR") return BGAttribute::FILL_COLOR;
-			else if (str == "OUTLINE_COLOR") return BGAttribute::OUTLINE_COLOR;
-			else if (str == "OUTLINE_THICKENSS") return BGAttribute::OUTLINE_THICKNESS;
-			else if (str == "TEXTURE_NAME") return BGAttribute::TEXTURE_NAME;
-			else if (str == "TEXTURE_RECT") return BGAttribute::TEXTURE_RECT;
-			return BGAttribute::NULLTYPE;
-			});
-		struct BG {
-			std::string texture_name;
-			sf::IntRect texture_rect;
-			sf::Color fill_color;
-			sf::Color outline_color;
-			unsigned int outline_thickness{ 1 };
-			BGAttribute ReadIn(const std::string& attributetype, const Keys& keys) {
-				BGAttribute attribute = BGAttributeConv(attributetype);
-				if (attribute == BGAttribute::NULLTYPE) return attribute;
-				auto attributekey = KeyProcessing::GetKey(attributetype,keys);
-				switch (attribute) {
-				case BGAttribute::FILL_COLOR: {
-					std::pair<bool, sf::Color> res = ProcessColor(keys, fill_color);
-					if (!res.first) return BGAttribute::NULLTYPE;
-					fill_color = std::move(res.second);
-					break;
-				}
-				case BGAttribute::OUTLINE_COLOR: {
-					std::pair<bool, sf::Color> res = ProcessColor(keys, outline_color);
-					if (!res.first) return BGAttribute::NULLTYPE;
-					outline_color = std::move(res.second);
-					break;
-				}
-				case BGAttribute::OUTLINE_THICKNESS: {
-					if (!attributekey.first) return BGAttribute::NULLTYPE;
-					try { outline_thickness = std::stoi(attributekey.second->second); }
-					catch (...) { return BGAttribute::NULLTYPE;}
-					break;
-				}
-				case BGAttribute::TEXTURE_NAME: {
-					if (!attributekey.first) return BGAttribute::NULLTYPE;
-					texture_name = attributekey.second->second;
-					break;
-				}
-				case BGAttribute::TEXTURE_RECT: {
-					bool successful = false;
-					std::array<unsigned int, 4> dimensionvals;
-					FoundKeys dimensions = KeyProcessing::GetKeys({ "TOP_LEFT_X", "TOP_LEFT_Y", "SIZE_X", "SIZE_Y" }, keys);
-					for (int i = 0; i < 4; ++i) {
-						auto& dimension = dimensions.at(i);
-						if (dimension.first) {
-							try { dimensionvals.at(i) = std::stoi(dimension.second->second); }
-							catch (const std::exception& exception) {}
-							successful = true;
-						}
-					}
-					if (!successful) return BGAttribute::NULLTYPE;
-					texture_rect.left = dimensionvals.at(0);
-					texture_rect.top = dimensionvals.at(1);
-					texture_rect.width = dimensionvals.at(2);
-					texture_rect.height = dimensionvals.at(3);
-					if (!successful) return BGAttribute::NULLTYPE;
-					break;
-				}
-				}
-				return attribute;
-			}
-		};
-		template<typename T>
-		using IS_BG = std::is_same<typename std::decay_t<T>, BG>;
-	}
-	namespace TextData {
-		static enum class TEXTAttribute {
-			CHARACTER_SIZE, STRING, POSITION, ORIGIN, FONT_NAME, HIDDEN, NULLTYPE = -1
-		};
-		static EnumConverter<TEXTAttribute> TEXTAttributeConv([](const std::string& str)->TEXTAttribute {
-			if (str == "CHARACTER_SIZE") return TEXTAttribute::CHARACTER_SIZE;
-			else if (str == "STRING") return TEXTAttribute::STRING;
-			else if (str == "POSITION_PERCENTAGE") return TEXTAttribute::POSITION;
-			else if (str == "ORIGIN_PERCENTAGE") return TEXTAttribute::ORIGIN;
-			else if (str == "HIDDEN") return TEXTAttribute::HIDDEN;
-			else if (str == "FONT_NAME") return TEXTAttribute::FONT_NAME;
-			return TEXTAttribute::NULLTYPE;
-			});
-		struct Text { //ENTIRE NOT ACCESSIBLE BY USER.
-			sf::Vector2f position_proportion{ 0.5,0.5 };
-			sf::Vector2f origin_proportion{ 0.5,0.5 };
-			mutable std::string text_string{ "DEFAULT_TEXT" };
-			std::string font_name{ "arial.ttf" };
-			sf::Color fill_color;
-			unsigned int character_size{ 20 };
-			bool text_hidden{ false };
-			TEXTAttribute ReadIn(const std::string& attributetypestr, const KeyProcessing::Keys& keys) {
-				TEXTAttribute attribute = TEXTAttributeConv(attributetypestr);
-				if (attribute == TEXTAttribute::NULLTYPE) return attribute;
-				auto attributekey = KeyProcessing::GetKey(attributetypestr, keys);
-				switch (attribute) {
-				case TEXTAttribute::CHARACTER_SIZE: {
-					if (!attributekey.first) return TEXTAttribute::NULLTYPE;
-					try { character_size = std::stoi(attributekey.second->second); }
-					catch (...) { return TEXTAttribute::NULLTYPE; }
-					break;
-				}
-				case TEXTAttribute::STRING: {
-					if (!attributekey.first) return TEXTAttribute::NULLTYPE;
-					text_string = attributekey.second->second;
-					break;
-				}
-				case TEXTAttribute::POSITION: {
-					auto percentagex = KeyProcessing::GetKey("POSITION_X", keys);
-					auto percentagey = KeyProcessing::GetKey("POSITION_Y", keys);
-					bool valid = false;
-					if (percentagex.first) {
-						valid = true;
-						try { position_proportion.x = std::stoi(percentagex.second->second) / 100; }
-						catch(const std::exception& exception){}
-					}
-					if (percentagey.first) {
-						valid = true;
-						try { position_proportion.y = std::stoi(percentagey.second->second) / 100; }
-						catch (const std::exception& exception) {}
-					}
-					if (!valid) return TEXTAttribute::NULLTYPE; //at least one key has to be present for the change to be registered.
-					break;
-				}
-				case TEXTAttribute::ORIGIN: {
-					auto originpercentagex = KeyProcessing::GetKey("ORIGIN_X", keys);
-					auto originpercentagey = KeyProcessing::GetKey("ORIGIN_Y", keys);
-					bool valid = false;
-					if (originpercentagex.first) {
-						valid = true;
-						try { origin_proportion.x = std::stoi(originpercentagex.second->second) / 100; }
-						catch (const std::exception& exception) {}
-					}
-					if (originpercentagey.first) {
-						valid = true;
-						try { origin_proportion.y = std::stoi(originpercentagey.second->second) / 100; }
-						catch (const std::exception& exception) {}
-					}
-					if (!valid) return TEXTAttribute::NULLTYPE; //at least one key has to be present for the change to be registered.
-					bool successful = false;
-					if (!successful) return TEXTAttribute::NULLTYPE;
-					break;
-				}
-				case TEXTAttribute::FONT_NAME: {
-					if (!attributekey.first) return TEXTAttribute::NULLTYPE;
-					font_name = attributekey.second->second;
-					break;
-				}
-					 return attribute;
-				}
-			}
-		};
-		template<typename T>
-		using IS_TEXT = std::is_same<typename std::decay_t<T>, Text>;
-	}
-	using namespace BackgroundData;
-	using namespace TextData;
-	class GUIStyle { //HIDDEN FROM USER.
+	enum class PROPERTY_TYPE {
+		BG, TEXT, NULLTYPE
+	};
+	
+	enum class STYLE_ATTRIBUTE {
+		BG_FILL_COLOR, BG_OUTLINE_COLOR, BG_OUTLINE_THICKNESS,BG_TEXTURE_NAME, BG_TEXTURE_RECT, 
+		TEXT_STRING, TEXT_FILL_COLOR, TEXT_CHARACTER_SIZE,
+		TEXT_POSITION, TEXT_ORIGIN, TEXT_FONT_NAME,TEXT_HIDDEN,
+		NULLTYPE
+	};
+	static std::pair<unsigned int, unsigned int> BG_RANGE{ 0,4 };
+	static std::pair<unsigned int, unsigned int> TEXT_RANGE{ 5,11 };
+	using AttributeVariant = std::variant<sf::Color, std::string, sf::IntRect, double, bool, sf::Vector2f>;
+	using AttributeLookup = std::unordered_map<STYLE_ATTRIBUTE, AttributeVariant>;
+	class GUIStyle {//EXPOSED TO USER THROUGH GET STYLE.
+		friend class Manager_GUI;
 		friend class GUIVisual;
 	private:
-		mutable bool pendingtextapply = false;
-		mutable bool pendingbgapply = false;
-		BG background;
-		Text text;
-	public:
-		template<typename T, typename = typename std::enable_if_t<IS_TEXT<T>::value || IS_BG<T>::value>>
-		bool ReadIn(const KeyProcessing::Keys& keys) {
-			std::string propertytype;
-			auto property_attribute = KeyProcessing::GetKey("PROPERTY_ATTRIBUTE", keys);
-			if (property_attribute.first) {
-				propertytype = property_attribute.second->second;
-				if constexpr (IS_BG<T>::value) {
-					if (background.ReadIn(std::move(propertytype), keys) == BGAttribute::NULLTYPE) return false;
-					pendingbgapply = true;
-					return true;
+		AttributeLookup attributes;
+		mutable bool pending_text_apply{ true };
+		mutable bool pending_bg_apply{ true };
+		STYLE_ATTRIBUTE ReadIn(const KeyProcessing::Keys& keys) {
+			//find the STYLE_ATTRIBUTE key, eg {STYLE_ATTRIBUTE,TEXT_POSITION}
+			auto style_attribute_key = KeyProcessing::GetKey("STYLE_ATTRIBUTE", keys);
+			STYLE_ATTRIBUTE type{ STYLE_ATTRIBUTE::NULLTYPE };
+			if (!style_attribute_key.first) return type;
+			//{STYLE_ATTRIBUTE,ATTRIBUTE} exists -> convert the ATTRIBUTE into the registered enum values. Return if invalid.
+			{auto valid_attribute = magic_enum::enum_cast<STYLE_ATTRIBUTE>(style_attribute_key.second->second);
+			if (!valid_attribute.has_value()) return type;
+			type = valid_attribute.value();
+			}
+			auto attrstr = static_cast<std::string>(magic_enum::enum_name(type));
+			//We want to read as many valid entires as possible. The read is successful if at least one entry is read.
+			bool successful{ false };
+			AttributeVariant result;
+			//Helper Lambda for setting the result of the read in.
+			auto SetResult = [&result, &successful](AttributeVariant arg)->void {
+				result = std::move(arg);
+				successful = true;
+			};
+			if (type == STYLE_ATTRIBUTE::BG_FILL_COLOR || type == STYLE_ATTRIBUTE::BG_OUTLINE_COLOR || type == STYLE_ATTRIBUTE::TEXT_FILL_COLOR) {
+				std::pair<bool, sf::Color> res = Utility::Conversions::ProcessColor(keys, std::get<sf::Color>(attributes.at(type)));
+				if (res.first) SetResult(std::move(res.second));
+			}
+			else if (type == STYLE_ATTRIBUTE::TEXT_POSITION || type == STYLE_ATTRIBUTE::TEXT_ORIGIN) {
+				sf::Vector2f defaultvec = std::get<sf::Vector2f>(attributes.at(type));
+				KeyProcessing::FoundKeys foundkeys;
+				if (type == STYLE_ATTRIBUTE::TEXT_POSITION) foundkeys = KeyProcessing::GetKeys({ "POSITION_X", "POSITION_Y" }, keys);
+				else foundkeys = KeyProcessing::GetKeys({ "ORIGIN_X", "ORIGIN_Y" }, keys);
+				//Populate the array with the default TEXT_POSITION / TEXT_ORIGIN value. 
+				std::array<double, 2>  arr_res{ defaultvec.x, defaultvec.y };
+				//Read any valid entries into the array.
+				for (int i = 0; i < 2; ++i) {
+					auto& key = foundkeys.at(i);
+					if (key.first) {
+						std::pair<bool, double> res = Utility::Conversions::ConvertToDouble(key.second->second);
+						if (res.first) {
+							successful = true;
+							arr_res.at(i) = std::move(res.second) / 100; //USER INSERTS A PERCENTAGE.
+						}
+					}
 				}
-				else if constexpr (IS_TEXT<T>::value) {
-					if (text.ReadIn(std::move(propertytype), keys) == TextData::TEXTAttribute::NULLTYPE) return false;
-					pendingtextapply = true;
-					return true;
+				if (successful) SetResult(sf::Vector2f{ static_cast<float>(arr_res.at(0)), static_cast<float>(arr_res.at(1)) });
+			}
+			else if (type == STYLE_ATTRIBUTE::BG_TEXTURE_RECT) {
+				sf::IntRect defaultintrect = std::get<sf::IntRect>(attributes.at(type));
+				KeyProcessing::FoundKeys init = KeyProcessing::GetKeys({ "TOP_LEFT_X","TOP_LEFT_Y","PIXEL_SIZE_X","PIXEL_SIZE_Y" }, keys);
+				std::array<int, 4> vals{ std::move(defaultintrect.left), std::move(defaultintrect.top), std::move(defaultintrect.width), std::move(defaultintrect.height) };
+				if (successful) SetResult(sf::IntRect{ std::move(vals.at(0)), std::move(vals.at(1)), std::move(vals.at(2)), std::move(vals.at(3)) });
+			}
+			else if (auto initkey = KeyProcessing::GetKey(attrstr, keys); type == STYLE_ATTRIBUTE::BG_OUTLINE_THICKNESS || type == STYLE_ATTRIBUTE::TEXT_CHARACTER_SIZE) {
+				if (initkey.first) {
+					auto res = Utility::Conversions::ConvertToDouble(initkey.second->second);
+					if (res.first) SetResult(std::move(res.second));
 				}
 			}
+			else if (type == STYLE_ATTRIBUTE::TEXT_HIDDEN) {
+				if (initkey.first) {
+					std::string str_res = initkey.second->second;
+					if (str_res == "TRUE" || str_res == "FALSE") SetResult(str_res == "TRUE");
+				}
+			}
+			else if (type == STYLE_ATTRIBUTE::BG_TEXTURE_NAME || type == STYLE_ATTRIBUTE::TEXT_FONT_NAME || type == STYLE_ATTRIBUTE::TEXT_STRING) {
+				if (initkey.first) SetResult(std::move(initkey.second->second));
+			}
+
+			if (successful) {
+				attributes.at(type) = std::move(result);
+				(GetPropertyType(type) == PROPERTY_TYPE::BG) ? pending_bg_apply = true : pending_text_apply = true;
+				return type;
+			}
+			return STYLE_ATTRIBUTE::NULLTYPE;
 		}
+		static PROPERTY_TYPE GetPropertyType(const STYLE_ATTRIBUTE& type) {
+			auto ind = magic_enum::enum_index(type);
+			if (ind >= BG_RANGE.first && ind <= BG_RANGE.second) return PROPERTY_TYPE::BG;
+			else if (ind >= TEXT_RANGE.first && ind <= TEXT_RANGE.second) return PROPERTY_TYPE::TEXT;
+			return PROPERTY_TYPE::NULLTYPE;
+		}
+
+	public:
+		GUIStyle() {
+			sf::Color defaultc(255, 255, 255, 255);
+			attributes[STYLE_ATTRIBUTE::BG_FILL_COLOR] = defaultc;
+			attributes[STYLE_ATTRIBUTE::BG_OUTLINE_COLOR] = defaultc;
+			attributes[STYLE_ATTRIBUTE::TEXT_FILL_COLOR] = std::move(defaultc);
+			attributes[STYLE_ATTRIBUTE::BG_TEXTURE_NAME] = std::string{ "" };
+			attributes[STYLE_ATTRIBUTE::TEXT_FONT_NAME] = std::string{};
+			attributes[STYLE_ATTRIBUTE::BG_TEXTURE_RECT] = sf::IntRect{};
+			attributes[STYLE_ATTRIBUTE::TEXT_STRING] = std::string{};
+			attributes[STYLE_ATTRIBUTE::BG_OUTLINE_THICKNESS] = 1.0;
+			attributes[STYLE_ATTRIBUTE::TEXT_CHARACTER_SIZE] = 30.0;
+			attributes[STYLE_ATTRIBUTE::TEXT_POSITION] = sf::Vector2f{ 0.5,0.5 };
+			attributes[STYLE_ATTRIBUTE::TEXT_ORIGIN] = sf::Vector2f{ 0.5,0.5 };
+			attributes[STYLE_ATTRIBUTE::TEXT_HIDDEN] = false;
+		}
+		STYLE_ATTRIBUTE ReadIn(const STYLE_ATTRIBUTE& attribute, const AttributeVariant& val) {
+			auto attrstr = static_cast<std::string>(magic_enum::enum_name(attribute));
+			if (attrstr.empty()) return STYLE_ATTRIBUTE::NULLTYPE;
+			//check if the required types match.
+			auto& attribute_variant = attributes.at(attribute);
+			if (val.index() != attribute_variant.index()) return STYLE_ATTRIBUTE::NULLTYPE;
+			attribute_variant = val;
+			PROPERTY_TYPE property_type = GetPropertyType(attribute);
+			(property_type == PROPERTY_TYPE::BG) ? pending_bg_apply = true : pending_text_apply = true;
+			return attribute;
+		}
+		//CHANGE FCN FOR AUTOMATIC CONVERSION TO TYPE (SHIELD STD::GET<> FROM USER)
+		const AttributeVariant& GetAttribute(const STYLE_ATTRIBUTE& attr) const { return attributes.at(attr); }
+		const bool& PendingTextApply() const { return pending_text_apply; }
+		const bool& PendingBGApply() const { return pending_bg_apply;}
 	};
 
-	template<typename PROPERTY, typename = typename std::enable_if_t<IS_TEXT<PROPERTY>::value || IS_BG<PROPERTY>::value>>
-	using DEDUCE_PROPERTY_ATTRIBUTE = std::conditional_t<IS_BG<PROPERTY>::value, BGAttribute,TEXTAttribute>;
 
 
 	using GUIStateStyles = std::array<GUIStyle, 3>;
 	using GUIData::GUIStateData::GUIState;
-	class GUIVisual {
+	class GUIVisual {//EXPOSED TO USER.
 	private:
-		/*
-		-whenever the visual has been redrawn, we need to be able to tell its corresponding parent layer.
-		*/
-
 		GUIStateStyles statestyles;
 
 		sf::Vector2f elementsize;
@@ -267,11 +192,11 @@ namespace GUIFormattingData {
 			std::string resname;
 			if constexpr (ManagedResourceData::IS_FONT<RESOURCE>::value) {
 				resmanager = fontmgr;
-				resname = activestyle.text.font_name;
+				resname = std::get<std::string>(activestyle.GetAttribute(STYLE_ATTRIBUTE::TEXT_FONT_NAME));
 			}
 			else if constexpr (ManagedResourceData::IS_TEXTURE<RESOURCE>::value) {
 				resmanager = texturemgr;
-				resname = activestyle.background.texture_name;
+				resname = std::get<std::string>(activestyle.GetAttribute(STYLE_ATTRIBUTE::BG_TEXTURE_NAME));
 			}
 			if (resname.empty()) return nullptr;
 			GetResource<RESOURCE>() = resmanager->RequestResource(resname);
@@ -282,45 +207,20 @@ namespace GUIFormattingData {
 			auto& activestyle = statestyles.at(static_cast<int>(activestate));
 			std::string resname;
 			GetResource<RESOURCE>().reset();
-			if constexpr (resname = activestyle.text.font_name; !resname.empty() && ManagedResourceData::IS_FONT<RESOURCE>::value) fontmgr->RequestResourceDealloc(resname);
-			else if constexpr (resname = activestyle.background.texture_name; !resname.empty() && ManagedResourceData::IS_TEXTURE<RESOURCE>::value) texturemgr->RequestResourceDealloc(resname);
-		}
-		void ReleasePrevStyleResources() {
-			auto& style = GetStyle(previousstate);
-			if (!style.background.texture_name.empty()) {
-				texture.reset();
-				if (texturemgr) texturemgr->RequestResourceDealloc(style.background.texture_name);
-			}
-			if (!style.text.font_name.empty()) {
-				font.reset();
-				if (fontmgr) fontmgr->RequestResourceDealloc(style.text.font_name);
-			}
+			if constexpr (ManagedResourceData::IS_FONT<RESOURCE>::value) fontmgr->RequestResourceDealloc(std::get<std::string>(activestyle.GetAttribute(STYLE_ATTRIBUTE::TEXT_FONT_NAME)));
+			else if constexpr (ManagedResourceData::IS_TEXTURE<RESOURCE>::value) texturemgr->RequestResourceDealloc(std::get<std::string>(activestyle.GetAttribute(STYLE_ATTRIBUTE::BG_TEXTURE_NAME)));
 		}
 		void ApplySize() {
 			background.setSize(elementsize);
 			pendingsizeapply = false;
 			pendingparentredraw = true;
 		}
-		void ApplyState(GUIStyle& activestyle, const sf::FloatRect& eltboundingbox) {
-			ReleasePrevStyleResources();
-			ApplyBackground(activestyle);
-			ApplyText(activestyle, eltboundingbox);
-			pendingstateapply = false;
-			pendingparentredraw = true;
-
-		}
 		void ApplyText(GUIStyle& activestyle, const sf::FloatRect& eltlocalboundingbox) {
-			auto& textattr = activestyle.text;
-			if (textattr.text_string == "CONFIRM") {
-				int x = 1;
-			}
-			text.setFillColor(textattr.fill_color);
-			text.setCharacterSize(textattr.character_size);
-			RequestVisualResource<sf::Texture>();
+			text.setFillColor(std::get<sf::Color>(activestyle.GetAttribute(STYLE_ATTRIBUTE::TEXT_FILL_COLOR)));
+			text.setCharacterSize(std::get<double>(activestyle.GetAttribute(STYLE_ATTRIBUTE::TEXT_CHARACTER_SIZE)));
 			text.setFont(*RequestVisualResource<sf::Font>());
-			auto& str = textattr.text_string;
+			auto& str = std::get<std::string>(activestyle.attributes.at(STYLE_ATTRIBUTE::TEXT_STRING));
 			str.erase(std::remove(str.begin(), str.end(), '\b'), str.end());
-			//remove any \\n so that sf::text formats \n properly.
 			for (auto it = str.begin(); it != str.end(); ++it) {
 				if (*it == '\\') {
 					if (it + 1 != str.end()) {
@@ -334,12 +234,14 @@ namespace GUIFormattingData {
 			sf::Vector2f textsize;
 			sf::Vector2f localorigin;
 			sf::Vector2f textposition;
-			auto CalculateAndApply = [&textsize, &localorigin, &textposition, &eltlocalboundingbox, &textattr](sf::Text& text, const unsigned int& charactersize) {
-				text.setCharacterSize(textattr.character_size);
+			const auto& origin_proportion = std::get<sf::Vector2f>(activestyle.GetAttribute(STYLE_ATTRIBUTE::TEXT_ORIGIN));
+			const auto& position_proportion = std::get<sf::Vector2f>(activestyle.GetAttribute(STYLE_ATTRIBUTE::TEXT_POSITION));
+			auto CalculateAndApply = [&textsize, &localorigin, &textposition, &eltlocalboundingbox, &origin_proportion, &position_proportion](sf::Text& text, const unsigned int& character_size) {
+				text.setCharacterSize(character_size);
 				textsize = sf::Vector2f{ text.getLocalBounds().width, text.getLocalBounds().height }; //size of the bounding box.
-				localorigin = { textattr.origin_proportion.x * textsize.x, textattr.origin_proportion.y * textsize.y }; //local origin as a proportion of the size.
+				localorigin = { origin_proportion.x * textsize.x, origin_proportion.y * textsize.y }; //local origin as a proportion of the size.
 				textposition = sf::Vector2f{ eltlocalboundingbox.left, eltlocalboundingbox.top };//plus the top left position of the element its being drawn relative to
-				textposition += sf::Vector2f{ textattr.position_proportion.x * eltlocalboundingbox.width, textattr.position_proportion.y * eltlocalboundingbox.height };//plus the position of the actual text itself as a proportion of the parent element size
+				textposition += sf::Vector2f{ position_proportion.x * eltlocalboundingbox.width, position_proportion.y * eltlocalboundingbox.height };//plus the position of the actual text itself as a proportion of the parent element size
 				textposition -= sf::Vector2f{ text.getLocalBounds().left, text.getLocalBounds().top };//minus the default padding that sfml inserts with sf::Text::getLocalBounds()
 				text.setOrigin(localorigin);
 				text.setPosition(textposition);
@@ -352,28 +254,28 @@ namespace GUIFormattingData {
 				if (texttopleft.y + textsize.y > eltlocalboundingbox.top + eltlocalboundingbox.height) return false;
 				return true;
 			};
-			CalculateAndApply(text, textattr.character_size);
+			
+			auto new_char_size = static_cast<double>(text.getCharacterSize());
+			CalculateAndApply(text, new_char_size);
 			if (!TextFits()) {
 				//must find the maximum charactersize, while maintaining this position, which allows us to fit in our element.
-				unsigned int newcharsize = textattr.character_size;
-				while (newcharsize > 1) {
-					CalculateAndApply(text, newcharsize);
+				while (new_char_size > 1) {
+					CalculateAndApply(text, new_char_size);
 					if (TextFits()) break;
-					--newcharsize;
+					--new_char_size;
 				}
-				textattr.character_size = newcharsize;
+				activestyle.attributes.at(STYLE_ATTRIBUTE::TEXT_CHARACTER_SIZE) = std::move(new_char_size);
 			}
-			activestyle.pendingtextapply = false;
+			activestyle.pending_text_apply = false;
 			pendingparentredraw = true;
 		}
 		void ApplyBackground(GUIStyle& activestyle) {
-			const auto& bg = activestyle.background;
-			background.setFillColor(bg.fill_color);
-			background.setOutlineColor(bg.outline_color);
-			background.setOutlineThickness(bg.outline_thickness);
-			//background.setTexture(RequestVisualResource<sf::Texture>());
-			//background.setTextureRect(bg.texture_rect);
-			activestyle.pendingbgapply = false;
+			background.setFillColor(std::get<sf::Color>(activestyle.GetAttribute(STYLE_ATTRIBUTE::BG_FILL_COLOR)));
+			background.setOutlineColor(std::get<sf::Color>(activestyle.GetAttribute(STYLE_ATTRIBUTE::BG_OUTLINE_COLOR)));
+			background.setOutlineThickness(std::get<double>(activestyle.GetAttribute(STYLE_ATTRIBUTE::BG_OUTLINE_THICKNESS)));
+			background.setTexture(RequestVisualResource<sf::Texture>());
+			background.setTextureRect(std::get<sf::IntRect>(activestyle.GetAttribute(STYLE_ATTRIBUTE::BG_TEXTURE_RECT)));
+			activestyle.pending_bg_apply = false;
 			pendingparentredraw = true;
 		}
 		void ApplyPosition() {
@@ -382,30 +284,30 @@ namespace GUIFormattingData {
 			pendingpositionapply = false;
 			pendingparentredraw = true;
 		}
-
+		void ReleasePrevStyleResources() {
+			auto& style = GetStyle(previousstate);
+			auto& bgresname = std::get<std::string>(style.GetAttribute(STYLE_ATTRIBUTE::BG_TEXTURE_NAME));
+			if (!bgresname.empty()) {
+				texture.reset();
+				if (texturemgr) texturemgr->RequestResourceDealloc(bgresname);
+			}
+			auto& fontresname = std::get<std::string>(style.GetAttribute(STYLE_ATTRIBUTE::TEXT_FONT_NAME));
+			if (!fontresname.empty()) {
+				font.reset();
+				if (fontmgr) fontmgr->RequestResourceDealloc(fontresname);
+			}
+		}
+		void ApplyState(GUIStyle& activestyle, const sf::FloatRect& eltboundingbox) {
+			ReleasePrevStyleResources();
+			ApplyBackground(activestyle);
+			ApplyText(activestyle, eltboundingbox);
+			pendingstateapply = false;
+			pendingparentredraw = true;
+		}
 	public:
+	
 		GUIVisual(Manager_Texture* tmgr, Manager_Font* fmgr, const GUIStateStyles& styles = GUIStateStyles{}) :texturemgr(tmgr), fontmgr(fmgr),statestyles(styles) {
 			pendingstateapply = true;
-		}
-	
-		template<BGAttribute arg>
-		const auto& GetBGAttribute() {
-			auto& background = statestyles.at(static_cast<int>(activestate)).background;
-			if constexpr (arg == BGAttribute::FILL_COLOR) return background.fill_color;
-			else if constexpr (arg == BGAttribute::OUTLINE_COLOR) return background.outline_color;
-			else if constexpr (arg == BGAttribute::OUTLINE_THICKNESS) return background.outline_thickness;
-			else if constexpr (arg == BGAttribute::TEXTURE_NAME) return background.texture_name;
-			else if constexpr (arg == BGAttribute::TEXTURE_RECT) return background.texture_rect;
-		}
-		template<TEXTAttribute arg>
-		const auto& GetTEXTAttribute() {
-			auto& text = statestyles.at(static_cast<int>(activestate)).text;
-			if constexpr (arg == TEXTAttribute::CHARACTER_SIZE) return text.character_size;
-			else if constexpr (arg == TEXTAttribute::FONT_NAME) return text.font_name;
-			else if constexpr (arg == TEXTAttribute::ORIGIN) return text.origin_proportion;
-			else if constexpr (arg == TEXTAttribute::POSITION) return text.position_proportion;
-			else if constexpr (arg == TEXTAttribute::STRING) return text.text_string;
-			else if constexpr (arg == TEXTAttribute::HIDDEN) return text.text_hidden;
 		}
 		const bool& Update(const sf::FloatRect& eltrect, const sf::FloatRect& parentrect) {
 			parentrect;
@@ -414,30 +316,9 @@ namespace GUIFormattingData {
 			if (pendingpositionapply) ApplyPosition();
 			if (pendingsizeapply) ApplySize();
 			//apply individual, non state changes made by the user.
-			if (activestyle.pendingbgapply) ApplyBackground(activestyle);
-			if (activestyle.pendingtextapply) ApplyText(activestyle, eltrect);
+			if (activestyle.PendingBGApply()) ApplyBackground(activestyle);
+			if (activestyle.PendingTextApply()) ApplyText(activestyle, eltrect);
 			return pendingparentredraw;
-		}
-
-		/*
-		-the readin is exposed to the user.
-		-we need to make the readin as intuitive as possible.
-		-and thus, we need to be able to accept a property_attribute type.
-
-		-property attribute can either be a template, or a argument. argument makes sense.
-		-accept a propertyattribute argument.
-		-ex
-		*/
-		template<typename PROPERTY, typename = typename std::enable_if_t<IS_BG<PROPERTY>::value || IS_TEXT<PROPERTY>::value>>
-		void ReadIn(const GUIData::GUIStateData::GUIState& state, const KeyProcessing::Keys& keys) {
-			try {
-				auto res = statestyles[static_cast<int>(state)].ReadIn<PROPERTY>(keys);
-				if (res) pendingparentredraw = true;
-			}
-			catch (...) {
-
-			}
-			/*if (state == activestate) QueueState(state);*/
 		}
 		void QueuePosition(const sf::Vector2f& position) {
 			elementlocalposition = position;
@@ -456,14 +337,10 @@ namespace GUIFormattingData {
 		}
 		void Draw(sf::RenderTarget& target, const bool& toparent) {
 			target.draw(background);
-			if (!GetStyle(activestate).text.text_hidden)target.draw(text);
-			//if this has been draw onto its parent, then it has been redrawn.
+			if(!std::get<bool>(statestyles.at(static_cast<int>(activestate)).GetAttribute(STYLE_ATTRIBUTE::TEXT_HIDDEN))) target.draw(text);
 			if(toparent) pendingparentredraw = false;
 		}
-		GUIStyle& GetStyle(const GUIState& state) {
-			return statestyles.at(static_cast<int>(state));
-		}
-	
+		GUIStyle& GetStyle(const GUIState& state) {return statestyles.at(static_cast<int>(state));}
 		void ChangeStyle(const GUIState& state, GUIStyle& style) {
 			GetStyle(state) = style;
 			if (activestate == state) QueueState(state);

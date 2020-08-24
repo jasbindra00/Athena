@@ -49,16 +49,17 @@ GUIStateStyles Manager_GUI::CreateStyleFromFile(const std::string& stylefile){
 		if (!statekey.first) continue;
 		currentstate = GUIData::GUIStateData::converter(statekey.second->second);
 		if (currentstate == GUIState::NULLSTATE) continue;
-		auto styleproperty = KeyProcessing::GetKey("STYLE_PROPERTY", linekeys);
-		if (!styleproperty.first) continue;
+// 		auto styleproperty = KeyProcessing::GetKey("STYLE_PROPERTY", linekeys);
+// 		if (!styleproperty.first) continue;
 		auto& style = styles.at(static_cast<int>(currentstate));
-		try {
-			if (styleproperty.second->second == "TEXT") style.ReadIn<GUIFormattingData::TextData::Text>(linekeys);
-			else if (styleproperty.second->second == "BG") style.ReadIn<GUIFormattingData::BackgroundData::BG>(linekeys);
-			else throw CustomException("Unable to identify {STYLE_PROPERTY,PROPERTY} key");
+		
+
+		if (style.ReadIn(linekeys) == STYLE_ATTRIBUTE::NULLTYPE) {
+			std::cout << "NULL" << std::endl;
+			//invalid line.
+			//tell user.
 		}
-		catch (const CustomException& exception) {
-		}
+	
 	}
 	return styles;
 }

@@ -5,26 +5,25 @@
 #include <iostream>
 
 GUITextfield::GUITextfield(GUIInterface* parent):GUIElement(parent,GUIType::TEXTFIELD,GUILayerType::CONTENT), predicatebitset(4026531840), maxchars(INT_MAX) {
-	SetPredicates(0);
-	
-
 }
 
 std::string GUITextfield::GetTextfieldString() {
-	return GetVisual().GetTEXTAttribute<GUIFormattingData::TEXTAttribute::STRING>();
-	
+	return std::get<std::string>(GetVisual().GetStyle(activestate).GetAttribute(STYLE_ATTRIBUTE::TEXT_STRING));
 }
 
 void GUITextfield::OnNeutral(){
-	SetState(GUIState::NEUTRAL);
-	if (GetTextfieldString().empty()) SetCurrentStateString(defaulttextstrings.at(static_cast<int>(activestate)));
+	auto textfieldstr = GetTextfieldString();
+	GUIElement::OnNeutral();
+	if (textfieldstr.empty()) SetCurrentStateString("ENTER_HERE");
+	else SetCurrentStateString(std::move(textfieldstr));
 }
 
 void GUITextfield::OnHover(){
 }
 void GUITextfield::OnClick(const sf::Vector2f& mousepos) {
+	auto currstr = GetTextfieldString();
 	SetState(GUIState::FOCUSED);
-	if (GetTextfieldString() == defaulttextstrings.at(static_cast<int>(activestate))) SetCurrentStateString("");
+	if (currstr == "ENTER_HERE") SetCurrentStateString("");
 }
 void GUITextfield::OnLeave(){
 }
@@ -32,11 +31,12 @@ void GUITextfield::OnRelease(){
 }
 
 void GUITextfield::ReadIn(KeyProcessing::Keys& keys){
+	using namespace Utility::CharacterCheckData;
 	GUIElement::ReadIn(keys);
 	auto textfieldpredicatekeys = keys.equal_range("TEXTFIELD_PREDICATE");
 	for (auto it = textfieldpredicatekeys.first; it != textfieldpredicatekeys.second; ++it) {
-		Utility::CharacterCheck::STRING_PREDICATE predicatetype = Utility::CharacterCheck::StringPredicateConv(it->second);
-		if (predicatetype != Utility::CharacterCheck::STRING_PREDICATE::NULLTYPE) AddPredicate(std::move(predicatetype));
+		auto validpredicate = magic_enum::enum_cast<STRING_PREDICATE>(it->second);
+		if (validpredicate.has_value()) AddPredicate(std::move(validpredicate.value()));
 	}
 	auto maxcharkey = KeyProcessing::GetKey("MAX_TEXTFIELD_CHARS", keys);
 	if (!maxcharkey.first) return;
@@ -44,19 +44,24 @@ void GUITextfield::ReadIn(KeyProcessing::Keys& keys){
 	catch (const std::exception& exception) {}
 }
 
-void GUITextfield::SetCurrentStateString(const std::string& str) { GetVisual().ReadIn<GUIFormattingData::Text>(activestate, KeyProcessing::Keys{ {"PROPERTY_ATTRIBUTE","STRING"}, { "STRING", str } }); }
+void GUITextfield::SetCurrentStateString(const std::string& str) { GetVisual().GetStyle(activestate).ReadIn(STYLE_ATTRIBUTE::TEXT_STRING, str);}
+
+void GUITextfield::OnElementCreate(Manager_Texture* texturemgr, Manager_Font* fontmgr, KeyProcessing::Keys& attributes, const GUIStateStyles& stylemap){
+	GUIElement::OnElementCreate(texturemgr, fontmgr, attributes, stylemap);
+	GetVisual().GetStyle(GUIState::NEUTRAL).ReadIn(STYLE_ATTRIBUTE::TEXT_STRING, std::string{ "ENTER_HERE" });
+	GetVisual().GetStyle(GUIState::FOCUSED).ReadIn(STYLE_ATTRIBUTE::TEXT_STRING, std::string{ "" });
+}
 
 void GUITextfield::AppendChar(const char& c){
+	if (!Predicate(c)) return;
 	std::string str = GetTextfieldString();
 	if (str.size() + 1 > maxchars) return;
 	std::cout << str + c << std::endl;
-	GetVisual().ReadIn<GUIFormattingData::Text>(activestate, KeyProcessing::Keys{ {"PROPERTY_ATTRIBUTE", "STRING"}, {"STRING", std::move(str + c)} });
-
+	GetVisual().GetStyle(activestate).ReadIn(STYLE_ATTRIBUTE::TEXT_STRING, std::move(str += c));
 }
 void GUITextfield::PopChar() {	
 	std::string str = GetTextfieldString();
 	if(str.size() == 0) return;
 	str.pop_back();
-	GetVisual().ReadIn<GUIFormattingData::Text>(activestate, KeyProcessing::Keys{ {"PROPERTY_ATTRIUTE","STRING"}, {"STRING", std::move(str)} });
-	std::cout << str << std::endl;
+	GetVisual().GetStyle(activestate).ReadIn(STYLE_ATTRIBUTE::TEXT_STRING, std::move(str));
 }

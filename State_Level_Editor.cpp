@@ -27,6 +27,11 @@ void State_LevelEditor::OnCreate(){
 	auto popup = guimgr->CreateStateInterface(GameStateData::GameStateType::LEVELEDITOR, "POP_UP_PANEL", "Interface_StateLevelEditor_PopUp_Panel.txt");
 	guimgr->CreateStateInterface(GameStateData::GameStateType::LEVELEDITOR, "RIGHT_PANEL", "Interface_StateLevelEditor_Right_Panel.txt");
 	guimgr->CreateStateInterface(GameStateData::GameStateType::LEVELEDITOR, "Top_Panel", "Interface_StateLevelEditor_Top_Panel.txt");
+	guimgr->GetElement<GUITextfield>(GameStateType::LEVELEDITOR, { "SPRITESHEET_NAME", "POP_UP_PANEL" })->SetPredicates(static_cast<int>(Utility::CharacterCheckData::STRING_PREDICATE::FILE_NAME));
+	guimgr->GetElement<GUITextfield>(GameStateType::LEVELEDITOR, { "TEXTURE_X_TEXTFIELD", "POP_UP_PANEL" })->SetPredicates(static_cast<int>(Utility::CharacterCheckData::STRING_PREDICATE::NUMBER));
+	guimgr->GetElement<GUITextfield>(GameStateType::LEVELEDITOR, { "TEXTURE_Y_TEXTFIELD", "POP_UP_PANEL" })->SetPredicates(static_cast<int>(Utility::CharacterCheckData::STRING_PREDICATE::NUMBER));
+
+	
 	
 }
 void State_LevelEditor::OnDestroy(){

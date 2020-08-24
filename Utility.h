@@ -5,14 +5,47 @@
 #include <type_traits>
 #include <string>
 #include <algorithm>
+#include <array>
 #include <sstream>
 #include <vector>
 #include "StreamAttributes.h"
 #include "KeyProcessing.h"
 #include "EnumConverter.h"
 #include "Bitmask.h"
-
+#include "MagicEnum.h"
+#include <SFML/Graphics/Color.hpp>
 namespace Utility {
+
+	struct Conversions {
+		static std::pair<bool, double> ConvertToDouble(const std::string& str) {
+			double res{ 0 };
+			bool valid = true;
+			try { res = std::stod(str); }
+			catch (...) { valid = false; }
+			return std::make_pair(std::move(valid), std::move(res));
+		}
+		static auto ProcessColor(const KeyProcessing::Keys& keys, sf::Color defaultc) {
+			KeyProcessing::FoundKeys foundkeys = KeyProcessing::GetKeys({ "R", "G", "B", "A" }, keys);
+			bool successful = false;
+			std::array<unsigned int, 4> rgba{ defaultc.r, defaultc.g,defaultc.b,defaultc.a };
+			for (int i = 0; i < 4; ++i) {
+				auto& foundkey = foundkeys.at(i);
+				if (foundkey.first) {
+					auto res = ConvertToDouble(foundkey.second->second);
+					if (res.first) {
+						rgba.at(i) = std::move(res.second);
+						successful = true;
+					}
+				}
+			}
+			defaultc.r = std::move(rgba.at(0));
+			defaultc.g = std::move(rgba.at(1));
+			defaultc.b = std::move(rgba.at(2));
+			defaultc.a = std::move(rgba.at(3));
+			return std::make_pair(std::move(successful), std::move(defaultc));
+		}
+	};
+
 	static LOG log;
 	template<typename T, typename = typename std::is_enum<T>>
 	constexpr static auto ConvertToUnderlyingType(T var)->typename std::underlying_type_t<typename std::decay_t<T>> {
@@ -49,7 +82,7 @@ namespace Utility {
 		if (!hierarchystr.empty() && hierarchystr.back() == ' ') hierarchystr.pop_back();
 		return hierarchystr;
 		}
-	namespace CharacterCheck {
+	namespace CharacterCheckData {
 		static enum class STRING_PREDICATE : long long {
 			LOWER_CASE_ALPHABET = 2147483648,
 			UPPER_CASE_ALPHABET = 1073741824,
@@ -59,16 +92,11 @@ namespace Utility {
 			FILE_NAME = 67108864,
 			NULLTYPE = 0
 		};
-		static EnumConverter<STRING_PREDICATE> StringPredicateConv([](const std::string& str)->STRING_PREDICATE {
-			if (str == "LOWER_CASE_ALPHABET") return STRING_PREDICATE::LOWER_CASE_ALPHABET;
-			else if (str == "UPPER_CASE_ALPHABET") return STRING_PREDICATE::UPPER_CASE_ALPHABET;
-			else if (str == "NUMBER") return STRING_PREDICATE::NUMBER;
-			else if (str == "SPACE") return STRING_PREDICATE::SPACE;
-			else if (str == "SENTENCE_PUNCTUATION") return STRING_PREDICATE::SENTENCE_PUNCTUATION;
-			else if (str == "FILE_NAME") return STRING_PREDICATE::FILE_NAME;
-			return STRING_PREDICATE::NULLTYPE;
-			});
-		static bool CharacterChecker(const STRING_PREDICATE& pred, const char& c) {
+		
+		static const std::unordered_map<unsigned int, STRING_PREDICATE> predmap{ {0,STRING_PREDICATE::LOWER_CASE_ALPHABET}, {1, STRING_PREDICATE::UPPER_CASE_ALPHABET},
+		{2, STRING_PREDICATE::NUMBER}, {3, STRING_PREDICATE::SPACE}, {4, STRING_PREDICATE::SENTENCE_PUNCTUATION}, {5, STRING_PREDICATE::FILE_NAME} };
+
+		static bool ValidCharacter(const STRING_PREDICATE& pred, const char& c) {
 			switch (pred) {
 			case STRING_PREDICATE::LOWER_CASE_ALPHABET: { return (c >= 97 && c <= 122); }
 			case STRING_PREDICATE::UPPER_CASE_ALPHABET: {return (c >= 65 && c <= 90); }
@@ -105,35 +133,19 @@ namespace Utility {
 			}
 			}
 			return false;
-			}
-
-		static bool Predicate(const Bitmask& b, const char& c) {
-			return true;
 		}
-		}
-
-
-	namespace EnumChecker {
-		template<typename EnumType, EnumType... Values>
-		class EnumCheck;
-		template<typename EnumType> class EnumCheck<EnumType>
-		{
-		public:
-			template<typename IntType>
-			static bool constexpr Is_Value(IntType) { return false; }
-		};
-		template<typename EnumType, EnumType V, EnumType... Next>
-		class EnumCheck<EnumType, V, Next...> : private EnumCheck<EnumType, Next...>
-		{
-			using super = EnumCheck<EnumType, Next...>;
-
-		public:
-			template<typename IntType>
-			static bool constexpr is_value(IntType v)
-			{
-				return v == static_cast<IntType>(V) || super::Is_Value(v);
+		static bool PredicateCheck(const Bitmask& mask, const char& c) {
+			bool res = false;
+			for (int i = 0; i < 5; ++i) {
+				if (mask.GetBit(i) == true) {
+					if (ValidCharacter(predmap.at(i), c)) res = true;
+				}
 			}
-		};
+			return res;
+		}
+	
 	}
+
+	
 }
 #endif							

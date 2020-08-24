@@ -44,9 +44,9 @@ void GUICheckbox::ReadIn(KeyProcessing::Keys& keys){
 	else checkboxstr = "SQUARE";
 	std::string checkedtexture{ "GUICheckbox_Checked_" + checkboxstr + ".png" };
 	std::string uncheckedtexture{ "GUICheckbox_Unchecked_" + checkboxstr + ".png" };
-	GetVisual().ReadIn<GUIFormattingData::BG>(GUIState::FOCUSED, KeyProcessing::Keys{ {"TEXTURE_NAME" , std::move(checkedtexture)} });
-	GetVisual().ReadIn<GUIFormattingData::Text>(GUIState::NEUTRAL, KeyProcessing::Keys{ {"TEXTURE_NAME" , std::move(uncheckedtexture)} });
-	for (int i = 0; i < 3; ++i) GetVisual().ReadIn<GUIFormattingData::Text>(static_cast<GUIState>(i), KeyProcessing::Keys{ {"STRING", ""} });
+	GetVisual().GetStyle(GUIState::NEUTRAL).ReadIn(STYLE_ATTRIBUTE::BG_TEXTURE_NAME, std::move(uncheckedtexture));
+	GetVisual().GetStyle(GUIState::FOCUSED).ReadIn(STYLE_ATTRIBUTE::BG_TEXTURE_NAME, std::move(checkedtexture));
+	for (int i = 0; i < 3; ++i) GetVisual().GetStyle(static_cast<GUIState>(i)).ReadIn(STYLE_ATTRIBUTE::TEXT_STRING, "");
 
 }
 

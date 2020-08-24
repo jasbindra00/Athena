@@ -335,5 +335,8 @@
     <ClInclude Include="GUILayerData.h">
       <Filter>Header Files\GUI\Data</Filter>
     </ClInclude>
+    <ClInclude Include="MagicEnum.h">
+      <Filter>Header Files\Utility</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

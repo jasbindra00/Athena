@@ -8,7 +8,6 @@
 #include <array>
 #include "Utility.h"
 
-using Utility::CharacterCheck::STRING_PREDICATE;
 class GUITextfield : public GUIElement {
 	friend class GUIInterface;
 protected:
@@ -22,6 +21,7 @@ protected:
 	virtual void OnRelease() override;
 	virtual void ReadIn(KeyProcessing::Keys& keys) override;
 	void SetCurrentStateString(const std::string& str);
+	virtual void OnElementCreate(Manager_Texture* texturemgr, Manager_Font* fontmgr, KeyProcessing::Keys& attributes, const GUIStateStyles& stylemap) override;
 public:
 	GUITextfield(GUIInterface* parent);
 	
@@ -31,10 +31,8 @@ public:
 	void PopChar();
 	void SetPredicates(const Bitmask& mask) { predicatebitset = mask; }
 	void SetMaxChars(const int& inp) { maxchars = (inp < 0) ? INT_MAX : inp; }
-	void AddPredicate(const STRING_PREDICATE& t) {predicatebitset.TurnOnBits(Utility::ConvertToUnderlyingType(t));}
-	bool Predicate(const char& c) {
-		return Utility::CharacterCheck::Predicate(predicatebitset, c);
-	}
+	void AddPredicate(const Utility::CharacterCheckData::STRING_PREDICATE& t) {predicatebitset.TurnOnBits(Utility::ConvertToUnderlyingType(t));}
+	bool Predicate(const char& c) { return Utility::CharacterCheckData::PredicateCheck(predicatebitset, c);}
 	void OnEnter() {
 	}
 

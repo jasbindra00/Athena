@@ -198,6 +198,7 @@
     <ClInclude Include="GUITextfield.h" />
     <ClInclude Include="KeyProcessing.h" />
     <ClInclude Include="Location.h" />
+    <ClInclude Include="MagicEnum.h" />
     <ClInclude Include="ManagedResources.h" />
     <ClInclude Include="Manager_Font.h" />
     <ClInclude Include="Manager_GUI.h" />

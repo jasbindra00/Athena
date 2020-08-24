@@ -22,6 +22,7 @@ using GUIData::GUILayerType;
 using GUIFormattingData::GUIVisual;
 using GUIFormattingData::GUIStyle;
 using GUIFormattingData::GUIStateStyles;
+using GUIFormattingData::STYLE_ATTRIBUTE;
 class GUIElement{ //abstract base class for specialised GUIElements.
 	friend class GUIInterface;
 	friend class Manager_GUI;

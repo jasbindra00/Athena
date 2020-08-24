@@ -103,21 +103,6 @@ void GUIElement::ReadIn(KeyProcessing::Keys& keys) {
 	if (position.y < 0) position.y = 0;
 	if (position.x + size.x >= parentdimensions.x) size.x = parentdimensions.x - position.x;
 	if (position.y + size.y >= parentdimensions.y) size.y = parentdimensions.y - position.y;
-
-	std::array<KeyProcessing::FoundKey, 3> customtextoverrides;
-	customtextoverrides[0] = KeyProcessing::GetKey("CUSTOM_TEXT_NEUTRAL", keys); //REFACTOR THIS
-	customtextoverrides[1] = KeyProcessing::GetKey("CUSTOM_TEXT_CLICKED", keys);
-	customtextoverrides[2] = KeyProcessing::GetKey("CUSTOM_TEXT_FOCUSED", keys);
-	if (name == "CONFIRM") {
-		int z = 4;
-	}
-	for (int i = 0; i < 3; ++i) {
-		if (customtextoverrides[i].first) {
-			std::string str = customtextoverrides[i].second->second;
-			std::replace(str.begin(), str.end(), '+', ' ');
-			visual->ReadIn<GUIFormattingData::TextData::Text>(static_cast<GUIState>(i), KeyProcessing::Keys{ {"PROPERTY_ATTRIBUTE", "STRING"}, {"STRING", std::move(str)} });
-		}
-	}
 	if (size != sf::Vector2f{0, 0}) SetSize(std::move(size));
 	SetPosition(std::move(position));
 }
