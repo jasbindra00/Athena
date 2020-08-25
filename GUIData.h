@@ -22,7 +22,7 @@ namespace GUIData {
 	}
 	namespace GUITypeData {
 		static enum class GUIType {
-			LABEL, TEXTFIELD, SCROLLBAR, WINDOW, CHECKBOX, NULLTYPE
+			LABEL,BUTTON, TEXTFIELD, SCROLLBAR, WINDOW, CHECKBOX, NULLTYPE
 		};
 		static EnumConverter<GUIType> converter([](const std::string& str)->GUIType {
 			if (str == "LABEL") return GUIType::LABEL;
@@ -30,6 +30,7 @@ namespace GUIData {
 			else if (str == "TEXTFIELD") return GUIType::TEXTFIELD;
 			else if (str == "SCROLLBAR") return GUIType::SCROLLBAR;
 			else if (str == "WINDOW") return GUIType::WINDOW;
+			else if (str == "BUTTON") return GUIType::BUTTON;
 			return GUIType::NULLTYPE;
 			});
 	}

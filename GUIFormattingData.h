@@ -172,7 +172,8 @@ namespace GUIFormattingData {
 		bool pendingsizeapply;
 		bool pendingpositionapply;
 
-		sf::RectangleShape background;
+		sf::RectangleShape texture_background;
+		sf::RectangleShape solid_background;
 		sf::Text text;
 		std::shared_ptr<sf::Font> font;
 		std::shared_ptr<sf::Texture> texture;
@@ -211,7 +212,8 @@ namespace GUIFormattingData {
 			else if constexpr (ManagedResourceData::IS_TEXTURE<RESOURCE>::value) texturemgr->RequestResourceDealloc(std::get<std::string>(activestyle.GetAttribute(STYLE_ATTRIBUTE::BG_TEXTURE_NAME)));
 		}
 		void ApplySize() {
-			background.setSize(elementsize);
+			solid_background.setSize(elementsize);
+			texture_background.setSize(elementsize);
 			pendingsizeapply = false;
 			pendingparentredraw = true;
 		}
@@ -270,16 +272,17 @@ namespace GUIFormattingData {
 			pendingparentredraw = true;
 		}
 		void ApplyBackground(GUIStyle& activestyle) {
-			background.setFillColor(std::get<sf::Color>(activestyle.GetAttribute(STYLE_ATTRIBUTE::BG_FILL_COLOR)));
-			background.setOutlineColor(std::get<sf::Color>(activestyle.GetAttribute(STYLE_ATTRIBUTE::BG_OUTLINE_COLOR)));
-			background.setOutlineThickness(std::get<double>(activestyle.GetAttribute(STYLE_ATTRIBUTE::BG_OUTLINE_THICKNESS)));
-			background.setTexture(RequestVisualResource<sf::Texture>());
-			background.setTextureRect(std::get<sf::IntRect>(activestyle.GetAttribute(STYLE_ATTRIBUTE::BG_TEXTURE_RECT)));
+			solid_background.setFillColor(std::get<sf::Color>(activestyle.GetAttribute(STYLE_ATTRIBUTE::BG_FILL_COLOR)));
+			solid_background.setOutlineColor(std::get<sf::Color>(activestyle.GetAttribute(STYLE_ATTRIBUTE::BG_OUTLINE_COLOR)));
+			solid_background.setOutlineThickness(std::get<double>(activestyle.GetAttribute(STYLE_ATTRIBUTE::BG_OUTLINE_THICKNESS)));
+			texture_background.setTexture(RequestVisualResource<sf::Texture>());
+			//texture_background.setTextureRect(std::get<sf::IntRect>(activestyle.attributes.at(STYLE_ATTRIBUTE::BG_TEXTURE_RECT)));
 			activestyle.pending_bg_apply = false;
 			pendingparentredraw = true;
 		}
 		void ApplyPosition() {
-			background.setPosition(elementlocalposition);
+			solid_background.setPosition(elementlocalposition);
+			texture_background.setPosition(elementlocalposition);
 			text.setPosition(elementlocalposition);
 			pendingpositionapply = false;
 			pendingparentredraw = true;
@@ -335,7 +338,8 @@ namespace GUIFormattingData {
 			pendingstateapply = true;
 		}
 		void Draw(sf::RenderTarget& target, const bool& toparent) {
-			target.draw(background);
+			target.draw(solid_background);
+			if(texture.get()) target.draw(texture_background);
 			if(!std::get<bool>(statestyles.at(static_cast<int>(activestate)).GetAttribute(STYLE_ATTRIBUTE::TEXT_HIDDEN))) target.draw(text);
 			if(toparent) pendingparentredraw = false;
 		}

@@ -73,7 +73,7 @@ public:
 	inline const GUIState& GetActiveState() const { return activestate; }
 
 	inline const sf::Vector2f& GetSize() const { return visual->GetElementSize(); }
-	inline const GUIStyle& GetActiveStyle() { return visual->GetStyle(activestate); }
+	inline GUIStyle& GetActiveStyle() { return visual->GetStyle(activestate); }
 
 	inline GUIVisual& GetVisual() { return *visual; }
 	const virtual sf::Vector2f& GetLocalPosition() const { return visual->GetElementPosition(); }

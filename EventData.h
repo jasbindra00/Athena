@@ -73,6 +73,7 @@ namespace EventData {
 		std::string bindingname;
 		BINDINGTYPE type;
 		int conditionsmet{ 0 };
+		bool ANDBinding{ true };
 
 		Binding(const std::string& name, const BINDINGTYPE& t) :bindingname(name), type(t) {
 		}
@@ -87,6 +88,13 @@ namespace EventData {
 		operator std::string() const {
 			return std::string{};
 		}
+
+		friend bool operator&&(const Binding& b1,const Binding& b2) {
+
+		}
+		friend bool operator||(const Binding& b1, const Binding& b2) {
+
+		}
 	};
 	struct GameBinding :public Binding {
 		GameBinding(const std::string& bindingname) :Binding(bindingname, BINDINGTYPE::GAME) {
@@ -97,6 +105,9 @@ namespace EventData {
 				unsigned int evnttype;
 				unsigned int keycode;
 				if (!KeyProcessing::IsOnlyNumeric(key.first) || !KeyProcessing::IsOnlyNumeric(key.second)){
+					if (key.first == "AND" || key.first == "OR") {
+						
+					}
 					LOG::Log(LOCATION::STANDARDBINDING, LOGTYPE::ERROR, __FUNCTION__, "Invalid GAMEBINDING condition arguments for binding of name " + bindingname + ". Ensure that the GAMEBINDING conditions are integral types. DID NOT READ CONDITION..");
 					continue;
 				}
@@ -104,6 +115,7 @@ namespace EventData {
 				keycode = std::stoi(key.second);
 				AddCondition(static_cast<EventType>(evnttype), std::move(keycode));
 			}
+			
 		}
 	};
 

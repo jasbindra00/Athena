@@ -45,6 +45,14 @@ public:
 	bool AddElement(const std::string& eltname, std::unique_ptr<GUIElement>& elt);
 	bool RemoveElement(const std::string& eltname);
 	
+	template<typename T>
+	T* GetElement(const std::string& eltname) {
+		auto found = std::find_if(elements.begin(), elements.end(), [&eltname](const std::pair<std::string, GUIElementPtr>& p) {
+			return p.second->GetName() == eltname;
+			});
+		if (found == elements.end()) return nullptr;
+		return dynamic_cast<T*>(found->second.get());
+	}
 	virtual const bool& PendingParentRedraw() const override; //may have been redrawn to its layer already, in which case the visual will deactivate parent redraw. but the layer redraw will still be activated.
 
 	std::pair<bool, sf::Vector2f> EltOverhangs(const GUIElement* const elt);

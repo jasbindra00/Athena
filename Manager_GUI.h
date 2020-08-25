@@ -59,7 +59,7 @@ private:
 	GUIStateStyles CreateStyleFromFile(const std::string& stylefile);
 	//TEMPLATISE THIS
 	GUIElementPtr CreateElement(const GUIType& TYPE, GUIInterface* parent, Keys& keys);
-	GUIInterfacePtr CreateInterfaceFromFile(const std::string& interfacefile);
+
 	std::pair<bool,Interfaces::iterator> FindInterface(const GameStateType& state, const std::string& interfacename) noexcept;
 protected:\
 	Interfaces& GetActiveInterfaces() { return stateinterfaces.at(activestate); }
@@ -81,7 +81,7 @@ public:
 		return dynamic_cast<T*>(element);
 	}
 
-	GUIInterface* CreateStateInterface(const GameStateType& state, const std::string& name, const std::string& interfacefile);
+	GUIInterface* CreateInterfaceFromFile(const GameStateType& state, const std::string& interfacefile);
 	bool RemoveStateInterface(const GameStateType& state, const std::string& name);
 
 	inline void SetActiveState(const GameStateType& state) const { activestate = state; activetextfield = nullptr; }

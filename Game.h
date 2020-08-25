@@ -53,8 +53,8 @@ public:
 	}
 	void Draw() {
 		window->GetRenderWindow()->clear();
-		statemanager->Draw();
 		guimgr->Draw();
+		statemanager->Draw();
 		window->GetRenderWindow()->display();
 	}
 	~Game() {

@@ -24,11 +24,6 @@ public:
 			if (e.type == sf::Event::EventType::Closed) renderwindow->close();
 			eventmanager->HandleEvent(e, renderwindow.get());
 		}
-		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::S)) {
-			sf::View s = renderwindow->getView();
-			s.zoom(1.0001);
-			renderwindow->setView(s);
-		}
 		eventmanager->Update(renderwindow.get());
 	}
 	bool IsOpen() const { return renderwindow->isOpen(); }

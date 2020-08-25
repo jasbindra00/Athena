@@ -11,9 +11,6 @@ GUIInterface::GUIInterface(GUIInterface* p, Manager_GUI* mgr)
 	:guimgr(mgr), GUIElement(p, GUIType::WINDOW, GUILayerType::CONTENT) {
 	layers = std::make_unique<GUILayerData::GUILayers>();//init the size to the user defined visual size.
 }
-
-
-
 void GUIInterface::SetHidden(const bool& inp) const{
 	GUIElement::SetHidden(inp);
 	layers->QueueParentRedraw();
@@ -100,7 +97,6 @@ std::pair<bool, GUIElements::iterator> GUIInterface::GetElement(const std::strin
 	return(it == elements.end()) ? std::make_pair(false, it) : std::make_pair(true, it);
 }
 void GUIInterface::OnClick(const sf::Vector2f& pos) {
-	std::cout << "INTERFACECLICK" << std::endl;
 	GUIElement::OnClick(pos); //dispatches event.
 	for (auto& element : elements) {
 		if (element.second->IsHidden()) continue;
@@ -114,8 +110,6 @@ void GUIInterface::OnClick(const sf::Vector2f& pos) {
 		}
 	}
 }
-
-
 void GUIInterface::OnRelease(){
 	//dispatch event here
 	OnNeutral();
@@ -130,7 +124,6 @@ void GUIInterface::OnRelease(){
 	evntinfo.interfacehierarchy = GetHierarchyString();
 	GetGUIManager()->AddGUIEvent(std::make_pair(EventData::EventType::GUI_RELEASE,std::move(evntinfo)));
 }
-
 void GUIInterface::SetEnabled(const bool& inp) const{
 	//apply change to all elements.
 	GUIElement::SetEnabled(inp);
@@ -138,7 +131,6 @@ void GUIInterface::SetEnabled(const bool& inp) const{
 		elt.second->SetEnabled(inp);
 	}
 }
-
 void GUIInterface::DefocusTextfields(){
 	for (auto& elt : elements) {
 		if (elt.second->IsHidden()) continue;
@@ -150,7 +142,6 @@ void GUIInterface::DefocusTextfields(){
 		}
 	}
 }
-
 std::pair<bool, sf::Vector2f> GUIInterface::EltOverhangs(const GUIElement* const elt){
 	auto eltpos = elt->GetLocalPosition(); 
 	auto eltsize = elt->GetSize();
@@ -163,9 +154,8 @@ std::pair<bool, sf::Vector2f> GUIInterface::EltOverhangs(const GUIElement* const
 	else if (eltpos.y + eltsize.y > mysize.y) { newpos.y = mysize.y - eltsize.y; overhangs = true; }
 	return { overhangs, newpos };
 }
-
 const sf::Vector2f& GUIInterface::GetLocalPosition() const { return layers->GetPosition(); }
-
 GUIInterface::~GUIInterface() {
+
 }
 
