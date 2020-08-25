@@ -350,5 +350,11 @@
     <ClInclude Include="GUILabel.h">
       <Filter>Header Files\GUI</Filter>
     </ClInclude>
+    <ClInclude Include="GUIButton.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GUISticky.h">
+      <Filter>Source Files\GUI</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

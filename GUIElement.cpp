@@ -39,13 +39,13 @@ void GUIElement::OnClick(const sf::Vector2f& mousepos) {
 	evntinfo.interfacehierarchy = GetHierarchyString();
 	GetGUIManager()->AddGUIEvent(std::make_pair(EventData::EventType::GUI_CLICK, std::move(evntinfo)));
 }
+
 void GUIElement::AdjustPositionToParent() {
 	if (parent == nullptr) return; //if in mid initialisation
 	auto overhangs = parent->EltOverhangs(this); //check if this entire elt still lies in interface after pos change
 	if (overhangs.first == false) return; //elt still lies within the interface.
 	visual->QueuePosition(overhangs.second);
 }
-
 void GUIElement::SetState(const GUIState& state) {
 	/*if (state == activestate) return;*/
 	activestate = state;

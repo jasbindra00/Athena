@@ -197,6 +197,7 @@
     <ClInclude Include="GUILayerData.h" />
     <ClInclude Include="GUIButton.h" />
     <ClInclude Include="GUIScrollbar.h" />
+    <ClInclude Include="GUISticky.h" />
     <ClInclude Include="GUITextfield.h" />
     <ClInclude Include="GUILabel.h" />
     <ClInclude Include="KeyProcessing.h" />
