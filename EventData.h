@@ -11,16 +11,13 @@
 #include "GUIData.h"
 #include "EnumConverter.h"
 #include "CustomException.h"
+#include "Bitmask.h"
 
 
 
 using GUIData::GUIStateData::GUIState;
 using GUIData::GUITypeData::GUIType;
 using KeyProcessing::Keys;
-
-
-
-
 namespace EventData {
 	enum class EventType {
 		KEYPRESSED = sf::Event::EventType::KeyPressed,
@@ -62,7 +59,6 @@ namespace EventData {
 		int mousecode{ -1 };
 		GUIEventInfo guiinfo;
 	};
-
 	static enum class BINDINGTYPE {
 		GAME, GUI
 	};
@@ -73,7 +69,7 @@ namespace EventData {
 		std::string bindingname;
 		BINDINGTYPE type;
 		int conditionsmet{ 0 };
-		bool ANDBinding{ true };
+		Bitmask conditionmask;
 
 		Binding(const std::string& name, const BINDINGTYPE& t) :bindingname(name), type(t) {
 		}
@@ -88,37 +84,29 @@ namespace EventData {
 		operator std::string() const {
 			return std::string{};
 		}
-
-		friend bool operator&&(const Binding& b1,const Binding& b2) {
-
-		}
-		friend bool operator||(const Binding& b1, const Binding& b2) {
-
-		}
 	};
 	struct GameBinding :public Binding {
 		GameBinding(const std::string& bindingname) :Binding(bindingname, BINDINGTYPE::GAME) {
 		}
-
 		void ReadIn(Keys keys) override {
+			int i = 0;
 			for (auto& key : keys) {
-				unsigned int evnttype;
-				unsigned int keycode;
-				if (!KeyProcessing::IsOnlyNumeric(key.first) || !KeyProcessing::IsOnlyNumeric(key.second)){
-					if (key.first == "AND" || key.first == "OR") {
-						
-					}
-					LOG::Log(LOCATION::STANDARDBINDING, LOGTYPE::ERROR, __FUNCTION__, "Invalid GAMEBINDING condition arguments for binding of name " + bindingname + ". Ensure that the GAMEBINDING conditions are integral types. DID NOT READ CONDITION..");
-					continue;
+				unsigned int event_type;
+				unsigned int key_code;
+				//CHANGE KEYPROCESSING TO VECTOR INSTEAD OF UNORDERED MULTIMAP.
+				if (!KeyProcessing::IsOnlyNumeric(key.first) || !KeyProcessing::IsOnlyNumeric(key.second)) { //UNORDERED_MAP IS MESSING WITH THE KEYS.
+					if (key.first == "OR") conditionmask.ToggleBit(i);
+					else if (key.first != "AND") LOG::Log(LOCATION::STANDARDBINDING, LOGTYPE::ERROR, __FUNCTION__, "Invalid GAMEBINDING condition arguments for binding of name " + bindingname + ". Ensure that the GAMEBINDING conditions are integral types. DID NOT READ CONDITION..");
 				}
-				evnttype = std::stoi(key.first);
-				keycode = std::stoi(key.second);
-				AddCondition(static_cast<EventType>(evnttype), std::move(keycode));
+				else {
+					event_type = std::stoi(key.first);
+					key_code = std::stoi(key.second);
+					AddCondition(static_cast<EventType>(event_type), std::move(key_code));
+				}
+				++i;
 			}
-			
 		}
 	};
-
 	//init via ctor
 	struct GUIBinding : public Binding {
 		GUIBinding(const std::string& bindingname) :Binding(bindingname, BINDINGTYPE::GUI) {
@@ -152,8 +140,6 @@ namespace EventData {
 			evntinfo.interfacehierarchy = std::move(hierarchystr);
 			AddCondition(std::move(guieventtype), std::move(evntinfo));
 		}
-
-		
 	};
 }
 #endif

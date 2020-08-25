@@ -10,6 +10,7 @@ private:
 	ElementHierarchyStorage elementhierarchy;
 	std::shared_ptr<sf::Texture> atlasmap;
 	bool spritesheet_loaded{ false };
+	sf::Vector2f atlas_tile_size;
 	using Visible = bool;
 	std::array<std::pair<Visible,std::unique_ptr<sf::Shape>>, 1> customshapes;
 	template<typename SHAPE_TYPE, std::size_t INDEX>
@@ -17,6 +18,8 @@ private:
 		return dynamic_cast<SHAPE_TYPE*>(customshapes.at(INDEX).second.get());
 	}
 	std::unordered_map<std::string, GUIInterface*> interfaces;
+	void SetSelectorPosition(const bool& left);
+	void CalibrateActiveTileTexture();
 public:
 	State_LevelEditor(Manager_State* statemgr, Manager_GUI* guimgr);
 	void draw(sf::RenderTarget& target, sf::RenderStates state) const override;

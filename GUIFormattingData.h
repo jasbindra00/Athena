@@ -128,7 +128,7 @@ namespace GUIFormattingData {
 			attributes[STYLE_ATTRIBUTE::TEXT_FILL_COLOR] = std::move(defaultc);
 			attributes[STYLE_ATTRIBUTE::BG_TEXTURE_NAME] = std::string{ "" };
 			attributes[STYLE_ATTRIBUTE::TEXT_FONT_NAME] = std::string{};
-			attributes[STYLE_ATTRIBUTE::BG_TEXTURE_RECT] = sf::IntRect{};
+			attributes[STYLE_ATTRIBUTE::BG_TEXTURE_RECT] = sf::IntRect{0,0,0,0};
 			attributes[STYLE_ATTRIBUTE::TEXT_STRING] = std::string{};
 			attributes[STYLE_ATTRIBUTE::BG_OUTLINE_THICKNESS] = 1.0;
 			attributes[STYLE_ATTRIBUTE::TEXT_CHARACTER_SIZE] = 30.0;
@@ -272,11 +272,14 @@ namespace GUIFormattingData {
 			pendingparentredraw = true;
 		}
 		void ApplyBackground(GUIStyle& activestyle) {
+			if (activestyle.pending_bg_apply) {
+				int x = 3;
+			}
 			solid_background.setFillColor(std::get<sf::Color>(activestyle.GetAttribute(STYLE_ATTRIBUTE::BG_FILL_COLOR)));
 			solid_background.setOutlineColor(std::get<sf::Color>(activestyle.GetAttribute(STYLE_ATTRIBUTE::BG_OUTLINE_COLOR)));
 			solid_background.setOutlineThickness(std::get<double>(activestyle.GetAttribute(STYLE_ATTRIBUTE::BG_OUTLINE_THICKNESS)));
+			texture_background.setTextureRect(std::get<sf::IntRect>(activestyle.attributes.at(STYLE_ATTRIBUTE::BG_TEXTURE_RECT)));
 			texture_background.setTexture(RequestVisualResource<sf::Texture>());
-			//texture_background.setTextureRect(std::get<sf::IntRect>(activestyle.attributes.at(STYLE_ATTRIBUTE::BG_TEXTURE_RECT)));
 			activestyle.pending_bg_apply = false;
 			pendingparentredraw = true;
 		}

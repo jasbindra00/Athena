@@ -65,16 +65,13 @@ void Manager_Event::HandleEvent(const std::pair<EventType, GUIEventInfo>& evnt) 
 using EventData::EventType;
 void Manager_Event::HandleEvent(const sf::Event& evnt, sf::RenderWindow* winptr) { //only considering the bindings of the active state.
 	guimgr->HandleEvent(evnt, winptr); //checks if any of the events cause change within any active interfaces.
-	if (evnt.type == sf::Event::KeyPressed) {
-		int x = 4;
-	}
 	auto eventtype = static_cast<EventType>(evnt.type);
 	auto& statebindings = statebindingobjects[activestate];
 	for (auto& binding : statebindings){
 		if (binding.second->type == BINDINGTYPE::GUI) continue; //we don't handle gui events here.
 		auto& bindingobject = binding.second;
 		for (auto& bindingcondition : bindingobject->conditions){
-			auto& code = std::get<0>(bindingcondition.second); //get the int member in union
+			auto& code = std::get<int>(bindingcondition.second); //get the int member in union
 			if (bindingcondition.first == eventtype) { //
 				if (bindingcondition.first == EventType::KEYPRESSED || bindingcondition.first == EventType::KEYRELEASED) {
  					const auto& eventcode = evnt.key.code;
