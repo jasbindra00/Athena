@@ -32,11 +32,11 @@ void State_LevelEditor::Draw(sf::RenderTarget& target){
 	
 	//draw contiguous rectangles from 0 : 75 x && y
 
-	float win_scale{ 1 };
-	auto win_size = sf::Vector2f{ static_cast<float>(target.getSize().x * win_scale), static_cast<float>(target.getSize().y * win_scale) };
-	int n_columns = 20;
-	int n_rows = 20;
-	auto rect_size = sf::Vector2f{win_size.x / n_columns, win_size.y / n_rows};
+// 	float win_scale{ 1 };
+// 	auto win_size = sf::Vector2f{ static_cast<float>(target.getSize().x * win_scale), static_cast<float>(target.getSize().y * win_scale) };
+// 	int n_columns = 20;
+// 	int n_rows = 20;
+// 	auto rect_size = sf::Vector2f{win_size.x / n_columns, win_size.y / n_rows};
 // 	sf::RectangleShape s;
 // 	s.setSize(rect_size);
 // 	s.setFillColor(sf::Color::Color(200, 200, 200, 255));
@@ -50,19 +50,43 @@ void State_LevelEditor::Draw(sf::RenderTarget& target){
 // 			target.draw(s);
 // 		}
 // 	}
+
 	
+	
+	//Determine the empty_tile size based on the current window scale.
+	auto win = static_cast<sf::RenderWindow*>(&target);
+
+	//we need to be able to limit the zoom such that the maximum zoom out will accomodate 256 x 256 tiles.
+	//Find the zoom at which 256 tiles is fit in.
+	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::S)) {
+		auto v = win->getView();
+		v.zoom(1.00001);
+		win->setView(std::move(v));
+	}
+	else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::W)) {
+		auto v = win->getView();
+			v.zoom(0.99999);
+			win->setView(std::move(v));
+	}
+	//Find the zoom scale of the window.
+	auto win_view_size = win->getView().getSize();
+	auto win_size = win->getSize();
+	sf::Vector2f scale{ win_size.x / win_view_size.x, win_size.y/win_view_size.y };
+
+	//Multiply the scale_x and scale_y by the empty_rect_size
+	empty_tile.setSize(sf::Vector2f{ empty_tile.getSize().x * scale.x, empty_tile.getSize().y * scale.y });
+	//Iterate through the available canvas, drawing as many rects as possible.
+	
+	float view_space_proportion{ 0.75 };
+	sf::Vector2f empty_tile_size{ empty_tile.getSize() };
+	for (float posy = 0; posy <= win_size.y * view_space_proportion; posy += empty_tile_size.y) {
+		for (float posx = 0; posx <= win_size.x * view_space_proportion; posx += empty_tile_size.x) {
+			empty_tile.setPosition(sf::Vector2f{ posx,posy });
+			target.draw(empty_tile);
+		}
+	}
 
 
-
-
-
-
-
-
-	//find the window scale.
-	//iterate through the available viewing space, and draw contiguous rectangles.
-	//right interface starts at 75%
-	//bottom interface starts at 75%
 
 }
 void State_LevelEditor::Update(const float& dT){
