@@ -24,8 +24,7 @@ namespace TileData {
 		}
 		sf::IntRect& GetTextureRect() const { return texturerect; }
 		sf::Sprite& GetTileSprite() { return tilesprite; }
-		bool 
-			ure(const std::string& atlas) {
+		bool ure(const std::string& atlas) {
 			SharedTexture texture = texturemgr->RequestResource(atlas);
 			if (texture == nullptr) {
 				texture = texturemgr->RequestResource("ERRORTILE");

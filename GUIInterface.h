@@ -40,7 +40,7 @@ public:
 	virtual void OnLeave() override {
 	}
 	virtual void SetEnabled(const bool& inp) const override;
-	void DefocusTextfields();
+	void DefocusStickyElements();
 
 	bool AddElement(const std::string& eltname, std::unique_ptr<GUIElement>& elt);
 	bool RemoveElement(const std::string& eltname);

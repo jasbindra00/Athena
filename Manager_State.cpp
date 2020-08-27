@@ -89,8 +89,7 @@ void Manager_State::Draw() {
 		currentstate--;
 	}
 	while (currentstate != statestack.end()) {
-		context->window->GetRenderWindow()->draw(*currentstate->second);
+		currentstate->second->Draw(*context->window->GetRenderWindow());
 		currentstate++;
 	}
 }
-

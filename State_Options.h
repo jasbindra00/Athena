@@ -5,7 +5,7 @@ class State_Options : public State_Base {
 protected:
 public:
 	State_Options();
-	virtual void draw(sf::RenderTarget& target, sf::RenderStates state) const override;
+	virtual void Draw(sf::RenderTarget& target) override;
 	virtual void Update(const float& dT) override;
 	virtual void OnCreate() override;
 	virtual void OnDestroy() override;

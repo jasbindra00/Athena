@@ -20,7 +20,7 @@ void State_Game::KeyPress(EventDetails* details) {
 	std::cout << "Spacebar pressed" << std::endl;
 }
 
-void State_Game::draw(sf::RenderTarget& target, sf::RenderStates state) const
+void State_Game::Draw(sf::RenderTarget& target)
 {
 	sf::RectangleShape s;
 	s.setFillColor(sf::Color::Green);

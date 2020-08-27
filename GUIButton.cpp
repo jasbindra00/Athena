@@ -6,11 +6,11 @@ GUIButton::GUIButton(GUIInterface* parent):GUIElement(parent,GUIType::BUTTON,GUI
 }
 
 void GUIButton::OnNeutral(){
-
+	GUIElement::OnNeutral();
 }
 
 void GUIButton::OnHover(){
-	GUIElement::OnHover();
+
 }
 
 void GUIButton::OnClick(const sf::Vector2f& mousepos){

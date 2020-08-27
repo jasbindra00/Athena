@@ -17,7 +17,7 @@ public:
 	void OnDestroy() override;
 	void OnCreate() override;
 	void Update(const float& dT) override;
-	void draw(sf::RenderTarget& target, sf::RenderStates state) const override;
+	void Draw(sf::RenderTarget& target) override;
 	void UpdateCamera() override;
 	void Continue() override;
 	void Activate() override;

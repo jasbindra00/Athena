@@ -9,7 +9,7 @@
 
 class Manager_State;
 class Manager_GUI;
-class State_Base : public sf::Drawable //abstract base for all specialised states
+class State_Base //abstract base for all specialised states
 {
 protected:
 	sf::View stateview;
@@ -21,7 +21,7 @@ public:
 	State_Base(Manager_State* statemanager, Manager_GUI* guimanager): statemgr(statemanager),guimgr(guimanager), transparency(true), transcendency(true){
 	}
 	virtual ~State_Base(){}
-	virtual void draw(sf::RenderTarget& target, sf::RenderStates state) const override = 0;
+	virtual void Draw(sf::RenderTarget& target) = 0;
 	virtual void Update(const float& dT) = 0;
 	virtual void Activate() = 0;
 	virtual void Deactivate() = 0;

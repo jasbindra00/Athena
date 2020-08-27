@@ -13,7 +13,7 @@ protected:
 public:
 	State_Game(Manager_State* statemanager, Manager_GUI* guimgr);
 	virtual void Update(const float& dT) override;
-	virtual void draw(sf::RenderTarget& target, sf::RenderStates state) const override;
+	virtual void Draw(sf::RenderTarget& target) override;
 	virtual void OnCreate() override;
 	virtual void OnDestroy() override;
 	virtual void Activate() override;

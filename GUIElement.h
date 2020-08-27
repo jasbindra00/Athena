@@ -15,6 +15,7 @@ class Manager_Texture;
 class Manager_Font;
 class Manager_GUI;
 
+using CustomStateCallable = std::function<void(void)>;
 //TURN VISUAL INTO pImpl
 using namespace GUIData::GUIStateData;
 using namespace GUIData::GUITypeData;
@@ -30,6 +31,7 @@ private:
 	std::unique_ptr<GUIVisual> visual;
 
 protected:
+	//std::array<CustomStateCallable, 3> customcallables;
 	GUILayerType layertype;
 	mutable GUIState activestate;
 	//the active style is applied to the visual
@@ -43,6 +45,7 @@ protected:
 	virtual void OnNeutral();
 	virtual void OnHover();
 	virtual void OnClick(const sf::Vector2f& mousepos);
+	virtual void OnFocus();
 	virtual void OnLeave() = 0;
 	virtual void OnRelease() = 0;
 	void AdjustPositionToParent();
@@ -73,8 +76,8 @@ public:
 	inline const GUIState& GetActiveState() const { return activestate; }
 
 	inline const sf::Vector2f& GetSize() const { return visual->GetElementSize(); }
-	inline GUIStyle& GetActiveStyle() { return visual->GetStyle(activestate); }
-
+	inline GUIStyle& GetActiveStyle() { return visual->GetStyle(activestate); } //DEPRECIATED
+	inline GUIStyle& GetStyle(const GUIState& state) { return visual->GetStyle(state); }
 	inline GUIVisual& GetVisual() { return *visual; }
 	const virtual sf::Vector2f& GetLocalPosition() const { return visual->GetElementPosition(); }
 	sf::Vector2f GetGlobalPosition() const;

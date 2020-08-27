@@ -17,7 +17,6 @@ void GUIElement::Update(const float& dT) {
 	AdjustPositionToParent();
 	//the user may have made changes to the visual, and this change must be communicated to the parent's layers.
 	visual->Update(GetLocalBoundingBox());
-	
 }
 void GUIElement::OnElementCreate(Manager_Texture* texturemgr, Manager_Font* fontmgr, KeyProcessing::Keys& attributes, const GUIStateStyles& styles){
 	visual = std::make_unique<GUIVisual>(texturemgr, fontmgr, styles);
@@ -28,6 +27,7 @@ void GUIElement::OnNeutral(){
 	SetState(GUIState::NEUTRAL);
 	EventData::GUIEventInfo evntinfo;
 	evntinfo.interfacehierarchy = GetHierarchyString();
+	evntinfo.elementstate = activestate;
 	GetGUIManager()->AddGUIEvent(std::make_pair(EventData::EventType::GUI_CLICK, std::move(evntinfo)));
 }
 void GUIElement::OnHover() {
@@ -37,6 +37,15 @@ void GUIElement::OnClick(const sf::Vector2f& mousepos) {
 	SetState(GUIState::CLICKED);
 	EventData::GUIEventInfo evntinfo;
 	evntinfo.interfacehierarchy = GetHierarchyString();
+	evntinfo.elementstate = activestate;
+	GetGUIManager()->AddGUIEvent(std::make_pair(EventData::EventType::GUI_CLICK, std::move(evntinfo)));
+}
+
+void GUIElement::OnFocus(){
+	SetState(GUIState::FOCUSED);
+	EventData::GUIEventInfo evntinfo;
+	evntinfo.interfacehierarchy = GetHierarchyString();
+	evntinfo.elementstate = GUIState::FOCUSED;
 	GetGUIManager()->AddGUIEvent(std::make_pair(EventData::EventType::GUI_CLICK, std::move(evntinfo)));
 }
 

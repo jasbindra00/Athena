@@ -131,14 +131,14 @@ void GUIInterface::SetEnabled(const bool& inp) const{
 		elt.second->SetEnabled(inp);
 	}
 }
-void GUIInterface::DefocusTextfields(){
+void GUIInterface::DefocusStickyElements(){
 	for (auto& elt : elements) {
 		if (elt.second->IsHidden()) continue;
-		if (elt.second->GetType() == GUIType::TEXTFIELD) {
+		if (elt.second->GetType() == GUIType::TEXTFIELD || elt.second->GetType() == GUIType::LABEL) { //HAVE TEXTFIELD AND LABEL INHERIT FROM STICKY INTERMEDIAT
 			if (elt.second->GetActiveState() != GUIState::NEUTRAL) elt.second->OnNeutral();
 		}
 		else if (elt.second->GetType() == GUIType::WINDOW) {
-			static_cast<GUIInterface*>(elt.second.get())->DefocusTextfields();
+			static_cast<GUIInterface*>(elt.second.get())->DefocusStickyElements();
 		}
 	}
 }

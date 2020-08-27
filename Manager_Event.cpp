@@ -46,16 +46,19 @@ using EventData::GUIEventInfo;
 void Manager_Event::HandleEvent(const std::pair<EventType, GUIEventInfo>& evnt) {
 	auto& statebindings = statebindingobjects[activestate];
 	for (auto& binding : statebindings) {
+		if (binding.first == "Activate_Atlas_Map") {
+			int x = 4;
+		}
 		auto& bindingobject = binding.second;
 		if (bindingobject->type != BINDINGTYPE::GUI) continue;
 		for (auto& condition : bindingobject->conditions) {
+			if (bindingobject->bindingname == "") {
+
+			}
 			if (condition.first != evnt.first) continue;
 			auto& requiredevntinfo = std::get<1>(condition.second);
-			//if (requiredevntinfo.elementstate != evnt.second.elementstate) continue;
-// 			std::cout << requiredevntinfo.interfacehierarchy << std::endl;
-// 			std::cout << evnt.second.interfacehierarchy << std::endl;
 			if (requiredevntinfo.interfacehierarchy != evnt.second.interfacehierarchy) continue;
-			//if (evnt.elementstate != guicondition.elementstate) continue;
+			if (requiredevntinfo.elementstate != evnt.second.elementstate) continue;
 			//its a full match.
 			++bindingobject->conditionsmet;
 			bindingobject->details.guiinfo = evnt.second;
@@ -137,7 +140,6 @@ void Manager_Event::Update(sf::RenderWindow* winptr) { //handling live input eve
 		}
 		if (bindingobject->conditionsmet == bindingobject->conditions.size()) { //checking if this binding has had all of its conditions met
 			auto foundcallable = FindBindingData<BindingCallable>(activestate, bindingobject->bindingname);
-			std::cout << "MATCH" << std::endl;
 			if (foundcallable.first) {
 				auto& callable = foundcallable.second->second;
 				callable(&bindingobject->details);

@@ -216,7 +216,7 @@ void Manager_GUI::HandleEvent(const sf::Event& evnt, sf::RenderWindow* winptr) {
 		SetActiveTextfield(nullptr);
 		for (auto& interfaceobj : activeinterfaces) {
 			if (interfaceobj.second->IsHidden() || !interfaceobj.second->IsEnabled()) continue;
-			interfaceobj.second->DefocusTextfields();
+			interfaceobj.second->DefocusStickyElements();
 			if (interfaceobj.second->Contains(clickcoords)) {
 				if (interfaceobj.second->GetActiveState() == GUIState::NEUTRAL) {
 					interfaceobj.second->OnClick(clickcoords);

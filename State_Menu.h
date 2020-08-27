@@ -7,7 +7,7 @@ class State_Menu : public State_Base
 protected:
 public:
 	State_Menu(Manager_State* statemgr);
-	virtual void draw(sf::RenderTarget& target, sf::RenderStates state) const override;
+	virtual void Draw(sf::RenderTarget& target) override;
 	virtual void Update(const float& dT) override;
 	virtual void OnCreate() override;
 	virtual void OnDestroy() override;

@@ -153,8 +153,6 @@ namespace GUIFormattingData {
 		const bool& PendingBGApply() const { return pending_bg_apply;}
 	};
 
-
-
 	using GUIStateStyles = std::array<GUIStyle, 3>;
 	using GUIData::GUIStateData::GUIState;
 	class GUIVisual {//EXPOSED TO USER.
@@ -346,6 +344,7 @@ namespace GUIFormattingData {
 			if(!std::get<bool>(statestyles.at(static_cast<int>(activestate)).GetAttribute(STYLE_ATTRIBUTE::TEXT_HIDDEN))) target.draw(text);
 			if(toparent) pendingparentredraw = false;
 		}
+		
 		GUIStyle& GetStyle(const GUIState& state) {return statestyles.at(static_cast<int>(state));}
 		void ChangeStyle(const GUIState& state, GUIStyle& style) {
 			GetStyle(state) = style;

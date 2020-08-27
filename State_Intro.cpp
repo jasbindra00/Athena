@@ -26,7 +26,7 @@ void State_Intro::Update(const float& dT){
 
 }
 
-void State_Intro::draw(sf::RenderTarget& target, sf::RenderStates state) const{
+void State_Intro::Draw(sf::RenderTarget& target){
 	target.draw(shape);
 }
 

@@ -1,7 +1,7 @@
 #ifndef GUITEXTFIELD_H
 #define GUITEXTFIELD_H
 #include "GUIElement.h"
-
+#include "GUISticky.h"
 #include <functional>
 #include "EnumConverter.h"
 #include "Bitmask.h"
@@ -27,7 +27,6 @@ protected:
 	}
 public:
 	GUITextfield(GUIInterface* parent);
-	
 
 	std::string GetTextfieldString(); //MAKE CONST
 
