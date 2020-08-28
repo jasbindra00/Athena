@@ -3,7 +3,7 @@
 #include "State_Base.h"
 #include "GUIInterface.h"
 #include "EventData.h"
-
+#include "GUILayerData.h"
 
 
 using TileID = unsigned int;
@@ -34,7 +34,11 @@ using DefaultProperties = TileProperties;
 struct UserMap {
 	std::shared_ptr<sf::Texture> tile_sheet;
 	sf::Vector2i tile_dimensions;
+	sf::Vector2u map_dimensions;
 	std::vector<std::pair<DefaultProperties, Tile>> registered_tiles;
+	UserMap(const sf::Vector2u& m_d, const sf::Vector2i& t_d, std::shared_ptr<sf::Texture> t_s):map_dimensions(m_d), tile_dimensions(t_d), tile_sheet(std::move(t_s)) {
+
+	}
 
 	//tile id will be the array position on the map.
 };
@@ -63,10 +67,25 @@ private:
 	enum STATEINTERFACES {
 		TOP_PANEL, POP_UP_PANEL, RIGHT_PANEL, BOT_PANEL
 	};
-	//tile selector active if state is not neutral
+	//Map canvas data
+	sf::RenderTexture map_screen;
+	sf::View map_view;
+	sf::Sprite map_sprite;
+	float x_off = 0; 
+	float y_off = 0;
+	unsigned int inc = 10;
+
+	GUILayerData::GUILayerPtr map_canvas;
+
+
+
+
+
 	sf::RectangleShape tile_selector;
-	sf::RectangleShape unavailable_tile_texture;
 	sf::RectangleShape empty_tile;
+
+
+
 	UserMap* active_map;
 	//spritesheet loaded by the size of user_maps
 	std::unordered_map<std::string, std::unique_ptr<UserMap>> user_maps;
@@ -91,7 +110,7 @@ public:
 	void UpdateCamera() override;
 	void Continue() override;
 
-	UserMap* CreateNewMap(const std::string& map_name, const sf::Vector2i& tiledimensions, std::shared_ptr<sf::Texture> tile_sheet);
+	UserMap* CreateNewMap(const std::string& map_name,const sf::Vector2u& map_tile_dimensions, const sf::Vector2i& tiledimensions, std::shared_ptr<sf::Texture> tile_sheet);
 
 	//USER INPUT
 	void ActivatePopUp(EventData::EventDetails* details);

@@ -8,9 +8,11 @@ namespace GUILayerData {
 	using GUIData::GUILayerType;
 	class GUILayer{
 	private:
+		std::vector<sf::Drawable*> user_drawables;
 		GUILayerType layertype;
 		sf::RenderTexture layer;
 		sf::Sprite layersprite;
+		sf::View layer_view;
 		mutable bool pendinglayerredraw{ true };
 	public:
 		GUILayer(const sf::Vector2f& eltsize, const GUILayerType& type):layertype(type) {
@@ -39,9 +41,14 @@ namespace GUILayerData {
 					elt.second->Draw(layer, true);
 					//draw it to the layer.
 				}
-				//if its not part of the current layer, then do we still draw in? no. the other layers will handle it since we are in the middle of a loop going through all layers.
 			}
+			//Draw any user specified drawables.
+			for (auto& drawable : user_drawables) {
+				layer.draw(*drawable);
+			}
+			layer.setView(layer_view); //OPTIMISE THIS TO ONLY SET WHEN CHANGED.
 			layer.display();
+			user_drawables.clear();
 			pendinglayerredraw = false;			
 		}
 		void SetSize(const sf::Vector2f& size) {
@@ -49,8 +56,12 @@ namespace GUILayerData {
 			layer.clear(sf::Color::Color(0, 0, 0, 0));
 			pendinglayerredraw = true;
 		}
-		void Draw(const sf::Drawable& drawable) {
-			layer.draw(drawable);
+		void Draw(const std::vector<sf::Drawable*>& drawables) {
+			user_drawables = drawables;
+			pendinglayerredraw = true;
+		}
+		void Zoom(const float& factor) {
+			layer_view.zoom(factor);
 			pendinglayerredraw = true;
 		}
 		void SetPosition(const sf::Vector2f& position) {
@@ -127,8 +138,12 @@ using GUIData::GUILayerType;
 			pendingparentredraw = true;
 		}
 		const bool& PendingParentRedraw() const { return pendingparentredraw; }
-		void DrawToLayer(const GUILayerType& layer, const sf::Drawable& drawable) {
-			GetLayer(layer)->Draw(drawable); 
+		void DrawToLayer(const GUILayerType& layer, const std::vector<sf::Drawable*>& drawables) {//CHANGE THIS FOR FINER USER - DRAWABLE CONTROL.
+			GetLayer(layer)->Draw(drawables); 
+			pendingparentredraw = true;
+		}
+		void ZoomLayer(const GUILayerType& layer, const float& factor) {
+			GetLayer(layer)->Zoom(factor);
 			pendingparentredraw = true;
 		}
 		sf::RenderTarget& GetLayerTarget(const GUILayerType& layer) { return layers.at(static_cast<int>(layer))->GetTarget(); }

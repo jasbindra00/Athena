@@ -34,10 +34,12 @@ void GUITextfield::ReadIn(KeyProcessing::Keys& keys){
 	using namespace Utility::CharacterCheckData;
 	GUIElement::ReadIn(keys);
 	auto textfieldpredicatekeys = keys.equal_range("TEXTFIELD_PREDICATE");
-	for (auto it = textfieldpredicatekeys.first; it != textfieldpredicatekeys.second; ++it) {
-		auto validpredicate = magic_enum::enum_cast<STRING_PREDICATE>(it->second);
+	for (auto it = textfieldpredicatekeys.first; it != textfieldpredicatekeys.second; ++it) { //MAGIC ENUM NOT CONVERTING PREDICATES? 128<=ENUMVAL<=128...
+		std::string x = it->second;
+		auto validpredicate = magic_enum::enum_cast<Utility::CharacterCheckData::STRING_PREDICATE>(x);
 		if (validpredicate.has_value()) AddPredicate(std::move(validpredicate.value()));
 	}
+
 	auto maxcharkey = KeyProcessing::GetKey("MAX_TEXTFIELD_CHARS", keys);
 	if (!maxcharkey.first) return;
 	try { SetMaxChars(std::stoi(maxcharkey.second->second)); }

@@ -23,7 +23,6 @@ protected:
 
 	Manager_GUI* guimgr{ nullptr };
 	virtual void SetState(const GUIState& state) override;
-	void DrawToLayer(const GUILayerType& layer,const sf::Drawable& drawable);
 	void Draw(sf::RenderTarget& target, const bool& toparent) override;
 	void Update(const float& dT) override;
 	virtual void ReadIn(KeyProcessing::Keys& keys) override;
@@ -57,7 +56,7 @@ public:
 
 	std::pair<bool, sf::Vector2f> EltOverhangs(const GUIElement* const elt);
 	const virtual sf::Vector2f& GetLocalPosition() const override;
-	
+	void DrawToLayer(const GUILayerType& layer, const std::vector<sf::Drawable*>& drawable);
 	virtual ~GUIInterface();
 	
 };

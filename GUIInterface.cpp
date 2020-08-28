@@ -60,8 +60,8 @@ void GUIInterface::SetState(const GUIState& state){
 	if (parent) parent->layers->QueueLayerRedraw(GUILayerType::CONTENT);
 	//if it does not have a parent, then it still needs 
 }
-void GUIInterface::DrawToLayer(const GUILayerType& layer, const sf::Drawable& drawable){
-	layers->DrawToLayer(layer,drawable);
+void GUIInterface::DrawToLayer(const GUILayerType& layer, const std::vector<sf::Drawable*>& drawables){
+	layers->DrawToLayer(layer,drawables);
 }
 void GUIInterface::Draw(sf::RenderTarget& target, const bool& toparent){
 	layers->RefreshChanges(*visual, elements);
