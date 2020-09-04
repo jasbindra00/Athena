@@ -35,6 +35,9 @@ protected:
 	SharedResource<DataType> LoadResource(const std::string& resname) { //Load resource from path.
 		return static_cast<Derived*>(this)->LoadResource(resname);
 	}
+	void RegisterResourcePath() {//FOR USER. REFACTOR.
+
+	}
 	void RegisterResourcePaths(const std::string& pathname) {//reads text document which contains the name : path for each resource.
 		std::fstream file(pathname, std::ios::in);
 		if (!file.is_open()) {

@@ -55,14 +55,14 @@
     <Filter Include="Source Files\Game States">
       <UniqueIdentifier>{6b9b5ad4-18f9-4f73-8224-5e4788ccf5ba}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\NewFilter1">
-      <UniqueIdentifier>{d4473705-d2f3-44e3-ae22-8441a03117a7}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Header Files\GUI\Data">
       <UniqueIdentifier>{47ca2bae-297b-4cd1-bc92-9e14223838cb}</UniqueIdentifier>
     </Filter>
     <Filter Include="Header Files\Map">
       <UniqueIdentifier>{01d93fe6-5ae0-420e-9d84-5184c49dc6fd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Map">
+      <UniqueIdentifier>{d4473705-d2f3-44e3-ae22-8441a03117a7}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -125,6 +125,9 @@
     </ClCompile>
     <ClCompile Include="GUILabel.cpp">
       <Filter>Source Files\GUI</Filter>
+    </ClCompile>
+    <ClCompile Include="TileMap.cpp">
+      <Filter>Source Files\Map</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -308,12 +311,6 @@
     <ClInclude Include="GUIData.h">
       <Filter>Header Files\GUI\Data</Filter>
     </ClInclude>
-    <ClInclude Include="Map.h">
-      <Filter>Header Files\Map</Filter>
-    </ClInclude>
-    <ClInclude Include="MapTile.h">
-      <Filter>Header Files\Map</Filter>
-    </ClInclude>
     <ClInclude Include="CustomException.h">
       <Filter>Header Files\Utility</Filter>
     </ClInclude>
@@ -355,6 +352,15 @@
     </ClInclude>
     <ClInclude Include="GUISticky.h">
       <Filter>Header Files\GUI</Filter>
+    </ClInclude>
+    <ClInclude Include="GUIButton.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="TileMap.h">
+      <Filter>Header Files\Map</Filter>
+    </ClInclude>
+    <ClInclude Include="GUIButton.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

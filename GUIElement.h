@@ -65,6 +65,9 @@ public:
 	}
 	virtual void SetPosition(const sf::Vector2f& position);
 	virtual void SetSize(const sf::Vector2f& size);
+	void SetLayerType(const GUILayerType& type) {//CHANGE THIS
+		layertype = type;
+	}
 
 	inline const bool& IsHidden() const { return hidden; }
 	inline const bool& IsEnabled() const { return enabled; }

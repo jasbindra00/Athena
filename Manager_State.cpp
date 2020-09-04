@@ -80,7 +80,6 @@ void Manager_State::SwitchState(const GameStateType& s) {
 	stateobj->OnCreate();
 	statestack.emplace_back(s, std::move(stateobj));
 	context->eventmanager->SwitchToState(s);
-	//NEED TO CALL SWITCH STATE IN STATEMGR.
 }
 void Manager_State::Draw() {
 	auto currentstate = statestack.end() - 1;
@@ -88,8 +87,10 @@ void Manager_State::Draw() {
 		if (currentstate->second->GetTransparency() == false) break;
 		currentstate--;
 	}
+	sf::RenderWindow* win = context->window->GetRenderWindow();
 	while (currentstate != statestack.end()) {
-		currentstate->second->Draw(*context->window->GetRenderWindow());
+		win->setView(currentstate->second->GetStateView());
+		currentstate->second->Draw(*win);
 		currentstate++;
 	}
 }

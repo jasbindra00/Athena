@@ -6,7 +6,7 @@
 
 class State_Intro : public State_Base {
 protected:
-	using State_Base::stateview;
+	using State_Base::state_view;
 	using State_Base::transparency;
 	using State_Base::transcendency;
 	

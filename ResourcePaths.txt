@@ -1,6 +1,7 @@
 A1.png D:\Desktop\REFACTORS\Game Engine\BEngine\A1.png
 mytiles.png D:\Desktop\REFACTORS\Game Engine\BEngine\mytiles.png
 test.png D:\Desktop\REFACTORS\Game Engine\BEngine\test.png
+empty_map.png D:\Desktop\REFACTORS\Game Engine\BEngine\empty_map.png
 GUICheckbox_Checked_SQUARE.png D:\Desktop\REFACTORS\Game Engine\BEngine\GUICheckbox_Checked_SQUARE.png
 GUICheckbox_Unchecked_SQUARE.png D:\Desktop\REFACTORS\Game Engine\BEngine\GUICheckbox_Unchecked_SQUARE.png
 GUICheckbox_Checked_CIRCLE.png D:\Desktop\REFACTORS\Game Engine\BEngine\GUICheckbox_Checked_CIRCLE.png

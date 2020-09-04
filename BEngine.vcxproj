@@ -170,6 +170,7 @@
     <ClCompile Include="Manager_State.cpp" />
     <ClCompile Include="Manager_System.cpp" />
     <ClCompile Include="Map.cpp" />
+    <ClCompile Include="TileMap.cpp" />
     <ClCompile Include="State_Game.cpp" />
     <ClCompile Include="State_Intro.cpp" />
     <ClCompile Include="State_Level_Editor.cpp" />
@@ -208,9 +209,8 @@
     <ClInclude Include="Manager_GUI.h" />
     <ClInclude Include="Manager_Resource.h" />
     <ClInclude Include="Manager_Texture.h" />
-    <ClInclude Include="Map.h" />
+    <ClInclude Include="TileMap.h" />
     <ClInclude Include="GameStateData.h" />
-    <ClInclude Include="MapTile.h" />
     <ClInclude Include="Origin.h" />
     <ClInclude Include="State_Intro.h" />
     <ClInclude Include="State_Level_Editor.h" />

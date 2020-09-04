@@ -37,7 +37,7 @@ using GUIElementProducer = std::function<GUIElementPtr(GUIInterface*)>;
 using GUIElementFactory = std::unordered_map<GUIType, GUIElementProducer>;
 
 class Manager_GUI{
-	friend class State_LevelEditor;
+	//friend class State_LevelEditor;
 private:
 	GameStateInterfaces stateinterfaces;
 	EventQueue<std::pair<EventData::EventType,GUIEventInfo>> guieventqueue;
@@ -61,7 +61,7 @@ private:
 	GUIElementPtr CreateElement(const GUIType& TYPE, GUIInterface* parent, Keys& keys);
 
 	std::pair<bool,Interfaces::iterator> FindInterface(const GameStateType& state, const std::string& interfacename) noexcept;
-protected:\
+protected:
 	Interfaces& GetActiveInterfaces() { return stateinterfaces.at(activestate); }
 public:
 	Manager_GUI(SharedContext* context);

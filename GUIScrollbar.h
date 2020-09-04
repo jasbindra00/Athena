@@ -13,7 +13,7 @@ public:
 	void Update(const float& dT) override;
 	void ReadIn(KeyProcessing::Keys& keys) override;
 protected:
-	
+
 };
 
 

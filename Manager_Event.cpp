@@ -46,13 +46,11 @@ using EventData::GUIEventInfo;
 void Manager_Event::HandleEvent(const std::pair<EventType, GUIEventInfo>& evnt) {
 	auto& statebindings = statebindingobjects[activestate];
 	for (auto& binding : statebindings) {
-		if (binding.first == "Activate_Atlas_Map") {
-			int x = 4;
-		}
+
 		auto& bindingobject = binding.second;
 		if (bindingobject->type != BINDINGTYPE::GUI) continue;
 		for (auto& condition : bindingobject->conditions) {
-			if (bindingobject->bindingname == "") {
+			if (bindingobject->binding_name == "") {
 
 			}
 			if (condition.first != evnt.first) continue;
@@ -60,7 +58,7 @@ void Manager_Event::HandleEvent(const std::pair<EventType, GUIEventInfo>& evnt) 
 			if (requiredevntinfo.interfacehierarchy != evnt.second.interfacehierarchy) continue;
 			if (requiredevntinfo.elementstate != evnt.second.elementstate) continue;
 			//its a full match.
-			++bindingobject->conditionsmet;
+			++bindingobject->conditions_met;
 			bindingobject->details.guiinfo = evnt.second;
 		}
 	}
@@ -75,19 +73,20 @@ void Manager_Event::HandleEvent(const sf::Event& evnt, sf::RenderWindow* winptr)
 		auto& bindingobject = binding.second;
 		for (auto& bindingcondition : bindingobject->conditions){
 			auto& code = std::get<int>(bindingcondition.second); //get the int member in union
+			//CALL TEMPLATE FUNCTION TO REDUCE CODE BLOAT
 			if (bindingcondition.first == eventtype) { //
 				if (bindingcondition.first == EventType::KEYPRESSED || bindingcondition.first == EventType::KEYRELEASED) {
- 					const auto& eventcode = evnt.key.code;
+					const auto& eventcode = evnt.key.code;
 					if (code == eventcode) {
 						auto& latestkeypressed = bindingobject->details.keycode;
 						if (latestkeypressed != code) {//if the key hasn't been pressed already
 							latestkeypressed = code;
-							++bindingobject->conditionsmet; //its a first time match. condition met.
+							++bindingobject->conditions_met; //its a first time match. condition met.
 							break;
 						}
 					}
 				}
-			}
+
 				else if (bindingcondition.first == EventType::MOUSEPRESSED || bindingcondition.first == EventType::MOUSERELEASED) {
 					const auto& eventcode = evnt.mouseButton.button;
 					if (code == eventcode) {
@@ -95,12 +94,18 @@ void Manager_Event::HandleEvent(const sf::Event& evnt, sf::RenderWindow* winptr)
 						if (latestmousepress != code) {
 							latestmousepress = code;
 							bindingobject->details.mouseposition = sf::Vector2i{ evnt.mouseButton.x,evnt.mouseButton.y };
-							++bindingobject->conditionsmet;
+							++bindingobject->conditions_met;
 							break;
 						}
 
 					}
 				}
+				else if (bindingcondition.first == EventType::MOUSESCROLLED) {
+						bindingobject->details.mousewheeldelta = evnt.mouseWheelScroll.delta;
+						++bindingobject->conditions_met;
+						break;
+				}
+			}
 		}
 	}
 }
@@ -119,7 +124,7 @@ void Manager_Event::Update(sf::RenderWindow* winptr) { //handling live input eve
 						auto& latestkeypressed = bindingobject->details.keycode;
 						if (latestkeypressed != code) {
 							latestkeypressed = code;
-							++bindingobject->conditionsmet;
+							++bindingobject->conditions_met;
 						}
 					}
 					break;
@@ -130,7 +135,7 @@ void Manager_Event::Update(sf::RenderWindow* winptr) { //handling live input eve
 						if (latestmousepress != code) {
 							latestmousepress = code;
 							bindingobject->details.mouseposition = sf::Mouse::getPosition(*winptr);
-							++bindingobject->conditionsmet;
+							++bindingobject->conditions_met;
 							break;
 						}
 					}
@@ -138,15 +143,16 @@ void Manager_Event::Update(sf::RenderWindow* winptr) { //handling live input eve
 				}
 			}
 		}
-		if (bindingobject->conditionsmet == bindingobject->conditions.size()) { //checking if this binding has had all of its conditions met
-			auto foundcallable = FindBindingData<BindingCallable>(activestate, bindingobject->bindingname);
+		if (bindingobject->conditions_met == bindingobject->conditions.size()) { //checking if this binding has had all of its conditions met
+			auto foundcallable = FindBindingData<BindingCallable>(activestate, bindingobject->binding_name);
+			std::cout << "MATCH" << std::endl;
 			if (foundcallable.first) {
 				auto& callable = foundcallable.second->second;
 				callable(&bindingobject->details);
 				
 			}
 		}
-		bindingobject->conditionsmet = 0; //resetting after every iteration.
+		bindingobject->conditions_met = 0; //resetting after every iteration.
 		bindingobject->details.Reset();
 	}
 }

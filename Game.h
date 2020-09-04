@@ -11,7 +11,7 @@
 #include "Manager_Texture.h"
 #include "Manager_Font.h"
 #include "GameStateData.h"
-#include "Map.h"
+#include "TileMap.h"
 
 class Game
 {
@@ -55,6 +55,9 @@ public:
 		window->GetRenderWindow()->clear();
 		statemanager->Draw();
 		guimgr->Draw();
+		/*
+	
+		*/
 		window->GetRenderWindow()->display();
 	}
 	~Game() {

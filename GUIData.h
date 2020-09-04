@@ -2,7 +2,7 @@
 #define GUIINFO_H
 #include "EnumConverter.h"
 #include <type_traits>
-
+#include <SFML/Graphics.hpp>
 namespace GUIData {
 
 	enum class GUILayerType {
@@ -34,6 +34,7 @@ namespace GUIData {
 			return GUIType::NULLTYPE;
 			});
 	}
+
 }
 
 

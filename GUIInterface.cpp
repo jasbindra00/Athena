@@ -99,6 +99,7 @@ std::pair<bool, GUIElements::iterator> GUIInterface::GetElement(const std::strin
 void GUIInterface::OnClick(const sf::Vector2f& pos) {
 	GUIElement::OnClick(pos); //dispatches event.
 	for (auto& element : elements) {
+		if (element.second->GetLayerType() == GUILayerType::BACKGROUND) continue; //CHANGE THIS
 		if (element.second->IsHidden()) continue;
 		if (element.second->GetActiveState() != GUIState::CLICKED) { //if the element has not already been clicked
 			if (element.second->Contains(pos)) {

@@ -11,13 +11,12 @@
 #include "GUIData.h"
 #include "EnumConverter.h"
 #include "CustomException.h"
-#include "Bitmask.h"
-
 
 
 using GUIData::GUIStateData::GUIState;
 using GUIData::GUITypeData::GUIType;
 using KeyProcessing::Keys;
+class Manager_Event;
 namespace EventData {
 	enum class EventType {
 		KEYPRESSED = sf::Event::EventType::KeyPressed,
@@ -63,15 +62,18 @@ namespace EventData {
 		GAME, GUI
 	};
 	using EventInfo = std::variant<int, GUIEventInfo>;
-	struct Binding {
-		std::vector<std::pair<EventType, EventInfo>> conditions;
-		EventDetails details;
-		std::string bindingname;
+	class Binding {
+		friend class Manager_Event;
+	private:
 		BINDINGTYPE type;
-		int conditionsmet{ 0 };
-		Bitmask conditionmask;
-
-		Binding(const std::string& name, const BINDINGTYPE& t) :bindingname(name), type(t) {
+		EventDetails details;
+		std::string binding_name;
+		int conditions_met{ 0 };
+	protected:
+		std::vector<std::pair<EventType, EventInfo>> conditions;
+		Bitmask condition_mask;
+	public:
+		Binding(const std::string& name, const BINDINGTYPE& t) :binding_name(name), type(t) {
 		}
 		void AddCondition(const EventType& evnttype, const EventInfo& evntinfo) {
 			conditions.emplace_back(evnttype, evntinfo);
@@ -90,19 +92,15 @@ namespace EventData {
 		}
 		void ReadIn(Keys keys) override {
 			int i = 0;
+			//Loop through all of the conditions 
 			for (auto& key : keys) {
+				if (!(KeyProcessing::IsOnlyNumeric(key.first) || KeyProcessing::IsOnlyNumeric(key.second))) continue;
 				unsigned int event_type;
 				unsigned int key_code;
 				//CHANGE KEYPROCESSING TO VECTOR INSTEAD OF UNORDERED MULTIMAP.
-				if (!KeyProcessing::IsOnlyNumeric(key.first) || !KeyProcessing::IsOnlyNumeric(key.second)) { //UNORDERED_MAP IS MESSING WITH THE KEYS.
-					if (key.first == "OR") conditionmask.ToggleBit(i);
-					else if (key.first != "AND") LOG::Log(LOCATION::STANDARDBINDING, LOGTYPE::ERROR, __FUNCTION__, "Invalid GAMEBINDING condition arguments for binding of name " + bindingname + ". Ensure that the GAMEBINDING conditions are integral types. DID NOT READ CONDITION..");
-				}
-				else {
-					event_type = std::stoi(key.first);
-					key_code = std::stoi(key.second);
-					AddCondition(static_cast<EventType>(event_type), std::move(key_code));
-				}
+				event_type = std::stoi(key.first);
+				key_code = std::stoi(key.second);
+				AddCondition(static_cast<EventType>(event_type), std::move(key_code));
 				++i;
 			}
 		}

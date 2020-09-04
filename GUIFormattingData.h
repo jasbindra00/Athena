@@ -316,11 +316,11 @@ namespace GUIFormattingData {
 
 			auto& activestyle = GetStyle(activestate);
 			if (pendingstateapply) ApplyState(activestyle, eltrect);
-			if (pendingpositionapply) ApplyPosition();
-			if (pendingsizeapply) ApplySize();
-			//apply individual, non state changes made by the user.
 			if (activestyle.PendingBGApply()) ApplyBackground(activestyle);
 			if (activestyle.PendingTextApply()) ApplyText(activestyle, eltrect);
+			if (pendingsizeapply) ApplySize();
+			if (pendingpositionapply) ApplyPosition();
+			//apply individual, non state changes made by the user.
 			return pendingparentredraw;
 		}
 		void QueuePosition(const sf::Vector2f& position) {

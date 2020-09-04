@@ -180,8 +180,6 @@ GUIInterface* Manager_GUI::CreateInterfaceFromFile(const GameStateType& state, c
 	return master_interface;
 	
 	}
-
-
 std::pair<bool,Interfaces::iterator> Manager_GUI::FindInterface(const GameStateType& state, const std::string& interfacename) noexcept{
 	auto& interfaces = stateinterfaces.at(state);
 	auto foundinterface = std::find_if(interfaces.begin(), interfaces.end(), [interfacename](const auto& p) {
@@ -268,6 +266,8 @@ void Manager_GUI::Update(const float& dT){
 }
 void Manager_GUI::Draw() {
 	auto& stategui = stateinterfaces.at(activestate);
+	sf::RenderWindow* render_window = context->window->GetRenderWindow();
+	render_window->setView(render_window->getDefaultView()); //Draw the gui on the render window view.
 	for (auto& interface : stategui) {
 		if (interface.second->IsHidden()) continue;
 		interface.second->Draw(*context->window->GetRenderWindow(), true);

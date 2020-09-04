@@ -12,7 +12,7 @@ class Manager_GUI;
 class State_Base //abstract base for all specialised states
 {
 protected:
-	sf::View stateview;
+	sf::View state_view; //Information on where exactly this is located in the world.
 	Manager_State* statemgr;
 	Manager_GUI* guimgr;
 	mutable bool transcendency;
@@ -34,9 +34,13 @@ public:
 	inline void SetTranscendency(const bool& input) const{ transcendency = input; }
 	inline bool GetTransparency() const { return transparency; }
 	inline bool GetTranscendency() const { return transcendency; }
+	const sf::View& GetStateView() const { return state_view; }
+	const sf::FloatRect GetStateViewAABB() const {
+		auto state_view_centre = static_cast<sf::Vector2f>(state_view.getCenter());
+		auto state_view_size = static_cast<sf::Vector2f>(state_view.getSize());
+		return sf::FloatRect{ state_view_centre.x - state_view_size.x / 2, state_view_centre.y - state_view_size.y / 2, state_view_size.x, state_view_size.y };
+	}
 
-
-	
 };
 
 
