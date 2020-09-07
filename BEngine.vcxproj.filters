@@ -158,9 +158,6 @@
     <ClInclude Include="State_Base.h">
       <Filter>Header Files\States\States</Filter>
     </ClInclude>
-    <ClInclude Include="State_Menu.h">
-      <Filter>Header Files\States\States</Filter>
-    </ClInclude>
     <ClInclude Include="State_Options.h">
       <Filter>Header Files\States\States</Filter>
     </ClInclude>
@@ -361,6 +358,12 @@
     </ClInclude>
     <ClInclude Include="GUIButton.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GUIButton.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="State_Menu.h">
+      <Filter>Header Files\States\States</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

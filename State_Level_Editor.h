@@ -27,19 +27,21 @@ private:
 		TOP_PANEL, RIGHT_PANEL, BOT_PANEL, POP_UP_PANEL
 	};
 	enum : unsigned char {
-		SCROLL_AMOUNT = 10
+		SCROLL_AMOUNT = 32,
 	};
+	static constexpr float ZOOM_AMOUNT = 0.1;
 	std::array<GUIInterface*, 4> interfaces;
 	inline GUIInterface* GetInterface(const INTERFACE_TYPE& t) {
 		return interfaces.at(static_cast<unsigned int>(t));
 	}
 	//*** ***
-	sf::RectangleShape empty_tile;
+
+	sf::RectangleShape map_selector;
+	sf::RectangleShape tile_selector;
 	
 
-
 	bool ValidatePopUpTextfields(); //Checks the user textfield input to ensure that they lie within valid ranges.
-	bool CreateNewMap(sf::Vector2u&& map_dimensions, sf::Vector2f&& tile_pixel_dimensions, std::string&& tile_sheet_name); //Called after a successful tile sheet load in.
+	bool CreateNewMap(sf::Vector2u&& map_dimensions, sf::Vector2u&& tile_pixel_dimensions, std::string&& tile_sheet_name); //Called after a successful tile sheet load in.
 	void SaveMap();
 
 

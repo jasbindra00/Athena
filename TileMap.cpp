@@ -23,4 +23,3 @@ void MapData::TileMap::Rasterize(sf::RenderTarget& target) const
 {
 	int x = 3;
 }
-

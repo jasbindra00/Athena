@@ -95,8 +95,8 @@ namespace EventData {
 			//Loop through all of the conditions 
 			for (auto& key : keys) {
 				if (!(KeyProcessing::IsOnlyNumeric(key.first) || KeyProcessing::IsOnlyNumeric(key.second))) continue;
-				unsigned int event_type;
-				unsigned int key_code;
+				int event_type;
+				int key_code;
 				//CHANGE KEYPROCESSING TO VECTOR INSTEAD OF UNORDERED MULTIMAP.
 				event_type = std::stoi(key.first);
 				key_code = std::stoi(key.second);

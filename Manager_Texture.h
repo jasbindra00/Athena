@@ -15,13 +15,14 @@ protected:
 		auto foundpath = FindResource(resourcename, resourcepaths);
 		if (foundpath != resourcepaths.end()) { //path has been registered.
 			auto resource = std::make_shared<sf::Texture>(); //try to create resource from registered path
-			if (!resource->loadFromFile(foundpath->first)) {//resource path file is not correct
-				LOG::Log(LOCATION::MANAGER_TEXTURE, LOGTYPE::ERROR, __FUNCTION__, "Could not create resource of name " + resourcename + " from path " + foundpath->second + ". Deleting path...");
-				resource.reset();
-				resourcepaths.erase(foundpath);
-				return nullptr;
-			}
-			//resource successfully loaded.
+// 			if (!resource->loadFromFile(foundpath->first)) {//resource path file is not correct
+// 				LOG::Log(LOCATION::MANAGER_TEXTURE, LOGTYPE::ERROR, __FUNCTION__, "Could not create resource of name " + resourcename + " from path " + foundpath->second + ". Deleting path...");
+// 				resource.reset();
+// 				//resourcepaths.erase(foundpath);
+// 				return nullptr;
+// 			}
+// 			//resource successfully loaded.
+			resource->loadFromFile(foundpath->first);
 			resourceobjects[resourcename] = resource;
 			return resource; //RVO
 		}
