@@ -38,16 +38,8 @@ void State_LevelEditor::OnCreate()
 	interfaces.at(RIGHT_PANEL)->GetElement<GUIElement>("TILE_SHEET_VIEW")->SetLayerType(GUIData::GUILayerType::BACKGROUND);
 
 	state_view.setViewport(sf::FloatRect{ 0,0,0.8,0.8 });
+	
 
-	//Configure the selectors.
-	tile_selector.setFillColor(sf::Color::Transparent);
-	tile_selector.setOutlineColor(sf::Color::Green);
-	tile_selector.setOutlineThickness(3);
-	map_selector = tile_selector;
-	tile_selector.setPosition(GetInterface(RIGHT_PANEL)->GetElement<GUILabel>("TILE_SHEET_VIEW")->GetGlobalPosition());
-	map_selector.setSize(sf::Vector2f{ 32,32 });
-	
-	
 	//Debugging purposes, default load in the tile_sheet
 
 	CreateNewMap({ 100,100 }, { 32,32 }, "mytiles.png");
@@ -66,9 +58,10 @@ bool State_LevelEditor::CreateNewMap(sf::Vector2u&& map_dimensions, sf::Vector2u
 	if (!res) return false;
 	//Set the tile sheet viewer texture to this new texture.
 	GetInterface(RIGHT_PANEL)->GetElement<GUILabel>("TILE_SHEET_VIEW")->GetActiveStyle().ReadIn(STYLE_ATTRIBUTE::BG_TEXTURE_NAME, std::move(tile_sheet_name));
+	map_selector.OnCreate(map_dimensions, sf::Vector2f{ 32,32 }, sf::Vector2f{ 0,0 });
 	//Create a new map.
 	active_map = std::make_unique<MapData::MapImpl>(std::move(map_dimensions), std::move(tile_pixel_dimensions), std::move(res),guimgr->GetContext()->texturemgr);
-
+	tile_selector.OnCreate(active_map->atlas_tile_dimensions, sf::Vector2f{ 32,32 }, GetInterface(RIGHT_PANEL)->GetElement<GUILabel>("TILE_SHEET_VIEW")->GetGlobalPosition());
 	return true;
 }
 
@@ -107,12 +100,11 @@ void State_LevelEditor::Scroll(EventData::EventDetails* details)
 		(scroll_upwards == true) ? state_view.move(sf::Vector2f{ 0, -SCROLL_AMOUNT }) : state_view.move(sf::Vector2f{ 0,SCROLL_AMOUNT });
 		break;
 	}
-	case sf::Keyboard::Key::Tab: { //SELECTOR SCROLL
-		/*
-		-Move the selector on the atlas map.
-		*/
+	case sf::Keyboard::Key::Tab: { //TILE_SELECTOR SCROLL
+		
 		break;
 	}
+							   
 	}
 
 }
@@ -140,15 +132,16 @@ void State_LevelEditor::PlaceTile()
 	
 	//Convert the tile selector position into array coordinates and check if it has been registered.
 	//Obtain the local position of the selector relative to the atlas map, and try registering the tile.
-	if (active_map->RegisterTile(MapData::WorldToMapCoords(tile_selector.getPosition() - GetInterface(RIGHT_PANEL)->GetElement<GUILabel>("TILE_SHEET_VIEW")->GetGlobalPosition(), active_map->tile_pixel_dimensions))) {
-		std::cout << "hello bigga jigga" << std::endl;
-	}
+
+	active_map->RegisterTile(MapData::WorldToMapCoords(tile_selector.GetWorldPosition() - GetInterface(RIGHT_PANEL)->GetElement<GUILabel>("TILE_SHEET_VIEW")->GetGlobalPosition(), active_map->tile_pixel_dimensions));
+	
 	//Now we must place the tile onto the actual game map.
-	active_map->PlaceTile({3,3}, { 0,0 });
+
+	active_map->PlaceTile(map_selector.GetLocalPosition(), tile_selector.GetLocalPosition());
 }
 void State_LevelEditor::Draw(sf::RenderTarget& target)
 {
-	//D
+	
 	if (active_map == nullptr) return;
 	//Draw the user map.
 	auto& default_tile_sprite = active_map->master_tiles.at(UINT_MAX).tile_sprite;
@@ -165,17 +158,21 @@ void State_LevelEditor::Draw(sf::RenderTarget& target)
 			default_tile_sprite.setPosition(map_position);
 			target.draw(default_tile_sprite);
 			//Obtain the user tile at this current position
-			auto& user_tile = active_map->worker_tiles.at(y * active_map->map_tile_dimensions.x + x);
+			auto& user_tile = active_map->worker_tiles.at(MapData::MapToArrayCoords({ x,y }, active_map->map_tile_dimensions));
 			if (user_tile.master_id == UINT_MAX) continue;
 			active_map->master_tiles.at(user_tile.master_id).tile_sprite.setPosition(MapData::MapToWorldCoords({ x,y }));
 			target.draw(active_map->master_tiles.at(user_tile.master_id).tile_sprite);
 			//
 		}
 	}
+	target.draw(map_selector.GetSelectorDrawable());
+	target.draw(tile_selector.GetSelectorDrawable());
+
 }
 void State_LevelEditor::Update(const float& dT)
 {
-	
+	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Left)) map_selector.Move(sf::Vector2i{ -1,0 });
+	else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Right)) map_selector.Move(sf::Vector2i{ 1,0 });
 }
 
 void State_LevelEditor::Activate()

@@ -120,7 +120,6 @@ namespace MapData {
 			//Create the default tile texture if it does not exist.
 			CreateDefaultTileTexture(texture_mgr);
 			//Register the default tile texture in master_tiles.
-
 			master_tiles.insert({ UINT_MAX, MasterTile{sf::FloatRect{ 0,0,32,32 }, texture_mgr->RequestResource(default_tile_texture_name)} });
 		}
 		
