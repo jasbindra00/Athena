@@ -41,7 +41,6 @@ using DEDUCE_ARG_TYPE = std::conditional_t<std::is_same_v<typename std::decay_t<
 template<typename T>
 using StateBindingData = std::unordered_map<GameStateType, BindingTypes::BindingData<T>>;
 
-
 class Manager_Event{
 protected:
 	StateBindingData<BindingTypes::BindingCallable> bindingcallables;
@@ -97,8 +96,4 @@ public:
 	void Update(sf::RenderWindow* winptr); //handles all live input events - keyboard and mouse.
 	
 };
-
-
-
-
 #endif

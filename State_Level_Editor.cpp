@@ -37,12 +37,11 @@ void State_LevelEditor::OnCreate()
 
 	interfaces.at(RIGHT_PANEL)->GetElement<GUIElement>("TILE_SHEET_VIEW")->SetLayerType(GUIData::GUILayerType::BACKGROUND);
 
-	state_view.setViewport(sf::FloatRect{ 0,0,0.8,0.8 });
-	
+	state_view.setViewport(sf::FloatRect{ 0,0,0.8,0.8 });	
 
 	//Debugging purposes, default load in the tile_sheet
 
-	CreateNewMap({ 100,100 }, { 32,32 }, "mytiles.png");
+	CreateNewMap({ 5,5 }, { 32,32 }, "mytiles.png");
 
 }
 
@@ -57,14 +56,14 @@ bool State_LevelEditor::CreateNewMap(sf::Vector2u&& map_dimensions, sf::Vector2u
 	SharedTexture res = guimgr->GetContext()->texturemgr->RequestResource(tile_sheet_name);
 	if (!res) return false;
 	//Set the tile sheet viewer texture to this new texture.
-	GetInterface(RIGHT_PANEL)->GetElement<GUILabel>("TILE_SHEET_VIEW")->GetActiveStyle().ReadIn(STYLE_ATTRIBUTE::BG_TEXTURE_NAME, std::move(tile_sheet_name));
+	GUIInterface* right_panel = GetInterface(RIGHT_PANEL);
+	right_panel->GetElement<GUILabel>("TILE_SHEET_VIEW")->GetActiveStyle().ReadIn(STYLE_ATTRIBUTE::BG_TEXTURE_NAME, std::move(tile_sheet_name));
 	map_selector.OnCreate(map_dimensions, sf::Vector2f{ 32,32 }, sf::Vector2f{ 0,0 });
 	//Create a new map.
 	active_map = std::make_unique<MapData::MapImpl>(std::move(map_dimensions), std::move(tile_pixel_dimensions), std::move(res),guimgr->GetContext()->texturemgr);
-	tile_selector.OnCreate(active_map->atlas_tile_dimensions, sf::Vector2f{ 32,32 }, GetInterface(RIGHT_PANEL)->GetElement<GUILabel>("TILE_SHEET_VIEW")->GetGlobalPosition());
+	tile_selector.OnCreate(active_map->atlas_tile_dimensions, sf::Vector2f{ 32,32 }, right_panel->GetElement<GUILabel>("TILE_SHEET_VIEW")->GetGlobalPosition() - right_panel->GetGlobalPosition());
 	return true;
 }
-
 void State_LevelEditor::SaveMap()
 {
 
@@ -139,6 +138,59 @@ void State_LevelEditor::PlaceTile()
 
 	active_map->PlaceTile(map_selector.GetLocalPosition(), tile_selector.GetLocalPosition());
 }
+
+void State_LevelEditor::MoveSelector(EventData::EventDetails* details)
+{
+		auto ConvertKeyToDirection = [details]()->sf::Vector2u {
+			auto& keycode = details->keycode;
+			if (keycode == sf::Keyboard::Key::Up || keycode == sf::Keyboard::Key::W) return { 0,-1 };
+			else if (keycode == sf::Keyboard::Key::Left || keycode == sf::Keyboard::Key::A) return { -1,0 };
+			else if (keycode == sf::Keyboard::Key::Down || keycode == sf::Keyboard::Key::S) return { 0,1 };
+			else if (keycode == sf::Keyboard::Key::Right || keycode == sf::Keyboard::Key::D) return { 1,0 };
+		};
+		auto dir = ConvertKeyToDirection();
+		
+
+
+
+
+
+	switch (details->keycode) {
+	case sf::Keyboard::Key::W: { //MOVE MAP SELECTOR
+		map_selector.Move({ 0,-1 });
+		break;
+	}
+	case sf::Keyboard::Key::A: { //MOVE MAP SELECTOR
+		map_selector.Move({ -1,0 });
+		break;
+	}
+	case sf::Keyboard::Key::S: { //MOVE MAP SELECTOR
+		map_selector.Move({ 0,1 });
+		break;
+	}
+	case sf::Keyboard::Key::D: {//MOVE MAP SELECTOR
+		map_selector.Move({ 1,0 });
+		break;
+	}
+	case sf::Keyboard::Key::Up: {
+		tile_selector.Move({ 0,-1 });
+		break;
+	}
+	case sf::Keyboard::Key::Right: {
+		tile_selector.Move({ 1,0 });
+		break;
+	}
+	case sf::Keyboard::Key::Down: {
+		tile_selector.Move({ 0,1 });
+		break;
+	}
+	case sf::Keyboard::Key::Left: {
+		tile_selector.Move({ -1,0 });
+		break;
+	}
+	}
+}
+
 void State_LevelEditor::Draw(sf::RenderTarget& target)
 {
 	
@@ -162,17 +214,15 @@ void State_LevelEditor::Draw(sf::RenderTarget& target)
 			if (user_tile.master_id == UINT_MAX) continue;
 			active_map->master_tiles.at(user_tile.master_id).tile_sprite.setPosition(MapData::MapToWorldCoords({ x,y }));
 			target.draw(active_map->master_tiles.at(user_tile.master_id).tile_sprite);
-			//
 		}
 	}
-	target.draw(map_selector.GetSelectorDrawable());
-	target.draw(tile_selector.GetSelectorDrawable());
-
+	map_selector.Render(target);
+	GetInterface(RIGHT_PANEL)->GetElement<GUILabel>("TILE_SHEET_VIEW")->GetVisual().RenderWithDrawables({ tile_selector.GetSelectorDrawable() });
+	
 }
 void State_LevelEditor::Update(const float& dT)
 {
-	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Left)) map_selector.Move(sf::Vector2i{ -1,0 });
-	else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Right)) map_selector.Move(sf::Vector2i{ 1,0 });
+	
 }
 
 void State_LevelEditor::Activate()

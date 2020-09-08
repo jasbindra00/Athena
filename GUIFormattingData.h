@@ -14,6 +14,7 @@
 #include "MagicEnum.h"
 #include <variant>
 #include "Utility.h"
+#include <SFML/Graphics/Drawable.hpp>
 
 
 class Manager_GUI;
@@ -158,7 +159,7 @@ namespace GUIFormattingData {
 	class GUIVisual {//EXPOSED TO USER.
 	private:
 		GUIStateStyles statestyles;
-
+		
 		sf::Vector2f elementsize;
 		sf::Vector2f elementlocalposition;
 
@@ -175,6 +176,7 @@ namespace GUIFormattingData {
 		sf::Text text;
 		std::shared_ptr<sf::Font> font;
 		std::shared_ptr<sf::Texture> texture;
+		std::vector<sf::Drawable*> drawables;
 
 		Manager_Texture* texturemgr;
 		Manager_Font* fontmgr;
@@ -342,6 +344,9 @@ namespace GUIFormattingData {
 			target.draw(solid_background);
 			if(texture.get()) target.draw(texture_background);
 			if(!std::get<bool>(statestyles.at(static_cast<int>(activestate)).GetAttribute(STYLE_ATTRIBUTE::TEXT_HIDDEN))) target.draw(text);
+			for (auto& drawable : drawables) {
+				target.draw(*drawable);
+			}
 			if(toparent) pendingparentredraw = false;
 		}
 		
@@ -353,6 +358,14 @@ namespace GUIFormattingData {
 		const bool& PendingParentRedraw() const { return pendingparentredraw; }
 		const bool& PendingSizeApply() const { return pendingsizeapply; }
 		void QueueParentRedraw() { pendingparentredraw = true; }//ENCAPSULATE
+		void RenderWithDrawables(const std::vector<sf::Drawable*>& d) {
+			drawables = d;
+			pendingparentredraw = true;
+		}
+		void ClearDrawables() {
+			drawables.clear();
+			pendingparentredraw = true;
+		}
 	};
 }
 #endif

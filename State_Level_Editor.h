@@ -40,34 +40,25 @@ struct TileSelector {
 		selector.setSize(selector_size);
 		ApplyPosition();
 	}
+	void SetWorldPosition(const sf::Vector2f& vec) {
+
+	}
 	const auto GetLocalPosition() const { return static_cast<sf::Vector2u>(local_coordinates); }
 	const sf::Vector2f& GetWorldPosition() const { return selector.getPosition(); }
-	const sf::Drawable& GetSelectorDrawable() const{ return selector; }
+	sf::Drawable* GetSelectorDrawable() { return &selector; }
+	const bool& PendingRedraw() const { return pending_redraw; }
+	void Render(sf::RenderTarget& target) const {
+		target.draw(selector);
+		pending_redraw = false;
+	}
 private:
+	mutable bool pending_redraw{ true };
 	sf::Vector2i local_coordinates;
 	sf::Vector2f starting_world_coordinates;
 	sf::RectangleShape selector;
 	sf::Vector2u max_dimensions;
 	void ApplyPosition() {
-		if (local_coordinates.x < 0 && local_coordinates.y != 0) {
-			local_coordinates.x = max_dimensions.x - 1;
-			local_coordinates.y -= 1;
-		}
-		else if (local_coordinates.x >= max_dimensions.x && local_coordinates.y != max_dimensions.y) {
-			local_coordinates.x = 0;
-			local_coordinates.y += 1;
-		}
 		
-
-
-
-// 
-// 
-// 		if (local_coordinates.x < 0) local_coordinates.x = 0;
-// 		else if (local_coordinates.x >= max_dimensions.x) local_coordinates.x = max_dimensions.x - 1;
-// 		if (local_coordinates.y < 0) local_coordinates.y = 0;
-// 		else if (local_coordinates.y >= max_dimensions.y) local_coordinates.y = max_dimensions.y - 1;
-		selector.setPosition(starting_world_coordinates.x + selector.getSize().x * local_coordinates.x, starting_world_coordinates.y + selector.getSize().y * local_coordinates.y);
 	}
 };
 
@@ -93,7 +84,7 @@ private:
 	TileSelector map_selector;
 	TileSelector tile_selector;
 	
-
+	
 	bool ValidatePopUpTextfields(); //Checks the user textfield input to ensure that they lie within valid ranges.
 	bool CreateNewMap(sf::Vector2u&& map_dimensions, sf::Vector2u&& tile_pixel_dimensions, std::string&& tile_sheet_name); //Called after a successful tile sheet load in.
 	void SaveMap();
@@ -105,8 +96,11 @@ private:
 	void Scroll(EventData::EventDetails* details);
 	void TogglePopUp();
 	void PlaceTile();
+	void MoveSelector(EventData::EventDetails* details);
+
 public:
 	State_LevelEditor(Manager_State* smgr, Manager_GUI* gmgr);
+	
 	void Draw(sf::RenderTarget& target) override;
 	void Update(const float& dT) override;
 	void Activate() override;
