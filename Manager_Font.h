@@ -4,7 +4,7 @@
 #include <SFML\Graphics\Font.hpp>
 
 
-using SharedFont = SharedResource<sf::Font>;
+using SharedFont = Shared_Resource<sf::Font>;
 class Manager_Font : public Manager_Resource < Manager_Font, sf::Font>{
 protected:
 public:
@@ -12,8 +12,8 @@ public:
 
 	}
 	SharedFont LoadResource(const std::string& resourcename) {
-		auto foundresourceobject = FindResource(resourcename, resourceobjects);
-		if (foundresourceobject != resourceobjects.end()) { //resource object already exists.
+		auto foundresourceobject = FindResource(resourcename, resource_objects);
+		if (foundresourceobject != resource_objects.end()) { //resource object already exists.
 			return foundresourceobject->second;
 		}
 		auto foundpath = FindResource(resourcename, resourcepaths);
@@ -26,7 +26,7 @@ public:
 				return nullptr;
 			}
 			//resource successfully loaded.
-			resourceobjects[resourcename] = resource;
+			resource_objects[resourcename] = resource;
 			return resource; //RVO
 		}
 		//if resource has no path

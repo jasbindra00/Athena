@@ -6,13 +6,25 @@
 #include "GUILayerData.h"
 #include <functional>
 
+/*
+-A RenderLayer is meant for GUIInterfaces.
+-Each GUIInterface has three layers : Background, Content and Control.
+-The elements of a given GUIInterace can form any part of a layer.
+-
+
+*/
+
+
+
+
 
 
 namespace GUILayerData {
 	using GUIData::GUILayerType;
 
 	using LayerRefreshCallable = std::function<void(sf::RenderTarget&)>;
-	class RenderLayer {
+
+	class RenderLayer { 
 	private:
 		std::vector<sf::Drawable*> user_drawables; //ADD FUNCTIONALITY FOR FINER CONTROL OF THESE
 

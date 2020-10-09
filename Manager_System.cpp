@@ -52,3 +52,11 @@ void Manager_System::AddEvent(const EntityID& id, const EntityEventType& type){
 	entityevents[id].InsertEvent(type);
 }
 MessageHandler* Manager_System::GetMessageHandler()const noexcept{ return messagehandler.get(); }
+
+
+enum class Attribute_Type
+{
+	Element_Size, Texture_Rect, Fill_Color, Outline_Color, Outline_Thickness, Origin, Local_Position, Scale, Resource_Name, Rotation, Hidden,
+
+	Character_Size, Letter_Spacing, Line_Spacing, Text_Style, Text_String
+};

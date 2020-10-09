@@ -5,7 +5,7 @@
 #include "Manager_GUI.h"
 #include "Window.h"
 #include <array>
-
+#include "GUIData.h"
 
 GUIElement::GUIElement(GUIInterface* p,const GUIType& t, const GUILayerType& layer) :type(t),layertype(layer), parent(p) {
 }
@@ -19,7 +19,7 @@ void GUIElement::Update(const float& dT) {
 	if (name == "MAP") {
 		int x = 3;
 	}
-	visual->Update(GetLocalBoundingBox());
+	visual->Update();
 }
 void GUIElement::OnElementCreate(Manager_Texture* texturemgr, Manager_Font* fontmgr, KeyProcessing::Keys& attributes, const GUIStateStyles& styles){
 	visual = std::make_unique<GUIVisual>(texturemgr, fontmgr, styles);
@@ -56,12 +56,12 @@ void GUIElement::AdjustPositionToParent() {
 	if (parent == nullptr) return; //if in mid initialisation
 	auto overhangs = parent->EltOverhangs(this); //check if this entire elt still lies in interface after pos change
 	if (overhangs.first == false) return; //elt still lies within the interface.
-	visual->QueuePosition(overhangs.second);
+	visual->SetPosition(overhangs.second);
 }
 void GUIElement::SetState(const GUIState& state) {
 	/*if (state == activestate) return;*/
 	activestate = state;
-	visual->QueueState(state);
+	visual->SetState(state);
 }
 void GUIElement::ReadIn(KeyProcessing::Keys& keys) {
 	//TO DEFAULT THE KEYS TO ERROR OR TO SEARCH FOR EACH INDIVIDUAL KEY?
@@ -117,10 +117,10 @@ void GUIElement::ReadIn(KeyProcessing::Keys& keys) {
 	SetPosition(std::move(position));
 }
 void GUIElement::SetPosition(const sf::Vector2f& position){
-	visual->QueuePosition(position);
+	visual->SetPosition(position);
 }
 void GUIElement::SetSize(const sf::Vector2f& size){
-	visual->QueueSize(size);
+	visual->SetSize(size);
 }
 std::string GUIElement::GetHierarchyString(){
 	if (parent == nullptr) return name;

@@ -41,8 +41,8 @@ public:
 
 	void SetPredicates(const Bitmask& mask) { predicatebitset = mask; }
 	void SetMaxChars(const int& inp) { maxchars = (inp < 0) ? INT_MAX : inp; }
-	void AddPredicate(const Utility::CharacterCheckData::STRING_PREDICATE& t) {predicatebitset.TurnOnBits(Utility::ConvertToUnderlyingType(t));}
-	bool Predicate(const char& c) { return Utility::CharacterCheckData::PredicateCheck(predicatebitset, c);}
+	void AddPredicate(const Utility::CharacterManipulation::STRING_PREDICATE& t) {predicatebitset.TurnOnBits(Utility::ConvertToUnderlyingType(t));}
+	bool Predicate(const char& c) { return Utility::CharacterManipulation::PredicateCheck(predicatebitset, c);}
 	void OnEnter() {
 	}
 

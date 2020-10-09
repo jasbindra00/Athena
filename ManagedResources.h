@@ -17,4 +17,5 @@ namespace ManagedResourceData {
 	template<typename RESOURCE, typename  = typename ENABLE_IF_MANAGED_RESOURCE<RESOURCE>::type>
 	using DEDUCE_RESOURCE_MANAGER_TYPE = std::conditional_t<IS_TEXTURE<RESOURCE>::value, Manager_Texture*, Manager_Font*>;
 }
+
 #endif

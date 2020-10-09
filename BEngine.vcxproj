@@ -88,13 +88,13 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>SFML_STATIC;WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>D:\Documents\PROGRAMMING\C++\LIBRARIES\SFML\SFML-2.5.1\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\FILES\Documents\Programming\Libraries\C++\SFML-2.5.1\include</AdditionalIncludeDirectories>
       <AdditionalOptions>/std:c++latest %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>D:\Documents\PROGRAMMING\C++\LIBRARIES\SFML\SFML-2.5.1\lib</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>D:\FILES\Documents\Programming\Libraries\C++\SFML-2.5.1\lib</AdditionalLibraryDirectories>
       <AdditionalDependencies>sfml-system-s-d.lib;sfml-window-s-d.lib;sfml-graphics-s-d.lib;winmm.lib;gdi32.lib;freetype.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions>/std:c++latest %(AdditionalOptions)</AdditionalOptions>
     </Link>
@@ -107,7 +107,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>SFML_STATIC;WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>D:\Documents\PROGRAMMING\C++\LIBRARIES\SFML\SFML-2.5.1\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\FILES\Documents\Programming\Libraries\C++\SFML-2.5.1\include</AdditionalIncludeDirectories>
       <AdditionalOptions>/std:c++latest %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
@@ -115,7 +115,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>D:\Documents\PROGRAMMING\C++\LIBRARIES\SFML\SFML-2.5.1\lib</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>D:\FILES\Documents\Programming\Libraries\C++\SFML-2.5.1\lib</AdditionalLibraryDirectories>
       <AdditionalDependencies>sfml-system-s.lib;sfml-window-s.lib;sfml-graphics-s.lib;winmm.lib;gdi32.lib;freetype.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions>/std:c++latest %(AdditionalOptions)</AdditionalOptions>
     </Link>
@@ -158,6 +158,7 @@
     <ClCompile Include="BEngine.cpp" />
     <ClCompile Include="GUICheckbox.cpp" />
     <ClCompile Include="GUIElement.cpp" />
+    <ClCompile Include="GUIFormattingData.cpp" />
     <ClCompile Include="GUIInterface.cpp" />
     <ClCompile Include="GUIButton.cpp" />
     <ClCompile Include="GUILabel.cpp" />
@@ -186,7 +187,7 @@
     <ClInclude Include="EntityDirection.h" />
     <ClInclude Include="EntityEventQueue.h" />
     <ClInclude Include="EntityStates.h" />
-    <ClInclude Include="EventQueue.h" />
+    <ClInclude Include="CustomQueue.h" />
     <ClInclude Include="FileReader.h" />
     <ClInclude Include="EventData.h" />
     <ClInclude Include="GUIButton.h" />
@@ -199,6 +200,7 @@
     <ClInclude Include="GUIButton.h" />
     <ClInclude Include="GUIScrollbar.h" />
     <ClInclude Include="GUISticky.h" />
+    <ClInclude Include="GUIStyle.h" />
     <ClInclude Include="GUITextfield.h" />
     <ClInclude Include="GUILabel.h" />
     <ClInclude Include="KeyProcessing.h" />

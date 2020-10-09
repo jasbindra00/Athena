@@ -69,8 +69,8 @@ namespace Utility {
 		enum { value = sizeof(test<T>(0)) == sizeof(char) };
 	};
 	template <typename Container>
-	typename std::enable_if<HasConstIterator<Container>::value,std::string>::type
-		ConstructGUIHierarchyString(const Container& container){
+	typename std::enable_if<HasConstIterator<Container>::value,std::string>::type ConstructGUIHierarchyString(const Container& container)
+	{
 		if (container.cbegin() == container.cend()) return std::string{};
 		std::string hierarchystr;
 		for (auto& eltname : container) {
@@ -82,7 +82,11 @@ namespace Utility {
 		if (!hierarchystr.empty() && hierarchystr.back() == ' ') hierarchystr.pop_back();
 		return hierarchystr;
 		}
-	namespace CharacterCheckData {//REFACTOR THIS.
+
+	const bool CheckAABBOverhang(const sf::FloatRect& rect1, const sf::FloatRect& rect2) {
+
+	}
+	namespace CharacterManipulation {//REFACTOR THIS.
 		static enum class STRING_PREDICATE : long long {
 			LOWER_CASE_ALPHABET = 2147483648,
 			UPPER_CASE_ALPHABET = 1073741824,
@@ -92,7 +96,7 @@ namespace Utility {
 			FILE_NAME = 67108864,
 			NULLTYPE = 0
 		};
-		
+	
 		static const std::unordered_map<unsigned int, STRING_PREDICATE> predmap{ {0,STRING_PREDICATE::LOWER_CASE_ALPHABET}, {1, STRING_PREDICATE::UPPER_CASE_ALPHABET},
 		{2, STRING_PREDICATE::NUMBER}, {3, STRING_PREDICATE::SPACE}, {4, STRING_PREDICATE::SENTENCE_PUNCTUATION}, {5, STRING_PREDICATE::FILE_NAME} };
 
@@ -143,7 +147,19 @@ namespace Utility {
 			}
 			return res;
 		}
-	
+		static std::string RemoveBackspace(std::string str) {
+			str.erase(std::remove(str.begin(), str.end(), '\b'), str.end());
+			for (auto it = str.begin(); it != str.end(); ++it) {
+				if (*it == '\\') {
+					if (it + 1 != str.end()) {
+						if (*(it + 1) != 'n') continue;
+						*it = '\n';
+						str.erase(it + 1);
+					}
+				}
+			}
+			return str;
+		}
 	}
 
 	

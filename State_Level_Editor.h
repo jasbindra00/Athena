@@ -17,9 +17,7 @@ class Manager_State;
 class GUIInterface;
 //*** ***
 
-
 struct TileSelector {
-
 	TileSelector() {
 
 	}
@@ -41,7 +39,6 @@ struct TileSelector {
 		ApplyPosition();
 	}
 	void SetWorldPosition(const sf::Vector2f& vec) {
-
 	}
 	const auto GetLocalPosition() const { return static_cast<sf::Vector2u>(local_coordinates); }
 	const sf::Vector2f& GetWorldPosition() const { return selector.getPosition(); }
@@ -89,7 +86,6 @@ private:
 	bool CreateNewMap(sf::Vector2u&& map_dimensions, sf::Vector2u&& tile_pixel_dimensions, std::string&& tile_sheet_name); //Called after a successful tile sheet load in.
 	void SaveMap();
 
-
 	//GUIBinding Callables
 	void ConfirmButtonPopup();
 	void MoveCamera(EventData::EventDetails* details);
@@ -111,7 +107,4 @@ public:
 	void Continue() override;
 
 };
-
-
-
 #endif

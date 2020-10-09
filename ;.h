@@ -13,10 +13,11 @@
 #include "Manager_Font.h"
 #include "Manager_Texture.h"
 class Manager_GUI;
-
+/*
+-Each component should have an apply function.
+-When the queue reaches this iteration, it will then simply all Apply
+*/
 namespace GUIFormattingData {
-	using Applier = std::function<void(void)>;
-	class AbstractStyle;
 	class StyleComponentBase
 	{
 	protected:
@@ -24,13 +25,30 @@ namespace GUIFormattingData {
 		std::function<void(void)> applier;
 		inline void AlertParentOfChange() { parent_style->Alert(this); }
 	public:
-		StyleComponentBase(AbstractStyle* p, Applier i_applier)
+		StyleComponentBase(AbstractStyle* p, std::function<void(void)> i_applier)
 			:parent_style(p), applier(std::move(i_applier))
 		{
 		}
 		inline void ApplyComponent() { applier(); }
 		virtual ~StyleComponentBase() = 0;
 	};
+
+
+
+	/*
+	-Keep an applier within a given style component
+	-Template this style component
+	-We do not need to have the applier as a template, since we are not going to use the lambda as a function
+	-We are going to use the lambda as a capture and therefore do not have to have any inputs
+	*/
+
+
+	/*
+
+	-Every component should be initialised in that it should know how to apply itself.
+	-
+	*/
+	using Applier = std::function<void(void)>;
 	template<typename ComponentType>
 	class StyleComponent : StyleComponentBase
 	{
@@ -38,9 +56,12 @@ namespace GUIFormattingData {
 		ComponentType component;
 		Applier applier;
 	public:
-		StyleComponent(AbstractStyle* parent, Applier applier)
-			:StyleComponentBase(parent, applier)
+		StyleComponent(AbstractStyle* parent, std::function<void(void)> applier)
+			:StyleComponentBase(std::move(type), parent, applier)
 		{
+			/*
+			
+			*/
 		}
 		inline void SetComponent(ComponentType&& inp)
 		{
@@ -49,7 +70,7 @@ namespace GUIFormattingData {
 		}
 		inline const ComponentType& GetComponent() const noexcept { return component; }
 	};
-	class AbstractProperty;
+
 	struct AbstractStyle
 	{
 		AbstractStyle(GUIVisual* p)
@@ -71,51 +92,53 @@ namespace GUIFormattingData {
 		StyleComponent<sf::Color> fill_color;
 		StyleComponent<sf::Color> outline_color;
 		//StyleComponent<std::string, Property> resource_name;
+
+
 		/*
 		-What will a string be applied to?
 		*/
 		BaseStyle(Property& p)
-			:position(this, [this->position, &p](){p->setPosition(position.GetComponent()); }),
-			rotation(this, [this->rotation, &p](){p->setRotation(rotation.GetComponent()); }),
-			scale(this, [this->scale, &p](){p->setScale(scale.GetComponent()); }),
-			origin(this, [this->origin](){p->setOrigin(origin.GetComponent()); }),
-			fill_color(this, [this->fill_color](){p->setFillColor(fill_color.GetComponent()); }),
-			outline_color(this, [this->outline_color](){p->setOutlineColor(outline_color.GetComponent()); })
+			:position([this->position, &p](){p->setPosition(position.GetComponent()); }),
+			rotation([this->rotation, &p](){p->setRotation(rotation.GetComponent()); }),
+			scale([this->scale, &p](){p->setScale(scale.GetComponent()); }),
+			origin([this->origin](){p->setOrigin(origin.GetComponent()); }),
+			fill_color([this->fill_color](){p->setFillColor(fill_color.GetComponent()); }),
+			outline_color([this->outline_color](){p->setOutlineColor(outline_color.GetComponent()); })
 		{	
 		}
 		virtual ~BaseStyle<Property>() = 0;
+
 	private:
 		void Alert(StyleComponentBase* component) override { parent->Alert(component); }
 	};
 
-
 	struct TextStyle : public BaseStyle<sf::Text>
 	{
-		StyleComponent<uint32_t> character_size;
+		StyleComponent<uint8_t> character_size;
 		StyleComponent<uint32_t> text_style;
-		StyleComponent<uint8_t> line_spacing;
-		StyleComponent<uint8_t> letter_spacing;
+		StyleComponent<uint32_t> line_spacing;
+		StyleComponent<uint32_t> letter_spacing;
 		TextStyle(sf::Text& text)
-			:character_size(static_cast<AbstractStyle*>(this), [this, &text]() {text.setCharacterSize(this->character_size.GetComponent()); }),
-			text_style(static_cast<AbstractStyle*>(this), [this, &text] {text.setStyle(static_cast<sf::Uint32>(this->text_style.GetComponent()); }),
-			line_spacing(static_cast<AbstractStyle*>(this), [this, &text] {text.setLineSpacing(this->line_spacing.GetComponent()); }),
-			letter_spacing(static_cast<AbstractStyle*>(this), [this, &text] {text.setLetterSpacing(this->letter_spacing.GetComponent()); })
+			:
+			character_size([this->character_size, &text](){text.setCharacterSize(character_size); }),
+			text_style([this->text_style, &text](){text.setStyle(text_style); }),
+			line_spacing([this->line_spacing, &text](){ text.setLineSpacing(line_spacing); }),
+			letter_spacing([this->letter_spacing, &text](){text.setLetterSpacing(letter_spacing); })
 		{
 		}
 		virtual ~TextStyle(){}
 	};
 	struct BackgroundStyle : public BaseStyle<sf::RectangleShape>
 	{
-		StyleComponent<sf::IntRect> texture_rect;
-		StyleComponent<sf::Vector2f> size;
+		StyleComponent<sf::IntRect, sf::RectangleShape> texture_rect;
+		StyleComponent<sf::Vector2f, sf::RectangleShape> size;
 
 		BackgroundStyle(sf::RectangleShape& p)
 			:BaseStyle<sf::RectangleShape>(p),
-			texture_rect([&p, &this->texture_rect]{p.setTextureRect(texture_rect.GetComponent())})
-			texture_rect([&p, &this->texture_rect]{p.setTextureRect(texture_rect.GetComponent())})
-			texture_rect([&p, this]() {p.setTextureRect(texture_rect.GetComponent()); }),
+			texture_rect(this, [&p, this]() {p.setTextureRect(texture_rect.GetComponent()); }),
 			size(this, [&p, this]() {p.setSize(size.GetComponent()); })
 		{
+
 		}
 		virtual ~BackgroundStyle()
 		{
@@ -130,79 +153,35 @@ namespace GUIFormattingData {
 	public:
 		void Alert(StyleComponentBase* component) 
 		{
-			pending_changes.Insert(component);
-			StyleComponentBase* x;
-			pending_changes.Poll(x);
-			x->ApplyComponent();
 		}
 		virtual ~AbstractProperty() = 0;
 	};
+
+	/*
+	-When a given substyle changes, it should alert the Visual Property 
+	*/
 	template<typename Property,typename Style>
 	class VisualProperty : public AbstractProperty
 	{
 	private:
 		Property visual_property;
 		GUIData::GUIState active_state;
+		
 		std::array<Style, 3> state_styles;
-		CustomQueue<StyleComponentBase*> to_process;
-		bool visual_has_changed{ true };
-
-
 	protected:
 	public:
 		VisualProperty()
 		{
-		}
-
-		void Alert(StyleComponentBase* changed_component)
-		{
-			/*
-			-We just have to add the input component to the queue over here.
-			-The update function will handle the processing and the applying of thecahnge
-			of this component automatically
-			*/
-			pending_changes.Insert(changed_component);
 		}
 		void SetState(GUIData::GUIState&& state)
 		{
 			active_state = std::move(state);
 			//Reset the queue here.
 			//Insert everything from the input state.
-			/*
-			
-			-We need some more functionality for the changed queues.
-			-We need to be able to clear a given queue.
-			-We need to be able to check if a given queue is already empty or not.
-
-			*/
 		}
+		void ProcessChanges()
+{
 
-		void ProcessQueue()
-		{
-			StyleComponent* ptr;
-			/*
-			-Check if the queue is empty.
-			-If not, then we need to log the fact that we have applied a given attriute; the visual needs to be redrawn.
-
-			*/
-			if (to_process.GetSize() != 0)
-			{
-				/*
-				-Then we have a visual change which is pending for us.
-				-The visual needs to be able to reflect this change.
-				-This should be a flag which is going to be toggled whenever we process a queue component
-				-We should make this a functionaltiy of a given queue. Not only of this.
-
-				*/
-			}
-			while (to_process.Poll(ptr))
-			{
-				/*
-				-Process the given changes here.
-				*/
-				ptr->ApplyComponent();
-			}
-		}
 	
 	};
 
@@ -281,14 +260,6 @@ namespace GUIFormattingData {
 		text.state_components.at(0).second.
 		}
 	};
-	/*
-	-We need to make a way in which we can add a given Attribute to a style.
-	
-	
-	*/
-
-
-
 
 
 

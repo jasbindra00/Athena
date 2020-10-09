@@ -129,6 +129,9 @@
     <ClCompile Include="TileMap.cpp">
       <Filter>Source Files\Map</Filter>
     </ClCompile>
+    <ClCompile Include="GUIFormattingData.cpp">
+      <Filter>Source Files\GUI</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Game.h">
@@ -260,9 +263,6 @@
     <ClInclude Include="Manager_GUI.h">
       <Filter>Header Files\GUI</Filter>
     </ClInclude>
-    <ClInclude Include="EventQueue.h">
-      <Filter>Header Files\System</Filter>
-    </ClInclude>
     <ClInclude Include="Manager_Font.h">
       <Filter>Header Files\Managers</Filter>
     </ClInclude>
@@ -364,6 +364,21 @@
     </ClInclude>
     <ClInclude Include="State_Menu.h">
       <Filter>Header Files\States\States</Filter>
+    </ClInclude>
+    <ClInclude Include="GUIButton.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CustomQueue.h">
+      <Filter>Header Files\System</Filter>
+    </ClInclude>
+    <ClInclude Include="GUIButton.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GUIButton.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GUIStyle.h">
+      <Filter>Header Files\GUI</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

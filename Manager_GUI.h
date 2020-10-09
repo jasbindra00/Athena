@@ -5,13 +5,17 @@
 #include <string>
 #include <functional>
 #include <memory>
-#include "EventQueue.h"
+#include "PollQueue.h"
 #include "GUIFormattingData.h"
 #include "GUIInterface.h"
 #include "SharedContext.h"
 #include "EventData.h"
 #include "GameStateData.h"
 #include "GUITextfield.h"
+
+
+
+
 // #include "GUITextfield.h"
 // #include "GUIScrollbar.h"
 // #include "GUITextfield.h"
@@ -34,13 +38,13 @@ using GameStateInterfaces = std::unordered_map<GameStateType, Interfaces>; //eac
 
 using GUIElementPtr = std::unique_ptr<GUIElement>;
 using GUIElementProducer = std::function<GUIElementPtr(GUIInterface*)>;
-using GUIElementFactory = std::unordered_map<GUIType, GUIElementProducer>;
+using GUIElementFactory = std::unordered_map<GUIData::GUIType, GUIElementProducer>;
 
 class Manager_GUI{
 	//friend class State_LevelEditor;
 private:
 	GameStateInterfaces stateinterfaces;
-	EventQueue<std::pair<EventData::EventType,GUIEventInfo>> guieventqueue;
+	CustomQueue<std::pair<EventData::EventType,GUIEventInfo>> guieventqueue;
 	GUIElementFactory elementfactory;
 	sf::Vector2f globalmouseposition;
 	SharedContext* context;
@@ -80,12 +84,10 @@ public:
 		}
 		return dynamic_cast<T*>(element);
 	}
-
 	GUIInterface* CreateInterfaceFromFile(const GameStateType& state, const std::string& interfacefile);
 	bool RemoveStateInterface(const GameStateType& state, const std::string& name);
-
+	void SetActiveState(const GameStateType& state, const std::string& name);
 	inline void SetActiveState(const GameStateType& state) const { activestate = state; activetextfield = nullptr; }
-	
 	void Update(const float& dT);
 	void Draw();
 
@@ -101,7 +103,4 @@ public:
 		activetextfield = ptr;
 	}
 };
-
-
-
 #endif

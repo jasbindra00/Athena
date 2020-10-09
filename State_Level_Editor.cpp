@@ -83,7 +83,9 @@ void State_LevelEditor::Scroll(EventData::EventDetails* details)
 {
 	//Find the scroll direction.
 	bool scroll_upwards = (details->mousewheeldelta < 0)? false : true;
+
 	
+
 	//Holding different keys down while scrolling will do different things.
 	switch (details->keycode) {
 	case sf::Keyboard::Key::LControl: { //ZOOM
@@ -141,6 +143,9 @@ void State_LevelEditor::PlaceTile()
 
 void State_LevelEditor::MoveSelector(EventData::EventDetails* details)
 {
+
+
+
 		auto ConvertKeyToDirection = [details]()->sf::Vector2u {
 			auto& keycode = details->keycode;
 			if (keycode == sf::Keyboard::Key::Up || keycode == sf::Keyboard::Key::W) return { 0,-1 };
@@ -149,12 +154,7 @@ void State_LevelEditor::MoveSelector(EventData::EventDetails* details)
 			else if (keycode == sf::Keyboard::Key::Right || keycode == sf::Keyboard::Key::D) return { 1,0 };
 		};
 		auto dir = ConvertKeyToDirection();
-		
-
-
-
-
-
+	
 	switch (details->keycode) {
 	case sf::Keyboard::Key::W: { //MOVE MAP SELECTOR
 		map_selector.Move({ 0,-1 });
@@ -194,6 +194,8 @@ void State_LevelEditor::MoveSelector(EventData::EventDetails* details)
 void State_LevelEditor::Draw(sf::RenderTarget& target)
 {
 	
+
+
 	if (active_map == nullptr) return;
 	//Draw the user map.
 	auto& default_tile_sprite = active_map->master_tiles.at(UINT_MAX).tile_sprite;
@@ -222,7 +224,15 @@ void State_LevelEditor::Draw(sf::RenderTarget& target)
 }
 void State_LevelEditor::Update(const float& dT)
 {
+	/*
+	-Look for keyboard input here.
+	-Control the camera.
+	-Control the tile selector positions.
+
+	-We can either do it with bindings or we can query default SFML functions.
 	
+	
+	*/
 }
 
 void State_LevelEditor::Activate()
